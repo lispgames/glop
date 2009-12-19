@@ -5,7 +5,7 @@
   :serial t
   :components
   ((:file "package")
+   (:file "glop")
    #+unix(:file "x11")
-   #+win32(:file "win32")
-   (:file "glop")))
+   #+win32(:file "win32")))
 

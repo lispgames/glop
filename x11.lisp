@@ -4,13 +4,7 @@
 
 (in-package #:glop-x11)
 
-;; X11 bindings
-(define-foreign-library xlib
-  (t (:default "libX11")))
-(use-foreign-library xlib)
-
 (defctype xid :unsigned-long)
-;; X
 (defctype window xid)
 (defctype drawable xid)
 (defctype colormap xid)
@@ -40,27 +34,9 @@
   (save-under bool) (event-mask :long) (do-not-propagate-mask :long)
   (override-redirect bool) (cmap colormap) (curs cursor))
 
-(defcfun ("XOpenDisplay" x-open-display) :pointer
-  (display-name :string))
-
-(defcfun("XCloseDisplay" x-close-display) :pointer
-  (display-ptr :pointer))
-
-(defmacro with-display ((display-sym display-name) &body body)
-  `(let ((,display-sym (%x-open-display ,display-name)))
-     (unwind-protect
-          (progn ,@body)
-       (%x-close-display ,display-sym))))
-
-(defcfun ("XDefaultRootWindow" %x-default-root-window) window
-  (display-ptr :pointer))
- 
 (defcenum (x-alloc :int)
   (:alloc-none)
   (:alloc-all))
-
-(defcfun ("XCreateColormap" %x-create-color-map) colormap
-  (display-ptr :pointer) (win window) (visual-ptr :pointer) (alloc x-alloc))
 
 (defcenum (x-window-class :int)
   (:copy-from-parent 0)
@@ -204,69 +180,32 @@
 
 (defctype x-pointer-moved-event x-motion-event)
 
-;; TODO: add missing events
+(defctype x-atom :unsigned-long)
+
+(defcunion x-client-message-event-data
+  (b :char :count 20)
+  (s :short :count 10)
+  (l :long :count 5))
+
+(defcstruct x-client-message-event
+  (type :int)
+  (serial :unsigned-long)
+  (send-event bool)
+  (display-ptr :pointer)
+  (win window)
+  (message-type x-atom)
+  (format :int)
+  (data x-client-message-event-data))
 
 (defcunion x-event
   (type x-event-name)
   (pad :long :count 24))
 
-(defcfun ("XCreateWindow" %x-create-window) window
-  (display-ptr :pointer) (parent window) (x :int) (y :int) (width :int) (height :int)
-  (border-width :int) (depth :int) (win-class x-window-class) (visual :pointer)
-  (value-mask x-window-attributes-flags) (attributes set-window-attributes))
-
-(defun x-create-window (dpy parent width height visual-infos)
-  (let ((root-win (%x-default-root-window dpy)))
-    (with-foreign-slots ((visual-id visual depth) visual-infos visual-info)
-      (let ((colormap (%x-create-color-map dpy root-win visual :alloc-none)))
-        (with-foreign-object (win-attrs 'set-window-attributes)
-          (with-foreign-slots ((cmap event-mask) win-attrs set-window-attributes)
-            (setf cmap colormap
-                  event-mask (foreign-bitfield-value 'x-event-mask-flags
-                                '(:exposure-mask
-                                  :key-press-mask :key-release-mask
-                                  :button-press-mask :button-release-mask
-                                  :structure-notify-mask
-                                  :visibility-change-mask
-                                  :pointer-motion-mask)))
-            (format t "ColorMap: ~S~%" cmap)
-            (format t "EventMask: ~S~%" event-mask)
-            (%x-create-window dpy parent 0 0 width height 0
-                              depth :input-output visual
-                              '(:cw-colormap :cw-event-mask)
-                              win-attrs)))))))
-
-
-(defcfun ("XDestroyWindow" x-destroy-window) :int
-  (display-ptr :pointer) (win window))
-
-(defcfun ("XMapWindow" %x-map-window) :int
-  (display-ptr :pointer) (win window))
-
-(defcfun ("XMapRaised" %x-map-raised) :int
-  (display-ptr :pointer) (win window))
-
-(defcfun ("XStoreName" %x-store-name) :int
-  (display-ptr :pointer) (win window) (name :string))
-
-(defcfun ("XNextEvent" x-next-event) :int
-  (display-ptr :pointer) (evt x-event))
-
-(defcfun ("XPending" %x-pending) :int
-  (display-ptr :pointer))
-
-(defun x-pending-p (display-ptr)
-  (not (zerop (%x-pending display-ptr))))
-
 (defcstruct x-compose-status
     (compose-ptr :pointer) (chars-matched :int))
 
-(defcfun ("XLookupString" %x-lookup-string) :int
-  (evt x-key-event) (buffer-return :pointer) (bytes-buffer :int)
-  (keysym-return :pointer) (status-in-out :pointer))
-
 ;; Only define interesting keysym and just use iso-8859-1 for the remaining ones
-;; too many keysyms exists and I don't want to write so many things right now
+;; too many keysyms exists and I don't want to write so many things right now.
 ;; TODO: add keypad support but I don't have it on the laptop here
 (defcenum x-keysym-value
   ;; cursor control & motion
@@ -293,76 +232,9 @@
   :key-f10
   :key-f11)
 
-(defun x-lookup-key (key-event)
-  "Returns either a char or an x-keysym-value keyword."
-  (with-foreign-objects ((buffer :char #x20) (keysym 'keysym) (compose 'x-compose-status))
-    (%x-lookup-string key-event buffer #x20 keysym compose)
-    ;; do we have an interesting keysym?
-    (let ((sym (foreign-enum-keyword 'x-keysym-value (mem-ref keysym 'keysym) :errorp nil)))
-      (or sym (code-char (mem-aref buffer :char 0))))))
-
-
-(defun process-event (evt)
-  (with-foreign-slots ((type) evt x-event)
-    (case type
-      (:key-press
-       (with-foreign-slots ((keycode) evt x-key-pressed-event)
-         (format t "Pressed key: ~S~%" (x-lookup-key evt))))
-      (:key-release
-       (with-foreign-slots ((keycode) evt x-key-pressed-event)
-         (format t "Pressed key: ~S~%" (x-lookup-key evt))))
-      (:button-press
-       (with-foreign-slots ((button) evt x-button-pressed-event)
-         (format t "Pressed button: ~S~%" button)))
-      (:button-release
-       (with-foreign-slots ((button) evt x-button-pressed-event)
-         (format t "Pressed button: ~S~%" button)))
-      (:motion-notify
-       (format t "Motion !!~%"))
-      (:expose
-       (format t "Expose !! ~%"))
-      (:configure-notify
-       (format t "Configure !! ~%"))
-      (:map-notify
-       (format t "Map !! ~%"))
-      (:unmap-notify
-       (format t "Unmap !! ~%"))
-      (:client-message
-       (format t "Client message !! ~%"))
-      (t (format t "Unhandled event: ~S~%" type)))))
-
-(defun dispatch-events (dpy)
-  (with-foreign-object (evt 'x-event)
-      (x-next-event dpy evt)
-      (process-event evt)))
-
-(defun dispatch-events-no-block (dpy)
-  (when (x-pending-p dpy)
-    (dispatch-events dpy)))
-
 (defctype x-status :int)
 
-(defcfun ("XGetGeometry" %x-get-geometry) x-status
-  (display-ptr :pointer) (d drawable) (root-return :pointer)
-  (x-return :pointer) (y-return :pointer) (width-return :pointer)
-  (height-return :pointer) (border-width-return :pointer)
-  (depth-return :pointer))
-
-(defun x-get-geometry (dpy win)
-  (with-foreign-objects ((root 'window) (x :int) (y :int)
-                         (width :unsigned-int) (height :unsigned-int)
-                         (border-width :unsigned-int) (depth :unsigned-int))
-    (%x-get-geometry dpy win root x y width height border-width depth)
-    (values (mem-ref root 'window) (mem-ref x :int) (mem-ref y :int)
-            (mem-ref width :unsigned-int) (mem-ref height :unsigned-int)
-            (mem-ref border-width :unsigned-int) (mem-ref depth :unsigned-int))))
-
 ;; GLX
-
-(define-foreign-library opengl
-  (t (:default "libGL")))
-(use-foreign-library opengl)
-
 (defcenum (glx-attributes :int)
   (:use-gl 1)
   (:buffer-size)
@@ -391,10 +263,166 @@
   (:bad-value)
   (:bad-enum))
 
+;; X11 bindings
+(define-foreign-library xlib
+  (t (:default "libX11")))
+(use-foreign-library xlib)
+
+(defcfun ("XOpenDisplay" x-open-display) :pointer
+  (display-name :string))
+
+(defcfun("XCloseDisplay" x-close-display) :pointer
+  (display-ptr :pointer))
+
+(defcfun ("XDefaultRootWindow" x-default-root-window) window
+  (display-ptr :pointer))
+
+(defcfun ("XCreateColormap" x-create-color-map) colormap
+  (display-ptr :pointer) (win window) (visual-ptr :pointer) (alloc x-alloc))
+
+(defcfun ("XGetAtomName" x-get-atom-name) :string
+  (display-ptr :pointer) (atm x-atom))
+
+(defcfun ("XFree" x-free) :int
+  (data :pointer))
+
+(defcfun ("XCreateWindow" %x-create-window) window
+  (display-ptr :pointer) (parent window) (x :int) (y :int) (width :int) (height :int)
+  (border-width :int) (depth :int) (win-class x-window-class) (visual :pointer)
+  (value-mask x-window-attributes-flags) (attributes set-window-attributes))
+
+(defun x-create-window (dpy parent width height visual-infos)
+  (let ((root-win (x-default-root-window dpy)))
+    (with-foreign-slots ((visual-id visual depth) visual-infos visual-info)
+      (let ((colormap (x-create-color-map dpy root-win visual :alloc-none)))
+        (with-foreign-object (win-attrs 'set-window-attributes)
+          (with-foreign-slots ((cmap event-mask) win-attrs set-window-attributes)
+            (setf cmap colormap
+                  event-mask (foreign-bitfield-value 'x-event-mask-flags
+                                '(:exposure-mask
+                                  :key-press-mask :key-release-mask
+                                  :button-press-mask :button-release-mask
+                                  :structure-notify-mask
+                                  :visibility-change-mask
+                                  :pointer-motion-mask)))
+            (%x-create-window dpy parent 0 0 width height 0
+                              depth :input-output visual
+                              '(:cw-colormap :cw-event-mask)
+                              win-attrs)))))))
+
+
+(defcfun ("XDestroyWindow" x-destroy-window) :int
+  (display-ptr :pointer) (win window))
+
+(defcfun ("XMapWindow" x-map-window) :int
+  (display-ptr :pointer) (win window))
+
+(defcfun ("XMapRaised" x-map-raised) :int
+  (display-ptr :pointer) (win window))
+
+(defcfun ("XUnmapWindow" x-unmap-window) :int
+  (display-ptr :pointer) (win window))
+
+(defcfun ("XStoreName" x-store-name) :int
+  (display-ptr :pointer) (win window) (name :string))
+
+(defcfun ("XNextEvent" %x-next-event) :int
+  (display-ptr :pointer) (evt x-event))
+
+(defcfun ("XPending" %x-pending) :int
+  (display-ptr :pointer))
+
+(defun x-pending-p (display-ptr)
+  (not (zerop (%x-pending display-ptr))))
+
+(defun x-next-event (dpy &optional blocking)
+  (with-foreign-object (evt 'x-event)
+    (if blocking
+        (progn (%x-next-event dpy evt)
+               (process-event evt))
+        (progn (when (x-pending-p dpy)
+                 (%x-next-event dpy evt)
+                 (process-event evt))))))
+
+(defun process-event (evt)
+  "Process an X11 event into a GLOP event."
+  (with-foreign-slots ((type) evt x-event)
+    (case type
+      (:key-press
+       (with-foreign-slots ((keycode) evt x-key-pressed-event)
+         (glop::make-event :type :key-press
+                           :key (x-lookup-key evt))))
+      (:key-release
+       (with-foreign-slots ((keycode) evt x-key-released-event)
+         (glop::make-event :type :key-release
+                           :key (x-lookup-key evt))))
+      (:button-press
+       (with-foreign-slots ((button) evt x-button-pressed-event)
+         (glop::make-event :type :button-press
+                           :button button)))
+      (:button-release
+       (with-foreign-slots ((button) evt x-button-pressed-event)
+         (glop::make-event :type :button-release
+                           :button button)))
+      (:motion-notify
+       (with-foreign-slots ((x y) evt x-motion-event)
+         (glop::make-event :type :mouse-motion
+                           :x x :y y)))
+      (:expose
+       (format t "Expose !! ~%"))
+      (:configure-notify
+       (format t "Configure !! ~%"))
+      (:map-notify
+       (format t "Map !! ~%"))
+      (:unmap-notify
+       (format t "Unmap !! ~%"))
+      (:client-message
+       (with-foreign-slots ((display-ptr message-type data) evt x-client-message-event)
+         (format t "Client message: ~S~%" message-type)
+         (with-foreign-slots ((l) data x-client-message-event-data)
+           (format t "Client message data: ~S~%" l)
+           (let ((atom-name (x-get-atom-name display-ptr (mem-ref l :long))))
+             (when (string= atom-name "WM_DELETE_WINDOW")
+               (glop::make-event :type :close))))))
+      (t (format t "Unhandled event: ~S~%" type)))))
+
+(defcfun ("XLookupString" %x-lookup-string) :int
+  (evt x-key-event) (buffer-return :pointer) (bytes-buffer :int)
+  (keysym-return :pointer) (status-in-out :pointer))
+
+(defun x-lookup-key (key-event)
+  "Returns either a char or an x-keysym-value keyword."
+  (with-foreign-objects ((buffer :char #x20) (keysym 'keysym) (compose 'x-compose-status))
+    (%x-lookup-string key-event buffer #x20 keysym compose)
+    ;; do we have an interesting keysym?
+    (let ((sym (foreign-enum-keyword 'x-keysym-value (mem-ref keysym 'keysym) :errorp nil)))
+      (or sym (code-char (mem-aref buffer :char 0))))))
+
+(defcfun ("XGetGeometry" %x-get-geometry) x-status
+  (display-ptr :pointer) (d drawable) (root-return :pointer)
+  (x-return :pointer) (y-return :pointer) (width-return :pointer)
+  (height-return :pointer) (border-width-return :pointer)
+  (depth-return :pointer))
+
+(defun x-get-geometry (dpy win)
+  (with-foreign-objects ((root 'window) (x :int) (y :int)
+                         (width :unsigned-int) (height :unsigned-int)
+                         (border-width :unsigned-int) (depth :unsigned-int))
+    (%x-get-geometry dpy win root x y width height border-width depth)
+    (values (mem-ref root 'window) (mem-ref x :int) (mem-ref y :int)
+            (mem-ref width :unsigned-int) (mem-ref height :unsigned-int)
+            (mem-ref border-width :unsigned-int) (mem-ref depth :unsigned-int))))
+
+;; GLX
+
+(define-foreign-library opengl
+  (t (:default "libGL")))
+(use-foreign-library opengl)
+
 (defcfun ("glXChooseVisual" %glx-choose-visual) visual-info
   (display-ptr :pointer) (screen :int) (attribs :pointer))
 
-(defun glx-choose-visual (dpy screen attribs)
+(defun glx-choose-visual (dpy screen &rest attribs)
   (with-foreign-object (atts :int (1+ (length attribs)))
     (loop for i below (length attribs)
          for attr = (nth i attribs)
@@ -411,11 +439,18 @@
   (display-ptr :pointer) (visual-infos :pointer) (share-list glx-context)
   (redirect bool))
 
-(defcfun ("glXDestroyContext" %glx-destroy-context) :void
+(defun glx-create-context (dpy visual)
+  (%glx-create-context dpy visual (null-pointer) 1))
+
+(defcfun ("glXDestroyContext" glx-destroy-context) :void
   (display-ptr :pointer) (context glx-context))
 
-(defcfun ("glXMakeCurrent" %glx-make-current) bool
+(defcfun ("glXMakeCurrent" glx-make-current) bool
   (display-ptr :pointer) (drawable drawable) (context glx-context))
+
+(defun glx-release-context (dpy)
+  (glx-make-current dpy 0
+                    (null-pointer)))
 
 (defcfun ("glXQueryVersion" %glx-query-version) bool
   (display-ptr :pointer) (major :pointer) (minor :pointer))
@@ -425,69 +460,94 @@
     (%glx-query-version dpy major minor)
     (values (mem-ref major :int) (mem-ref minor :int))))
 
-(defcfun ("glXSwapBuffers" %glx-swap-buffers) :void
+(defcfun ("glXSwapBuffers" glx-swap-buffers) :void
   (display-ptr :pointer) (drawable drawable))
 
-;; GLOP functions
+;; GLOP implementation
 (in-package #:glop)
 
-(defstruct system-window
-  display
-  screen
-  id
-  visual-infos)
+(defstruct (x11-window (:include window))
+  display      ;; X display ptr
+  screen       ;; X screen number
+  id           ;; X window ID
+  visual-infos ;; X visual format of the window
+)
 
-(defstruct gl-context
-  glx-context
-  display)
+(defstruct glx-context
+  ctx           ;; GL context ptr
+  display       ;; X display ptr
+)
 
-(defun create-gl-context (window)
-  (let ((ctx (make-gl-context
-              :glx-context (glop-x11::%glx-create-context (system-window-display window)
-                                                          (system-window-visual-infos window)
-                                                          (cffi::null-pointer) 1)
-              :display (system-window-display window))))
+(defmethod create-gl-context ((win x11-window) &key (make-current t))
+  (let ((ctx (make-glx-context
+              :ctx (glop-x11::glx-create-context (x11-window-display win)
+                                                 (x11-window-visual-infos win))
+              :display (x11-window-display win))))
+    (when make-current
+      (attach-gl-context win ctx))
     ctx))
 
-(defun set-gl-context (ctx win)
-  (glop-x11::%glx-make-current (gl-context-display ctx)
-                               (system-window-id win)
-                               (gl-context-glx-context ctx)))
+(defmethod destroy-gl-context (ctx)
+  (detach-gl-context ctx)
+  (glop-x11::glx-destroy-context (glx-context-display ctx)
+                                 (glx-context-ctx ctx)))
 
-(defun destroy-gl-context (ctx)
-  (glop-x11::%glx-destroy-context (gl-context-display ctx)
-                                  (gl-context-glx-context ctx)))
+(defmethod attach-gl-context ((win x11-window) (ctx glx-context))
+  (glop-x11::glx-make-current (glx-context-display ctx)
+                              (x11-window-id win)
+                              (glx-context-ctx ctx)))
 
-(defun swap-gl-buffers (win)
-  (glop-x11::%glx-swap-buffers (system-window-display win) (system-window-id win)))
+(defmethod detach-gl-context ((ctx glx-context))
+  (glop-x11::glx-release-context (glx-context-display ctx)))
 
-(defun create-system-window (title width height)
-  (let ((win (make-system-window :display (glop-x11::x-open-display "")
-                          :screen 0))
-        (visual-format '(:rgba
-                         :red-size 4
-                         :green-size 4
-                         :blue-size 4
-                         :alpha-size 4
-                         :depth-size 24
-                         :double-buffer)))
-    (setf (system-window-visual-infos win) (glop-x11::glx-choose-visual (system-window-display win)
-                                                                 (system-window-screen win)
-                                                                 visual-format))
-    (setf (system-window-id win) (glop-x11::x-create-window
-                           (system-window-display win)
-                           (glop-x11::%x-default-root-window (system-window-display win))
-                           width height (system-window-visual-infos win)))
-    (glop-x11::%x-store-name (system-window-display win) (system-window-id win) title)
-    (glop-x11::%x-map-raised (system-window-display win) (system-window-id win))
+(defmethod create-window (title width height &key (double-buffer t) accum (alpha t) (depth 24))
+  (let ((win (make-x11-window :display (glop-x11::x-open-display "")
+                              :screen 0)))
+    ;; create visual
+    (setf (x11-window-visual-infos win)
+          (glop-x11::glx-choose-visual (x11-window-display win)
+                                       (x11-window-screen win)
+                                       :rgba
+                                       :red-size 4
+                                       :green-size 4
+                                       :blue-size 4
+                                       :alpha-size (if alpha 4 0)
+                                       :depth-size depth
+                                       (if double-buffer :double-buffer :single-buffer)))
+    ;; create window
+    (setf (x11-window-id win) (glop-x11::x-create-window
+                               (x11-window-display win)
+                               (glop-x11::x-default-root-window (x11-window-display win))
+                               width height (x11-window-visual-infos win)))
+    (setf (window-width win) width)
+    (setf (window-height win) height)
+    ;; set title
+    (glop-x11::x-store-name (x11-window-display win) (x11-window-id win) title)
+    (setf (slot-value win 'title) title)
+    ;; create a GL context and make it current
+    (setf (window-gl-context win) (create-gl-context win :make-current t))
+    ;; show created window
+    (show-window win)
+    ;; return created window
     win))
 
-(defun destroy-system-window (window)
-  (glop-x11::x-destroy-window (system-window-display window) (system-window-id window))
-  (glop-x11::x-close-display (system-window-display window)))
+(defmethod show-window ((win x11-window))
+  (glop-x11::x-map-raised (x11-window-display win) (x11-window-id win)))
 
+(defmethod hide-window ((win x11-window))
+  (glop-x11::x-unmap-window (x11-window-display win) (x11-window-id win)))
 
-(defun dispatch-system-window-events (win &key (blocking nil))
-  (if blocking
-      (glop-x11::dispatch-events (system-window-display win))
-      (glop-x11::dispatch-events-no-block (system-window-display win))))
+(defmethod set-window-title ((win x11-window) title)
+  (setf (slot-value win 'title) title)
+  (glop-x11::x-store-name (x11-window-display win) (x11-window-id win) title))
+
+(defmethod destroy-window ((win x11-window))
+  (glop-x11::x-destroy-window (x11-window-display win) (x11-window-id win))
+  (glop-x11::x-close-display (x11-window-display win)))
+
+(defmethod swap-buffers ((win x11-window))
+  (glop-x11::glx-swap-buffers (x11-window-display win) (x11-window-id win)))
+
+(defmethod next-event ((win x11-window) &key (blocking nil))
+  (glop-x11::x-next-event (x11-window-display win) blocking))
+
