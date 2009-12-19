@@ -1,7 +1,7 @@
 ;;;; -*- Mode: Lisp; indent-tabs-mode: nil -*-
 
 (defsystem glop
-  :depends-on (cffi cl-opengl cl-glu)
+  :depends-on (cffi)
   :serial t
   :components
   ((:file "package")

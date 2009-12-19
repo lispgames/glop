@@ -4,7 +4,8 @@
   width
   height
   title
-  gl-context)
+  gl-context
+  pushed-event)
 
 (defgeneric create-gl-context (window &key make-current)
   (:documentation "Creates a new OpenGL context for the provided window and optionally
@@ -37,6 +38,7 @@
 (defgeneric swap-buffers (window)
   (:documentation "Swaps GL buffers."))
 
+;;; Events handling
 (defstruct event
   type
   key     ;; for :key-press :key-release
@@ -45,9 +47,22 @@
   dx dy
 )
 
+(defun push-event (window evt)
+  (setf (window-pushed-event window) evt))
+
+(defun push-close-event (window)
+  (push-event window (make-event :type :close)))
+
 (defgeneric next-event (window &key blocking)
   (:documentation "Returns next available event for manual processing.
    If :blocking is true wait until an event occur."))
+
+(defmethod next-event :around (window &key blocking)
+  (let ((pushed-evt (window-pushed-event window)))
+    (if pushed-evt
+        (progn (setf (window-pushed-event window) nil)
+               pushed-evt)
+        (call-next-method))))
 
 ;; method based event handling
 (defun dispatch-events (window &key blocking)
@@ -68,36 +83,22 @@
         (:resize (on-resize window))
         (:draw (on-draw window))
         (:close (on-close window)
-                (return-from dispatch-events nil))))
+                (return-from dispatch-events nil))
+        (t (format t "Unhandled event type: ~S~%" (event-type evt)))))
     t))
 
 
-(defgeneric on-key (window state key)
-  (:method ((win window) state key)
-    (format t "Key: ~S~%" key)))
+(defgeneric on-key (window state key))
+(defgeneric on-button (window state button))
+(defgeneric on-mouse-motion (window x y dx dy))
+(defgeneric on-resize (window))
+(defgeneric on-draw (window))
+(defgeneric on-close (window))
 
-(defgeneric on-button (window state button)
-  (:method ((win window) state button)
-    (format t "Button: ~S~%" button)))
-
-(defgeneric on-mouse-motion (window x y dx dy)
-  (:method ((win window) x y dx dy)
-    (format t "Mouse motion !!~%")))
-
-(defgeneric on-resize (window)
-  (:method ((win window))
-    (format t "Resize !!~%")))
-
-(defgeneric on-draw (window)
-  (:method ((win window))
-    (format t "Draw !!~%")))
-
-(defgeneric on-close (window)
-  (:method ((win window))
-    (format t "Close !!~%")))
+;;; Some helper macros
 
 ;; main loop anyone?
-(defmacro run-loop (window &body idle-forms)
+(defmacro with-idle-forms (window &body idle-forms)
   (let ((blocking (unless idle-forms t))
         (res (gensym)))
     `(loop with ,res = (dispatch-events window :blocking ,blocking)
@@ -106,18 +107,8 @@
                   `(progn ,@idle-forms)
                   t))))
 
-;; Test func
-
-(defmethod on-key (window state (key (eql #\Escape)))
-  (destroy-window window))
-
-(defun test ()
-  (let ((win (create-window "GLOP Test Window" 800 600))
-        (running t))
-    (format t "Created window: ~S~%" win)
-    (gl:clear-color 0.3 0.3 1.0 0)
-    (loop while (dispatch-events win :blocking nil) do
-         (gl:clear :color-buffer)
-         (gl:flush)
-         (swap-buffers win))
-    (destroy-window win)))
+(defmacro with-window ((win-sym title width height) &body body)
+  `(let ((,win-sym (create-window ,title ,width ,height)))
+     (when ,win-sym
+       (unwind-protect (progn ,@body)
+         (destroy-window ,win-sym)))))
