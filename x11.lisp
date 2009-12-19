@@ -369,13 +369,13 @@
          (glop::make-event :type :mouse-motion
                            :x x :y y)))
       (:expose
-       (format t "Expose !! ~%"))
+       (glop::make-event :type :expose))
       (:configure-notify
-       (format t "Configure !! ~%"))
+       (glop::make-event :type :configure))
       (:map-notify
-       (format t "Map !! ~%"))
+       (glop::make-event :type :show))
       (:unmap-notify
-       (format t "Unmap !! ~%"))
+       (glop::make-event :type :hide))
       (:client-message
        (with-foreign-slots ((display-ptr message-type data) evt x-client-message-event)
          (format t "Client message: ~S~%" message-type)
