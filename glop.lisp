@@ -73,7 +73,6 @@
    Returns NIL on :CLOSE event type, T otherwise."
   (let ((evt (next-event window :blocking blocking)))
     (when evt
-      (format t "Dispatching event: ~S~%" evt)
       (case (event-type evt)
         (:key-press (on-key window :press (event-key evt)))
         (:key-release (on-key window :release (event-key evt)))

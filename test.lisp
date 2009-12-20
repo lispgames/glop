@@ -37,6 +37,7 @@
          (glop:swap-buffers win))
     (glop:destroy-window win)))
 
+;; XXX: doesn't seem to work on win32...
 (defun test-multiple-contexts ()
   (let ((win (glop:create-window "Glop test window" 800 600))
         (time (get-internal-real-time)))
