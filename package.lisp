@@ -8,6 +8,7 @@
    #:swap-buffers
    ;; events
    #:next-event #:push-event #:push-close-event
+   #:event-type #:event-x #:event-y #:event-dx #:event-dy #:event-key #:event-button
    ;; events methods
    #:dispatch-events
    #:on-key #:on-button #:on-mouse-motion #:on-resize #:on-draw #:on-close

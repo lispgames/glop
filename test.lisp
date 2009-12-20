@@ -1,6 +1,6 @@
 (defpackage :glop-test
   (:use #:cl)
-  (:export #:test-manual-create #:test-multiple-contexts #:test-with-window))
+  (:export #:test-manual-create #:test-multiple-contexts #:test-with-window #:test-manual-events))
 
 (in-package #:glop-test)
 
@@ -32,7 +32,6 @@
     (loop while (glop:dispatch-events win :blocking nil) do
          (gl:clear :color-buffer)
          (gl:flush)
-         (format t "Swapping buffers~%")
          (glop:swap-buffers win))
     (glop:destroy-window win)))
 
@@ -63,3 +62,23 @@
          (gl:clear :color-buffer)
          (gl:flush)
          (glop:swap-buffers win))))
+
+
+(defun test-manual-events ()
+  (let ((win (glop:create-window "Glop test window" 800 600)))
+    (format t "Created window: ~S~%" win)
+    (gl:clear-color 0.3 0.3 1.0 0)
+    (loop for evt = (glop:next-event win :blocking nil)
+         with running = t
+         while running do
+         (when evt
+           (case (glop:event-type evt)
+             (:key-press
+              (when (eql (glop:event-key evt) #\Escape)
+                (glop:push-close-event win)))
+             (:close (setf running nil))
+             (t (format t "Unhandled event: ~S~%" (glop:event-type evt)))))
+         (gl:clear :color-buffer)
+         (gl:flush)
+         (glop:swap-buffers win))
+    (glop:destroy-window win)))
