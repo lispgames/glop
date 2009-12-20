@@ -188,7 +188,7 @@
     (t (:default "user32")))
 (use-foreign-library user32)
 
-(defcfun ("GetDC" %get-dc) hdc
+(defcfun ("GetDC" get-dc) hdc
   (wnd hwnd))
 
 (defcfun ("ReleaseDC" %release-dc) :int
@@ -214,41 +214,38 @@
   (filter-min :uint) (filter-max :uint)
   (remove remove-msg))
 
-(defun dispatch-events (wnd)
+;; XXX: this is an ugly hack and should probably be changed
+;; We use the *event* var to allow window-proc callback to generate glop:event objects
+;; that can be return from next-event
+
+(defvar *event* nil)
+
+(defun next-event (wnd &optional blocking)
   (with-foreign-object (msg 'msg)
-    (when (> (%get-message msg wnd 0 0) 0)
-      (%translate-message msg)
-      (%dispatch-message msg))))
-
-(defun dispatch-events-no-block (wnd)
-  (with-foreign-object (msg 'msg)
-    (when (%peek-message msg wnd 0 0 :pm-remove)
-      (%translate-message msg)
-      (%dispatch-message msg))))
-
-(defcfun ("RegisterClassA" %register-class) :int16
-  (wndclass :pointer))
-
-(defcfun ("RegisterClassExA" %register-class-ex) :int16
-  (wndclass-ex :pointer))
-
-
-(defcfun ("UnregisterClassA" %unregister-class) bool
-  (class-name :string) (instance hinstance))
+    (if blocking
+        (when (> (%get-message msg wnd 0 0) 0)
+          (%translate-message msg)
+          (%dispatch-message msg))
+        (when (%peek-message msg wnd 0 0 :pm-remove)
+          (%translate-message msg)
+          (%dispatch-message msg))))
+  *event*)
 
 (defcallback window-proc :long ((wnd hwnd) (msg :uint) (w-param wparam) (l-param lparam))
    (let ((msg-type (foreign-enum-keyword 'msg-type msg :errorp nil)))
      (case msg-type
        (:wm-close
         (format t "WM_CLOSE~%")
-        (%destroy-window wnd)
+        (setf *event* (glop::make-event :type :close))
         (return-from window-proc 0))
        (:wm-destroy
         (format t "WM_DESTROY~%")
         (%post-quit-message 0)
         (return-from window-proc 0))
        (:wm-mouse-move
-        (format t "WM_MOUSEMOVE~%")
+        (format t "l-param: ~S~%" l-param)
+        (setf *event* (glop::make-event :type :mouse-motion
+                                       :x 0 :y 0 :dx 0 :dy 0))
         (return-from window-proc 0))
        (:wm-paint
         (format t "WM_PAINT~%"))
@@ -291,6 +288,16 @@
        ;;  (format t "WM_SYSCOMMAND~%")))
      (%def-window-proc wnd msg w-param l-param)))
 
+(defcfun ("RegisterClassA" %register-class) :int16
+  (wndclass :pointer))
+
+(defcfun ("RegisterClassExA" %register-class-ex) :int16
+  (wndclass-ex :pointer))
+
+
+(defcfun ("UnregisterClassA" unregister-class) bool
+  (class-name :string) (instance hinstance))
+
 (defun create-and-register-class (module-instance name)
   (with-foreign-object (class 'wndclass)
     (with-foreign-slots ((style wndproc cls-extra wnd-extra instance icon cursor
@@ -307,37 +314,39 @@
             menu-name (null-pointer)
             class-name name))
     (when (zerop (%register-class class))
-      (format t "Error registering class ~S: ~S~%" name (%get-last-error)))))
+      (format t "Error registering class ~S: ~S~%" name (get-last-error)))))
 
+(defcfun ("SetWindowText" set-window-text) bool
+  (wnd hwnd) (title :string))
 
-(defcfun ("CreateWindowExA" %create-window-ex) hwnd
+(defcfun ("CreateWindowExA" create-window-ex) hwnd
   (ex-style wex-style) (class-name :string) (win-name :string)
   (style wstyle) (x :int) (y :int) (width :int) (height :int)
   (parent hwnd) (menu hmenu) (instance hinstance) (param :pointer))
 
-(defcfun ("DestroyWindow" %destroy-window) bool
+(defcfun ("DestroyWindow" destroy-window) bool
   (wnd hwnd))
 
-(defcfun ("UpdateWindow" %update-window) bool
+(defcfun ("UpdateWindow" update-window) bool
   (wnd hwnd))
 
-(defcfun ("ShowWindow" %show-window) bool
+(defcfun ("ShowWindow" show-window) bool
   (wnd hwnd) (cmd-show sw-cmd-show))
 
-(defcfun ("SetForegroundWindow" %set-foreground-window) bool
+(defcfun ("SetForegroundWindow" set-foreground-window) bool
   (wnd hwnd))
 
-(defcfun ("SetFocus" %set-focus) hwnd
+(defcfun ("SetFocus" set-focus) hwnd
   (wnd hwnd))
 
 (define-foreign-library kernel32
     (t (:default "kernel32")))
 (use-foreign-library kernel32)
 
-(defcfun ("GetModuleHandleW" %get-module-handle) hmodule
+(defcfun ("GetModuleHandleW" get-module-handle) hmodule
   (module-name :string))
 
-(defcfun ("GetLastError" %get-last-error) :int32)
+(defcfun ("GetLastError" get-last-error) :int32)
 
 (define-foreign-library gdi32
     (t (:default "gdi32")))
@@ -349,22 +358,25 @@
 (defcfun ("SetPixelFormat" %set-pixel-format) bool
   (dc hdc) (pixel-format :int) (pfd :pointer))
 
-(defun choose-pixel-format (dc)
+(defun choose-pixel-format (dc &key (double-buffer t) (depth 24) (alpha t))
   (with-foreign-object (pfd 'pixelformatdescriptor)
     (with-foreign-slots ((size version flags pixel-type color-bits
                                depth-bits) pfd pixelformatdescriptor)
       (setf size (foreign-type-size 'pixelformatdescriptor)
             version 1
             flags (foreign-bitfield-value 'pfd-flags
-                       '(:pfd-draw-to-window :pfd-support-opengl :pfd-double-buffer))
+                       (list :pfd-draw-to-window :pfd-support-opengl
+                             (if double-buffer
+                                 :pfd-double-buffer
+                                 :pfd-double-buffer-dont-care)))
             pixel-type (foreign-enum-value 'pfd-pixel-type :pfd-type-rgba)
-            color-bits 32
-            depth-bits 16))
+            color-bits (if alpha 32 24)
+            depth-bits depth))
     (let ((fmt (%choose-pixel-format dc pfd)))
       (%set-pixel-format dc fmt pfd)
       fmt)))
 
-(defcfun ("SwapBuffers" %swap-buffers) bool
+(defcfun ("SwapBuffers" swap-buffers) bool
   (dc hdc))
 
 ;; WGL
@@ -374,13 +386,13 @@
 
 (defctype hglrc handle)
 
-(defcfun ("wglCreateContext" %wgl-create-context) hglrc
+(defcfun ("wglCreateContext" wgl-create-context) hglrc
   (dc hdc))
 
-(defcfun ("wglMakeCurrent" %wgl-make-current) bool
+(defcfun ("wglMakeCurrent" wgl-make-current) bool
   (dc hdc) (rc hglrc))
 
-(defcfun ("wglDeleteContext" %wgl-delete-context) bool
+(defcfun ("wglDeleteContext" wgl-delete-context) bool
   (rc hglrc))
 
 ;; test
@@ -390,69 +402,85 @@
 ;; GLOP
 (in-package #:glop)
 
-(defstruct system-window
-  module-instance
+(defstruct (win32-window (:include window))
+  module-handle
   class-name
   pixel-format
   dc
   id)
 
-(defstruct gl-context
-  wgl-context)
+(defstruct wgl-context
+  ctx)
 
-(defun create-gl-context (win)
-  (let ((ctx (make-gl-context)))
-    (let ((wgl-ctx (glop-win32::%wgl-create-context (system-window-dc win))))
+(defmethod create-gl-context ((win win32-window) &key (make-current t))
+  (let ((ctx (make-wgl-context)))
+    (let ((wgl-ctx (glop-win32::wgl-create-context (win32-window-dc win))))
       (unless wgl-ctx
-        (format t "Error creating GL context: ~S~%" (glop-win32::%get-last-error)))
-      (setf (gl-context-wgl-context ctx) wgl-ctx))
-    (format t "Created gl context: ~S~%" ctx)
+        (format t "Error creating GL context: ~S~%" (glop-win32::get-last-error)))
+      (setf (wgl-context-ctx ctx) wgl-ctx))
+    (when make-current
+      (attach-gl-context win ctx))
     ctx))
 
-(defun set-gl-context (ctx win)
-  (glop-win32::%wgl-make-current (system-window-dc win) (gl-context-wgl-context ctx)))
+(defmethod destroy-gl-context (ctx)
+  (detach-gl-context ctx)
+  (glop-win32::wgl-delete-context (wgl-context-ctx ctx)))
 
-(defun destroy-gl-context (ctx)
-  (glop-win32::%wgl-delete-context (gl-context-wgl-context ctx)))
+(defmethod attach-gl-context ((win win32-window) (ctx wgl-context))
+  (glop-win32::wgl-make-current (win32-window-dc win) (wgl-context-ctx ctx)))
 
-(defun swap-gl-buffers (win)
-  (glop-win32::%swap-buffers (system-window-dc win)))
+(defmethod detach-gl-context ((ctx wgl-context))
+  (glop-win32::wgl-make-current (cffi:null-pointer) (cffi:null-pointer)))
 
-(defun create-system-window (title width height)
-  (let ((win (make-system-window
-              :module-instance (glop-win32::%get-module-handle (cffi:null-pointer)))))
+(defmethod create-window (title width height &key (double-buffer t) accum (alpha t) (depth 24))
+  (let ((win (make-win32-window
+              :module-handle (glop-win32::get-module-handle (cffi:null-pointer)))))
     ;; create window class
-    (glop-win32::create-and-register-class (system-window-module-instance win) "OpenGL")
-    (setf (system-window-class-name win) "OpenGL")
-    (let ((wnd (glop-win32::%create-window-ex '(:ws-ex-app-window :ws-ex-window-edge)
+    (glop-win32::create-and-register-class (win32-window-module-handle win) "OpenGL")
+    (setf (win32-window-class-name win) "OpenGL")
+    (let ((wnd (glop-win32::create-window-ex '(:ws-ex-app-window :ws-ex-window-edge)
                                   "OpenGL"
                                   title
                                   '(:ws-overlapped-window :ws-clip-siblings :ws-clip-children)
                                   0 0 width height (cffi:null-pointer) (cffi:null-pointer)
-                                  (system-window-module-instance win) (cffi:null-pointer))))
+                                  (win32-window-module-handle win) (cffi:null-pointer))))
       (unless wnd
-        (format t "Error creating window: ~S~%" (glop-win32::%get-last-error))
-        (return-from create-system-window))
-      (setf (system-window-id win) wnd))
-    (setf (system-window-dc win) (glop-win32::%get-dc (system-window-id win)))
+        (format t "Error creating window: ~S~%" (glop-win32::get-last-error))
+        (return-from create-window))
+      (setf (win32-window-id win) wnd))
+    (setf (win32-window-width win) width)
+    (setf (win32-window-height win) height)
+    (setf (win32-window-dc win) (glop-win32::get-dc (win32-window-id win)))
     ;; choose pixel format
-    (setf (system-window-pixel-format win) (glop-win32::choose-pixel-format
-                                            (system-window-dc win)))
+    (setf (win32-window-pixel-format win) (glop-win32::choose-pixel-format
+                                            (win32-window-dc win)))
+    ;; create GL context and make it current
+    (setf (window-gl-context win) (create-gl-context win :make-current t))
     ;; show window
-    (glop-win32::%show-window (system-window-id win) :sw-show)
-    (glop-win32::%set-foreground-window (system-window-id win))
-    (glop-win32::%set-focus (system-window-id win))
-    (glop-win32::%update-window (system-window-id win))
+    (glop-win32::set-foreground-window (win32-window-id win))
+    (glop-win32::update-window (win32-window-id win))
+    (show-window win)
+    ;; return created window
     win))
 
+(defmethod show-window ((win win32-window))
+  (glop-win32::show-window (win32-window-id win) :sw-show)
+  (glop-win32::set-focus (win32-window-id win)))
 
+(defmethod hide-window ((win win32-window))
+  (glop-win32::show-window (win32-window-id win) :sw-hide))
 
-(defun destroy-system-window (win)
-  (glop-win32::%unregister-class (system-window-class-name win)
-                                 (system-window-module-instance win)))
+(defmethod set-window-title ((win win32-window) title)
+  (setf (slot-value win 'title) title)
+  (glop-win32::set-window-text (win32-window-id win) title))
 
+(defmethod destroy-window ((win win32-window))
+  (glop-win32::destroy-window (win32-window-id win))
+  (glop-win32::unregister-class (win32-window-class-name win)
+                                 (win32-window-module-handle win)))
 
-(defun dispatch-system-window-events (win &key (blocking nil))
-  (if blocking
-      (glop-win32::dispatch-events (system-window-id win))
-      (glop-win32::dispatch-events-no-block (system-window-id win))))
+(defmethod swap-buffers ((win win32-window))
+  (glop-win32::swap-buffers (win32-window-dc win)))
+
+(defmethod next-event ((win win32-window) &key blocking)
+  (glop-win32::next-event (win32-window-id win) blocking))

@@ -493,6 +493,7 @@
                                  (glx-context-ctx ctx)))
 
 (defmethod attach-gl-context ((win x11-window) (ctx glx-context))
+  (setf (window-gl-context win) ctx)
   (glop-x11::glx-make-current (glx-context-display ctx)
                               (x11-window-id win)
                               (glx-context-ctx ctx)))
@@ -548,6 +549,6 @@
 (defmethod swap-buffers ((win x11-window))
   (glop-x11::glx-swap-buffers (x11-window-display win) (x11-window-id win)))
 
-(defmethod next-event ((win x11-window) &key (blocking nil))
+(defmethod next-event ((win x11-window) &key blocking)
   (glop-x11::x-next-event (x11-window-display win) blocking))
 
