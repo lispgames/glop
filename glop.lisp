@@ -41,10 +41,11 @@
 ;;; Events handling
 (defstruct event
   type
-  key     ;; for :key-press :key-release
-  button  ;; for :button-press :button-release
-  x y     ;; mouse position
-  dx dy
+  width height ;; for :configure :expose :show
+  key          ;; for :key-press :key-release
+  button       ;; for :button-press :button-release
+  x y          ;; mouse position (all events)
+  dx dy        ;; for :mouse-motion
 )
 
 (defun push-event (window evt)
@@ -80,8 +81,8 @@
         (:button-release (on-button window :release (event-button evt)))
         (:mouse-motion (on-mouse-motion window (event-x evt) (event-y evt)
                                         (event-dx evt) (event-dy evt)))
-        (:resize (on-resize window))
-        (:draw (on-draw window))
+        (:configure (on-resize window (event-width evt) (event-height evt)))
+        (:expose (on-draw window))
         (:close (on-close window)
                 (return-from dispatch-events nil))
         (t (format t "Unhandled event type: ~S~%" (event-type evt)))))
@@ -91,7 +92,7 @@
 (defgeneric on-key (window state key))
 (defgeneric on-button (window state button))
 (defgeneric on-mouse-motion (window x y dx dy))
-(defgeneric on-resize (window))
+(defgeneric on-resize (window w h))
 (defgeneric on-draw (window))
 (defgeneric on-close (window))
 

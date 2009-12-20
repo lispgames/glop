@@ -197,6 +197,47 @@
   (format :int)
   (data x-client-message-event-data))
 
+(defcstruct x-expose-event
+  (type :int)
+  (serial :unsigned-long)
+  (send-event bool)
+  (display-ptr :pointer)
+  (win window)
+  (x :int) (y :int)
+  (width :int) (height :int)
+  (count :int))
+
+(defcstruct x-configure-event
+  (type :int)
+  (serial :unsigned-long)
+  (send-event bool)
+  (display-ptr :pointer)
+  (event window)
+  (win window)
+  (x :int) (y :int)
+  (width :int) (height :int)
+  (border-width :int)
+  (above window)
+  (override-reirect bool))
+
+(defcstruct x-map-event
+  (type :int)
+  (serial :unsigned-long)
+  (send-event bool)
+  (display-ptr :pointer)
+  (event window)
+  (win window)
+  (override-redirect bool))
+
+(defcstruct x-unmap-event
+  (type :int)
+  (serial :unsigned-long)
+  (send-event bool)
+  (display-ptr :pointer)
+  (event window)
+  (win window)
+  (from-configure bool))
+
 (defcunion x-event
   (type x-event-name)
   (pad :long :count 24))
@@ -381,9 +422,15 @@
              (setf last-x x last-y y)
              glop-evt)))
         (:expose
-         (glop::make-event :type :expose))
+         (with-foreign-slots ((display-ptr win) evt x-expose-event)
+           (multiple-value-bind (root x y width height border-width depth)
+               (x-get-geometry display-ptr win)
+             (glop::make-event :type :expose
+                               :width width :height height))))
         (:configure-notify
-         (glop::make-event :type :configure))
+         (with-foreign-slots ((width height) evt x-configure-event)
+           (glop::make-event :type :configure
+                             :width width :height height)))
         (:map-notify
          (glop::make-event :type :show))
         (:unmap-notify

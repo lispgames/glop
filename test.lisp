@@ -15,8 +15,8 @@
 (defmethod glop:on-mouse-motion (window x y dx dy)
   (format t "Mouse motion !!~%"))
 
-(defmethod glop:on-resize (window)
-  (format t "Resize !!~%"))
+(defmethod glop:on-resize (window w h)
+  (format t "Resize: ~Sx~S !!~%" w h))
 
 (defmethod glop:on-draw (window)
   (format t "Draw !!~%"))
