@@ -100,11 +100,40 @@
   (:wm-mbutton-up 520)
   (:wm-key-up 257)
   (:wm-key-down 256)
+  (:wm-char 258)
   (:wm-mouse-wheel 522)
   (:wm-size 5)
   (:wm-show-window 24)
   (:wm-set-focus 7)
   (:wm-sys-command 274))
+
+(defcenum vkey-type
+  (:key-up 38)
+  (:key-down 40)
+  (:key-left 37)
+  (:key-right 39)
+  (:key-prior 33)
+  (:key-next 34)
+  (:key-home 36)
+  (:key-end 35)
+  (:key-clear 12)
+  (:key-insert 45)
+  (:key-delete 46)
+  (:key-f1 #x70)
+  :key-f2
+  :key-f3
+  :key-f4
+  :key-f5
+  :key-f6
+  :key-f7
+  :key-f8
+  :key-f9
+  :key-f10
+  :key-f11
+  (:key-lshift #xA0)
+  :key-rshift
+  :key-lcontrol
+  :key-rcontrol)
 
 (defcenum system-command-type
   (:sc-minimize #xf020)
@@ -131,6 +160,12 @@
 (defcenum remove-msg
   (:pm-no-remove 0)
   (:pm-remove 1))
+
+(defcstruct rect
+  (left :long)
+  (top :long)
+  (right :long)
+  (bottom :long))
 
 ;; WGL
 (defcstruct pixelformatdescriptor
@@ -188,6 +223,22 @@
     (t (:default "user32")))
 (use-foreign-library user32)
 
+(defcfun ("GetClientRect" get-client-rect) bool
+  (wnd hwnd) (rect-out :pointer))
+
+(defun get-geometry (wnd)
+  (with-foreign-object (rct 'rect)
+    (get-client-rect wnd rct)
+    (with-foreign-slots ((left top right bottom) rct rect)
+      (values left bottom
+              (- right left)
+              (- bottom top)))))
+
+(defcfun ("SetCapture" set-capture) hwnd
+  (wnd hwnd))
+
+(defcfun ("ReleaseCapture" release-capture) bool)
+
 (defcfun ("GetDC" get-dc) hdc
   (wnd hwnd))
 
@@ -214,6 +265,12 @@
   (filter-min :uint) (filter-max :uint)
   (remove remove-msg))
 
+(defcfun ("GetKeyboardState" get-keyboard-state) bool
+  (state-out :pointer))
+
+(defcfun ("ToAscii" to-ascii) :int
+  (vkey :uint) (scan-code :uint) (kbd-state :pointer) (buffer :pointer) (flags :uint))
+
 ;; XXX: this is an ugly hack and should probably be changed
 ;; We use the *event* var to allow window-proc callback to generate glop:event objects
 ;; that can be return from next-event
@@ -231,62 +288,123 @@
           (%dispatch-message msg))))
   *event*)
 
-(defcallback window-proc :long ((wnd hwnd) (msg :uint) (w-param wparam) (l-param lparam))
-   (let ((msg-type (foreign-enum-keyword 'msg-type msg :errorp nil)))
-     (case msg-type
-       (:wm-close
-        (format t "WM_CLOSE~%")
-        (setf *event* (glop::make-event :type :close))
-        (return-from window-proc 0))
-       (:wm-destroy
-        (format t "WM_DESTROY~%")
-        (%post-quit-message 0)
-        (return-from window-proc 0))
-       (:wm-mouse-move
-        (format t "l-param: ~S~%" l-param)
-        (setf *event* (glop::make-event :type :mouse-motion
-                                       :x 0 :y 0 :dx 0 :dy 0))
-        (return-from window-proc 0))
-       (:wm-paint
-        (format t "WM_PAINT~%"))
-       (:wm-lbutton-down
-        (format t "WM_LBUTTONDOWN~%")
-        (return-from window-proc 0))
-       (:wm-lbutton-up
-        (format t "WM_LBUTTONUP~%")
-        (return-from window-proc 0))
-       (:wm-rbutton-down
-        (format t "WM_RBUTTONDOWN~%")
-        (return-from window-proc 0))
-       (:wm-rbutton-up
-        (format t "WM_RBUTTONUP~%")
-        (return-from window-proc 0))
-       (:wm-mbutton-down
-        (format t "WM_MBUTTONDOWN~%")
-        (return-from window-proc 0))
-       (:wm-mbutton-up
-        (format t "WM_MBUTTONUP~%")
-        (return-from window-proc 0))
-       (:wm-key-up
-        (format t "WM_KEYUP~%")
-        (return-from window-proc 0))
-       (:wm-key-down
-        (format t "WM_KEYDOWN~%")
-        (return-from window-proc 0))
-       (:wm-mouse-wheel
-        (format t "WM_MOUSEWHEEL~%")
-        (return-from window-proc 0))
-       (:wm-size
-        (format t "WM_SIZE~%")
-        (return-from window-proc 0))
-       (:wm-show-window
-        (format t "WM_SHOWWINDOW~%"))
-       (:wm-set-focus
-        (format t "WM_SETFOCUS~%")
-        (return-from window-proc 0)))
+;; XXX: we probably have problems with negative numbers here...
+(defun low-word (value)
+  (logand value #xFFFF))
+
+(defun high-word (value)
+  (logand (ash value -16) #xFFFF))
+
+(defun win32-lookup-key (w-param l-param)
+  (let ((key (foreign-enum-keyword 'vkey-type w-param :errorp nil)))
+    (or key
+        (with-foreign-object (kbd-state :char 256)
+          (when (get-keyboard-state kbd-state)
+            (with-foreign-object (buffer :int16)
+              (unless (/= (to-ascii w-param l-param kbd-state buffer 0) 1)
+                (code-char (mem-ref buffer :char)))))))))
+
+
+(let ((last-x 0)
+      (last-y 0)
+      (from-configure nil))
+  (defcallback window-proc :long ((wnd hwnd) (msg :uint) (w-param wparam) (l-param lparam))
+     (let ((msg-type (foreign-enum-keyword 'msg-type msg :errorp nil)))
+       (case msg-type
+         (:wm-close
+          (setf *event* (glop::make-event :type :close))
+          (return-from window-proc 0))
+         (:wm-destroy
+          (%post-quit-message 0)
+          (return-from window-proc 0))
+         (:wm-mouse-move
+          (let ((low (low-word l-param))
+                (high (high-word l-param)))
+            (when (or (/= low last-x) (/= high last-y))
+              (setf *event* (glop::make-event :type :mouse-motion
+                                              :x low :y high
+                                              :dx (- low last-x) :dy (- high last-y)))
+              (setf last-x low last-y high))
+            (return-from window-proc 0)))
+         (:wm-paint
+          ;; XXX: this is an ugly hack but WM_SIZE acts strangely...
+          (multiple-value-bind (x y width height) (get-geometry wnd)
+            (setf *event* (glop::make-event :type (if from-configure
+                                                      (progn (setf from-configure nil)
+                                                             :configure)
+                                                      :expose)
+                                                :width width :height height))))
+         (:wm-lbutton-down
+          (set-capture wnd)
+          (setf *event* (glop::make-event :type :button-press
+                                          :button :left-button))
+          (return-from window-proc 0))
+         (:wm-lbutton-up
+          (release-capture)
+          (setf *event* (glop::make-event :type :button-release
+                                          :button :left-button))
+          (return-from window-proc 0))
+         (:wm-rbutton-down
+          (set-capture wnd)
+          (setf *event* (glop::make-event :type :button-press
+                                          :button :right-button))
+          (return-from window-proc 0))
+         (:wm-rbutton-up
+          (release-capture)
+          (setf *event* (glop::make-event :type :button-release
+                                          :button :right-button))
+          (return-from window-proc 0))
+         (:wm-mbutton-down
+          (set-capture wnd)
+          (setf *event* (glop::make-event :type :button-press
+                                          :button :middle-button))
+          (return-from window-proc 0))
+         (:wm-mbutton-up
+          (release-capture)
+          (setf *event* (glop::make-event :type :button-release
+                                          :button :middle-button))
+          (return-from window-proc 0))
+         (:wm-key-up
+          (let ((key (win32-lookup-key w-param l-param)))
+            (when key
+              (setf *event* (glop::make-event :type :key-release
+                                              :key  key))))
+          (return-from window-proc 0))
+         (:wm-key-down
+          (let ((key (win32-lookup-key w-param l-param)))
+            (when key
+              (setf *event* (glop::make-event :type :key-press
+                                              :key  key))))
+          (return-from window-proc 0))
+         (:wm-mouse-wheel
+          (format t "WM_MOUSEWHEEL: ~S => ~S~%" w-param (high-word w-param))
+          (setf *event* (glop::make-event :type :button-press
+                                          :button (if (> w-param 0)
+                                                      :wheel-up :wheel-down)))
+          (return-from window-proc 0))
+         (:wm-size
+          (format t"WM_SIZE !!!!~%")
+          ;; XXX: other part of above ugly hack...
+          ;; Not sure why but it looks WM_SIZE doesn't get out of window-proc
+          ;; until mouse button is released...
+          ;; Maybe we can use WM_EXITSIZEMOVE and send :configure event only at the end
+          ;; of the window resize while still sending a proper expose event...
+          ;; With this hack it seems that WM_PAINT is handled directly thus overwriting
+          ;; our glop :configure event with a :expose event...weird
+          (setf from-configure t)
+          (return-from window-proc 0))
+         (:wm-show-window
+          (multiple-value-bind (x y width height) (get-geometry wnd)
+            (setf *event* (glop::make-event :type (if (zerop w-param)
+                                                      :hide
+                                                      :show)
+                                            :width width :height height))))
+         (:wm-set-focus
+          (format t "WM_SETFOCUS~%")
+          (return-from window-proc 0)))
        ;; (:wm-sys-command
        ;;  (format t "WM_SYSCOMMAND~%")))
-     (%def-window-proc wnd msg w-param l-param)))
+       (%def-window-proc wnd msg w-param l-param))))
 
 (defcfun ("RegisterClassA" %register-class) :int16
   (wndclass :pointer))
@@ -483,4 +601,6 @@
   (glop-win32::swap-buffers (win32-window-dc win)))
 
 (defmethod next-event ((win win32-window) &key blocking)
-  (glop-win32::next-event (win32-window-id win) blocking))
+  (let ((evt (glop-win32::next-event (win32-window-id win) blocking)))
+    (setf glop-win32::*event* nil)
+    evt))
