@@ -344,47 +344,57 @@
                  (%x-next-event dpy evt)
                  (process-event evt))))))
 
-(defun process-event (evt)
-  "Process an X11 event into a GLOP event."
-  (with-foreign-slots ((type) evt x-event)
-    (case type
-      (:key-press
-       (with-foreign-slots ((keycode) evt x-key-pressed-event)
-         (glop::make-event :type :key-press
-                           :key (x-lookup-key evt))))
-      (:key-release
-       (with-foreign-slots ((keycode) evt x-key-released-event)
-         (glop::make-event :type :key-release
-                           :key (x-lookup-key evt))))
-      (:button-press
-       (with-foreign-slots ((button) evt x-button-pressed-event)
-         (glop::make-event :type :button-press
-                           :button button)))
-      (:button-release
-       (with-foreign-slots ((button) evt x-button-pressed-event)
-         (glop::make-event :type :button-release
-                           :button button)))
-      (:motion-notify
-       (with-foreign-slots ((x y) evt x-motion-event)
-         (glop::make-event :type :mouse-motion
-                           :x x :y y)))
-      (:expose
-       (glop::make-event :type :expose))
-      (:configure-notify
-       (glop::make-event :type :configure))
-      (:map-notify
-       (glop::make-event :type :show))
-      (:unmap-notify
-       (glop::make-event :type :hide))
-      (:client-message
-       (with-foreign-slots ((display-ptr message-type data) evt x-client-message-event)
-         (format t "Client message: ~S~%" message-type)
-         (with-foreign-slots ((l) data x-client-message-event-data)
-           (format t "Client message data: ~S~%" l)
-           (let ((atom-name (x-get-atom-name display-ptr (mem-ref l :long))))
-             (when (string= atom-name "WM_DELETE_WINDOW")
-               (glop::make-event :type :close))))))
-      (t (format t "Unhandled event: ~S~%" type)))))
+(defun x-translate-mouse-button (button)
+  (case button
+    (1 :left-button)
+    (2 :middle-button)
+    (3 :right-button)
+    (4 :wheel-up)
+    (5 :wheel-down)))
+
+(let ((last-x 0)
+      (last-y 0))
+  (defun process-event (evt)
+    "Process an X11 event into a GLOP event."
+    (with-foreign-slots ((type) evt x-event)
+      (case type
+        (:key-press
+         (with-foreign-slots ((keycode) evt x-key-pressed-event)
+           (glop::make-event :type :key-press
+                             :key (x-lookup-key evt))))
+        (:key-release
+         (with-foreign-slots ((keycode) evt x-key-released-event)
+           (glop::make-event :type :key-release
+                             :key (x-lookup-key evt))))
+        (:button-press
+         (with-foreign-slots ((button) evt x-button-pressed-event)
+           (glop::make-event :type :button-press
+                             :button (x-translate-mouse-button button))))
+        (:button-release
+         (with-foreign-slots ((button) evt x-button-pressed-event)
+           (glop::make-event :type :button-release
+                             :button (x-translate-mouse-button button))))
+        (:motion-notify
+         (with-foreign-slots ((x y) evt x-motion-event)
+           (let ((glop-evt (glop::make-event :type :mouse-motion
+                                             :x x :y y :dx (- x last-x) :dy (- y last-y))))
+             (setf last-x x last-y y)
+             glop-evt)))
+        (:expose
+         (glop::make-event :type :expose))
+        (:configure-notify
+         (glop::make-event :type :configure))
+        (:map-notify
+         (glop::make-event :type :show))
+        (:unmap-notify
+         (glop::make-event :type :hide))
+        (:client-message
+         (with-foreign-slots ((display-ptr message-type data) evt x-client-message-event)
+           (with-foreign-slots ((l) data x-client-message-event-data)
+             (let ((atom-name (x-get-atom-name display-ptr (mem-ref l :long))))
+               (when (string= atom-name "WM_DELETE_WINDOW")
+                 (glop::make-event :type :close))))))
+        (t (format t "Unhandled event: ~S~%" type))))))
 
 (defcfun ("XLookupString" %x-lookup-string) :int
   (evt x-key-event) (buffer-return :pointer) (bytes-buffer :int)
