@@ -1,6 +1,7 @@
 (defpackage :glop-test
   (:use #:cl)
-  (:export #:test-manual-create #:test-multiple-contexts #:test-with-window #:test-manual-events))
+  (:export #:test-manual-create #:test-multiple-contexts #:test-with-window #:test-manual-events
+           #:test-gl-hello))
 
 (in-package #:glop-test)
 
@@ -16,6 +17,7 @@
   (format t "Mouse motion !!~%"))
 
 (defmethod glop:on-resize (window w h)
+  (gl:viewport 0 0 w h)
   (format t "Resize: ~Sx~S !!~%" w h))
 
 (defmethod glop:on-draw (window)
@@ -82,3 +84,26 @@
          (gl:flush)
          (glop:swap-buffers win))
     (glop:destroy-window win)))
+
+
+(defun test-gl-hello ()
+  (glop:with-window (win "Glop test window" 800 600)
+    (format t "Created window: ~S~%" win)
+    ;; GL init
+    (gl:clear-color 0.3 0.3 1.0 0)
+    ;; setup view
+    (gl:matrix-mode :projection)
+    (gl:load-identity)
+    (gl:ortho 0 1 0 1 -1 1)
+    ;; idle loop, we draw here anyway
+    (loop while (glop:dispatch-events win :blocking nil) do
+         ;; rendering
+         (gl:clear :color-buffer)
+         (gl:color 1 1 1)
+         (gl:with-primitive :polygon
+           (gl:vertex 0.25 0.25 0)
+           (gl:vertex 0.75 0.25 0)
+           (gl:vertex 0.75 0.75 0)
+           (gl:vertex 0.25 0.75 0))
+         (gl:flush)
+         (glop:swap-buffers win))))
