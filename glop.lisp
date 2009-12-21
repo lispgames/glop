@@ -85,7 +85,7 @@
           (:close (on-close window)
                   (return-from dispatch-events nil))
           (t (format t "Unhandled event type: ~S~%" (event-type evt))))
-    finally return t))
+    finally (return t)))
 
 
 (defgeneric on-key (window state key))
