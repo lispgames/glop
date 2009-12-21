@@ -67,25 +67,25 @@
 
 ;; method based event handling
 (defun dispatch-events (window &key blocking)
-  "Dispatch window events to corresponding methods.
+  "Process all pending system events and call corresponding methods.
    When :blocking is non-nil calls event handling func that will block
    until an event occur.
-   Returns NIL on :CLOSE event type, T otherwise."
-  (let ((evt (next-event window :blocking blocking)))
-    (when evt
-      (case (event-type evt)
-        (:key-press (on-key window :press (event-key evt)))
-        (:key-release (on-key window :release (event-key evt)))
-        (:button-press (on-button window :press (event-button evt)))
-        (:button-release (on-button window :release (event-button evt)))
-        (:mouse-motion (on-mouse-motion window (event-x evt) (event-y evt)
-                                        (event-dx evt) (event-dy evt)))
-        (:configure (on-resize window (event-width evt) (event-height evt)))
-        (:expose (on-draw window))
-        (:close (on-close window)
-                (return-from dispatch-events nil))
-        (t (format t "Unhandled event type: ~S~%" (event-type evt)))))
-    t))
+   Returns NIL on :CLOSE event, T otherwise."
+  (loop for evt = (next-event window :blocking blocking)
+    while evt
+    do  (case (event-type evt)
+          (:key-press (on-key window :press (event-key evt)))
+          (:key-release (on-key window :release (event-key evt)))
+          (:button-press (on-button window :press (event-button evt)))
+          (:button-release (on-button window :release (event-button evt)))
+          (:mouse-motion (on-mouse-motion window (event-x evt) (event-y evt)
+                                          (event-dx evt) (event-dy evt)))
+          (:configure (on-resize window (event-width evt) (event-height evt)))
+          (:expose (on-draw window))
+          (:close (on-close window)
+                  (return-from dispatch-events nil))
+          (t (format t "Unhandled event type: ~S~%" (event-type evt))))
+    finally return t))
 
 
 (defgeneric on-key (window state key))

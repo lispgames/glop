@@ -327,6 +327,9 @@
 (defcfun ("XFree" x-free) :int
   (data :pointer))
 
+(defcfun ("XFlush" x-flush) :int
+  (display-ptr :pointer))
+
 (defcfun ("XCreateWindow" %x-create-window) window
   (display-ptr :pointer) (parent window) (x :int) (y :int) (width :int) (height :int)
   (border-width :int) (depth :int) (win-class x-window-class) (visual :pointer)
@@ -367,6 +370,9 @@
 (defcfun ("XStoreName" x-store-name) :int
   (display-ptr :pointer) (win window) (name :string))
 
+(defcfun ("XSync" x-sync) :int
+  (display-ptr :pointer) (discard bool))
+
 (defcfun ("XNextEvent" %x-next-event) :int
   (display-ptr :pointer) (evt x-event))
 
@@ -377,6 +383,7 @@
   (not (zerop (%x-pending display-ptr))))
 
 (defun x-next-event (dpy &optional blocking)
+  (x-sync dpy 0)
   (with-foreign-object (evt 'x-event)
     (if blocking
         (progn (%x-next-event dpy evt)
@@ -475,6 +482,8 @@
 (define-foreign-library opengl
   (t (:default "libGL")))
 (use-foreign-library opengl)
+
+(defcfun ("glXWaitGL" glx-wait-gl) :void)
 
 (defcfun ("glXChooseVisual" %glx-choose-visual) visual-info
   (display-ptr :pointer) (screen :int) (attribs :pointer))
@@ -604,6 +613,7 @@
   (glop-x11::x-close-display (x11-window-display win)))
 
 (defmethod swap-buffers ((win x11-window))
+  (glop-x11::glx-wait-gl)
   (glop-x11::glx-swap-buffers (x11-window-display win) (x11-window-id win)))
 
 (defmethod next-event ((win x11-window) &key blocking)
