@@ -563,14 +563,13 @@
 )
 
 (defmethod create-gl-context ((win x11-window) &key (make-current t))
-  (without-fp-traps
     (let ((ctx (make-glx-context
 		:ctx (glop-x11::glx-create-context (x11-window-display win)
 						   (x11-window-visual-infos win))
 		:display (x11-window-display win))))
       (when make-current
 	(attach-gl-context win ctx))
-      ctx)))
+      ctx))
 
 (defmethod destroy-gl-context (ctx)
   (detach-gl-context ctx)
@@ -587,36 +586,37 @@
   (glop-x11::glx-release-context (glx-context-display ctx)))
 
 (defmethod create-window (title width height &key (double-buffer t) accum (alpha t) (depth 24))
-  (let ((win (make-x11-window :display (glop-x11::x-open-display "")
-                              :screen 0)))
-    ;; create visual
-    (setf (x11-window-visual-infos win)
-          (glop-x11::glx-choose-visual (x11-window-display win)
-                                       (x11-window-screen win)
-                                       :rgba
-                                       :red-size 4
-                                       :green-size 4
-                                       :blue-size 4
-                                       :alpha-size (if alpha 4 0)
-                                       :depth-size depth
-                                       (if double-buffer :double-buffer :single-buffer)))
-    ;; create window
-    (setf (x11-window-id win) (glop-x11::x-create-window
-                               (x11-window-display win)
-                               (glop-x11::x-default-root-window (x11-window-display win))
-                               width height (x11-window-visual-infos win)))
-    (setf (window-width win) width)
-    (setf (window-height win) height)
-    ;; set title
-    (glop-x11::x-store-name (x11-window-display win) (x11-window-id win) title)
-    (setf (slot-value win 'title) title)
-    ;; create a GL context and make it current
-    (setf (window-gl-context win) (create-gl-context win :make-current t))
-    ;; show created window
-    (show-window win)
-    (glop-x11::x-flush (x11-window-display win))
-    ;; return created window
-    win))
+  (without-fp-traps
+    (let ((win (make-x11-window :display (glop-x11::x-open-display "")
+				:screen 0)))
+      ;; create visual
+      (setf (x11-window-visual-infos win)
+	    (glop-x11::glx-choose-visual (x11-window-display win)
+					 (x11-window-screen win)
+					 :rgba
+					 :red-size 4
+					 :green-size 4
+					 :blue-size 4
+					 :alpha-size (if alpha 4 0)
+					 :depth-size depth
+					 (if double-buffer :double-buffer :single-buffer)))
+      ;; create window
+      (setf (x11-window-id win) (glop-x11::x-create-window
+				 (x11-window-display win)
+				 (glop-x11::x-default-root-window (x11-window-display win))
+				 width height (x11-window-visual-infos win)))
+      (setf (window-width win) width)
+      (setf (window-height win) height)
+      ;; set title
+      (glop-x11::x-store-name (x11-window-display win) (x11-window-id win) title)
+      (setf (slot-value win 'title) title)
+      ;; create a GL context and make it current
+      (setf (window-gl-context win) (create-gl-context win :make-current t))
+      ;; show created window
+      (show-window win)
+      (glop-x11::x-flush (x11-window-display win))
+      ;; return created window
+      win)))
 
 (defmethod show-window ((win x11-window))
   (glop-x11::x-map-raised (x11-window-display win) (x11-window-id win)))
