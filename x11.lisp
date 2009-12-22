@@ -428,7 +428,7 @@
              glop-evt)))
         (:expose
          (with-foreign-slots ((display-ptr win) evt x-expose-event)
-           (multiple-value-bind (root x y width height border-width depth)	       
+           (multiple-value-bind (root x y width height border-width depth)
                (x-get-geometry display-ptr win)
 	     (declare (ignorable x y root border-width depth))
              (glop::make-event :type :expose
