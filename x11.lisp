@@ -537,6 +537,19 @@
 
 (setf gl-get-proc-address #'glop-x11::glx-get-proc-address)
 
+;;; Execute BODY with floating-point traps disabled. This seems to be
+;;; necessary on (at least) Linux/x86-64 where SIGFPEs are signalled
+;;; when creating making a GLX context active.
+#+(and sbcl x86-64)
+(defmacro without-fp-traps (&body body)
+ `(sb-int:with-float-traps-masked (:invalid :divide-by-zero)
+ ,@body))
+
+;;; Do nothing on Lisps that don't need traps disabled.
+#-(and sbcl x86-64)
+(defmacro without-fp-traps (&body body)
+ `(progn ,@body))
+
 (defstruct (x11-window (:include window))
   display      ;; X display ptr
   screen       ;; X screen number
@@ -550,13 +563,14 @@
 )
 
 (defmethod create-gl-context ((win x11-window) &key (make-current t))
-  (let ((ctx (make-glx-context
-              :ctx (glop-x11::glx-create-context (x11-window-display win)
-                                                 (x11-window-visual-infos win))
-              :display (x11-window-display win))))
-    (when make-current
-      (attach-gl-context win ctx))
-    ctx))
+  (without-fp-traps
+    (let ((ctx (make-glx-context
+		:ctx (glop-x11::glx-create-context (x11-window-display win)
+						   (x11-window-visual-infos win))
+		:display (x11-window-display win))))
+      (when make-current
+	(attach-gl-context win ctx))
+      ctx)))
 
 (defmethod destroy-gl-context (ctx)
   (detach-gl-context ctx)
