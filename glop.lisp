@@ -1,5 +1,9 @@
 (in-package #:glop)
 
+;; GL/OS interface
+(defvar gl-get-proc-address nil)
+
+;; Windows and GL context
 (defstruct window
   width
   height
