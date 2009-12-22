@@ -614,6 +614,7 @@
     (setf (window-gl-context win) (create-gl-context win :make-current t))
     ;; show created window
     (show-window win)
+    (glop-x11::x-flush (x11-window-display win))
     ;; return created window
     win))
 
