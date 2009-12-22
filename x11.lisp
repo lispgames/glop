@@ -448,7 +448,7 @@
              (let ((atom-name (x-get-atom-name display-ptr (mem-ref l :long))))
                (when (string= atom-name "WM_DELETE_WINDOW")
                  (glop::make-event :type :close))))))
-        (t (format t "Unhandled event: ~S~%" type))))))
+        (t (format t "Unhandled X11 event: ~S~%" type))))))
 
 (defcfun ("XLookupString" %x-lookup-string) :int
   (evt x-key-event) (buffer-return :pointer) (bytes-buffer :int)
@@ -529,6 +529,9 @@
 (defcfun ("glXSwapBuffers" glx-swap-buffers) :void
   (display-ptr :pointer) (drawable drawable))
 
+(defcfun ("glXGetProcAddress" glx-get-proc-address) :pointer
+  (proc-name :string))
+
 ;; GLOP implementation
 (in-package #:glop)
 
@@ -544,6 +547,8 @@
 #-(and sbcl x86-64)
 (defmacro without-fp-traps (&body body)
  `(progn ,@body))
+
+(setf gl-get-proc-address #'glop-x11::glx-get-proc-address)
 
 (defstruct (x11-window (:include window))
   display      ;; X display ptr

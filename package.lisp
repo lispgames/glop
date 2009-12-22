@@ -3,6 +3,7 @@
   (:export
    ;; GL
    #:create-gl-context #:destroy-gl-context #:attach-gl-context #:detach-gl-context
+   #:gl-get-proc-address
    ;; window
    #:create-window #:destroy-window #:show-window #:hide-window #:set-window-title
    #:swap-buffers

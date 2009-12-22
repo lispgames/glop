@@ -513,12 +513,18 @@
 (defcfun ("wglDeleteContext" wgl-delete-context) bool
   (rc hglrc))
 
+(defcfun ("wglGetProcAddress" wgl-get-proc-address) :pointer
+  (proc-name :string))
+
 ;; test
 (defvar *running* t)
 
 
 ;; GLOP
 (in-package #:glop)
+
+(setf gl-get-proc-address #'glop-win32::wgl-get-proc-address)
+
 
 (defstruct (win32-window (:include window))
   module-handle
