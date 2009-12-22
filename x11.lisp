@@ -407,13 +407,11 @@
     (with-foreign-slots ((type) evt x-event)
       (case type
         (:key-press
-         (with-foreign-slots ((keycode) evt x-key-pressed-event)
            (glop::make-event :type :key-press
-                             :key (x-lookup-key evt))))
+                             :key (x-lookup-key evt)))
         (:key-release
-         (with-foreign-slots ((keycode) evt x-key-released-event)
            (glop::make-event :type :key-release
-                             :key (x-lookup-key evt))))
+                             :key (x-lookup-key evt)))
         (:button-press
          (with-foreign-slots ((button) evt x-button-pressed-event)
            (glop::make-event :type :button-press
@@ -430,8 +428,9 @@
              glop-evt)))
         (:expose
          (with-foreign-slots ((display-ptr win) evt x-expose-event)
-           (multiple-value-bind (root x y width height border-width depth)
+           (multiple-value-bind (root x y width height border-width depth)	       
                (x-get-geometry display-ptr win)
+	     (declare (ignorable x y root border-width depth))
              (glop::make-event :type :expose
                                :width width :height height))))
         (:configure-notify
@@ -599,6 +598,7 @@
   (glop-x11::glx-release-context (glx-context-display ctx)))
 
 (defmethod create-window (title width height &key (double-buffer t) accum (alpha t) (depth 24))
+  (declare (ignorable accum))
   (without-fp-traps
     (let ((win (make-x11-window :display (glop-x11::x-open-display "")
 				:screen 0)))
