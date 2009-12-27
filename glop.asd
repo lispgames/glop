@@ -7,9 +7,11 @@
   ((:file "package")
    (:file "glop")
    #+unix(:module "x11"
+                  :serial t
                   :components ((:file "constants")
                                (:file "x11")))
    #+win32(:module "win32"
-                  :components ((:file "constants")
-                               (:file "win32")))))
+                   :serial t
+                   :components ((:file "constants")
+                                (:file "win32")))))
 
