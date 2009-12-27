@@ -11,9 +11,10 @@
   gl-context
   pushed-event)
 
-(defgeneric create-gl-context (window &key make-current)
-  (:documentation "Creates a new OpenGL context for the provided window and optionally
-    make it current."))
+(defgeneric create-gl-context (window &key make-current major minor)
+  (:documentation "Creates a new OpenGL context of the specified version for the provided window
+      and optionally make it current. If major and minor are NIL old style context creation is
+      used.I"))
 
 (defgeneric destroy-gl-context (ctx)
   (:documentation "Detach and release the provided OpenGL context."))
@@ -24,8 +25,24 @@
 (defgeneric detach-gl-context (ctx)
   (:documentation "Make the provided OpenGL context no longer current."))
 
-(defgeneric create-window (title width height &key double-buffer accum alpha depth)
-  (:documentation "Creates a new GL window using the provided visual attributes if possible."))
+(defgeneric create-window (title width height &key major minor
+                                                   double-buffer
+                                                   stereo
+                                                   red-size
+                                                   green-size
+                                                   blue-size
+                                                   alpha-size
+                                                   depth-size
+                                                   accum-buffer
+                                                   accum-red-size
+                                                   accum-green-size
+                                                   accum-blue-size
+                                                   stencil-buffer
+                                                   stencil-size)
+  (:documentation "Creates a new GL window using the provided visual attributes.
+                   Major and minor arguments specify the context version to use, when NIL
+                   (default value) old style gl context is created, otherwise framebuffer config
+                   based context creation is used."))
 
 (defgeneric destroy-window (window)
   (:documentation "Destroy the provided GL window."))

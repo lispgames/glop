@@ -430,7 +430,7 @@
          (with-foreign-slots ((display-ptr win) evt x-expose-event)
            (multiple-value-bind (root x y width height border-width depth)
                (x-get-geometry display-ptr win)
-	     (declare (ignorable x y root border-width depth))
+             (declare (ignorable x y root border-width depth))
              (glop::make-event :type :expose
                                :width width :height height))))
         (:configure-notify
@@ -574,13 +574,15 @@
   display       ;; X display ptr
 )
 
-(defmethod create-gl-context ((win x11-window) &key (make-current t))
+(defmethod create-gl-context ((win x11-window) &key (make-current t) major minor)
     (let ((ctx (make-glx-context
-		:ctx (glop-x11::glx-create-context (x11-window-display win)
-						   (x11-window-visual-infos win))
-		:display (x11-window-display win))))
+                :ctx (if (and major minor)
+                         (error "Specific context creation for X11 not implemented yet.")
+                         (glop-x11::glx-create-context (x11-window-display win)
+                                                       (x11-window-visual-infos win)))
+                :display (x11-window-display win))))
       (when make-current
-	(attach-gl-context win ctx))
+        (attach-gl-context win ctx))
       ctx))
 
 (defmethod destroy-gl-context (ctx)
@@ -597,34 +599,52 @@
 (defmethod detach-gl-context ((ctx glx-context))
   (glop-x11::glx-release-context (glx-context-display ctx)))
 
-(defmethod create-window (title width height &key (double-buffer t) accum (alpha t) (depth 24))
+(defmethod create-window (title width height &key major minor
+                                                  (double-buffer t)
+                                                  stereo
+                                                  (red-size 0)
+                                                  (green-size 0)
+                                                  (blue-size 0)
+                                                  (alpha-size 0)
+                                                  (depth-size 0)
+                                                  accum-buffer
+                                                  (accum-red-size 0)
+                                                  (accum-green-size 0)
+                                                  (accum-blue-size 0)
+                                                  stencil-buffer (stencil-size 0))
   (declare (ignorable accum))
   (without-fp-traps
     (let ((win (make-x11-window :display (glop-x11::x-open-display "")
-				:screen 0)))
-      ;; create visual
-      (setf (x11-window-visual-infos win)
-	    (glop-x11::glx-choose-visual (x11-window-display win)
-					 (x11-window-screen win)
-					 :rgba
-					 :red-size 4
-					 :green-size 4
-					 :blue-size 4
-					 :alpha-size (if alpha 4 0)
-					 :depth-size depth
-					 (if double-buffer :double-buffer :single-buffer)))
+                                :screen 0)))
+      ;; if major *and* minor are specified use fb config code path
+      ;; otherwise just use old style visual selection and context creation
+      (if (and major minor)
+          (error "FB Config visual selection not implemented yet.")
+          ;; create old style visual
+          (setf (x11-window-visual-infos win)
+                (glop-x11::glx-choose-visual (x11-window-display win)
+                                             (x11-window-screen win)
+                                             :rgba
+                                             :red-size 4
+                                             :green-size 4
+                                             :blue-size 4
+                                             :alpha-size (if alpha-size 4 0)
+                                             :depth-size depth-size
+                                             (if double-buffer :double-buffer :single-buffer))))
       ;; create window
       (setf (x11-window-id win) (glop-x11::x-create-window
-				 (x11-window-display win)
-				 (glop-x11::x-default-root-window (x11-window-display win))
-				 width height (x11-window-visual-infos win)))
+                                 (x11-window-display win)
+                                 (glop-x11::x-default-root-window (x11-window-display win))
+                                 width height (x11-window-visual-infos win)))
       (setf (window-width win) width)
       (setf (window-height win) height)
       ;; set title
       (glop-x11::x-store-name (x11-window-display win) (x11-window-id win) title)
       (setf (slot-value win 'title) title)
-      ;; create a GL context and make it current
-      (setf (window-gl-context win) (create-gl-context win :make-current t))
+      ;; create a GL context and make it current same as for the visual regarding to major/minor
+      ;; values
+      (setf (window-gl-context win) (create-gl-context win :major major :minor minor
+                                                           :make-current t))
       ;; show created window
       (show-window win)
       (glop-x11::x-flush (x11-window-display win))
