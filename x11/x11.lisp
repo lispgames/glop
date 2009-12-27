@@ -183,7 +183,7 @@
 (defcfun ("glXChooseVisual" %glx-choose-visual) visual-info
   (display-ptr :pointer) (screen :int) (attribs :pointer))
 
-(defun glx-choose-visual (dpy screen &rest attribs)
+(defun glx-choose-visual (dpy screen attribs)
   (with-foreign-object (atts :int (1+ (length attribs)))
     (loop for i below (length attribs)
          for attr = (nth i attribs)
@@ -308,7 +308,6 @@
                                                   (accum-green-size 0)
                                                   (accum-blue-size 0)
                                                   stencil-buffer (stencil-size 0))
-  (declare (ignorable accum))
   (without-fp-traps
     (let ((win (make-x11-window :display (glop-x11::x-open-display "")
                                 :screen 0)))
@@ -317,16 +316,27 @@
       (if (and major minor)
           (error "FB Config visual selection not implemented yet.")
           ;; create old style visual
-          (setf (x11-window-visual-infos win)
-                (glop-x11::glx-choose-visual (x11-window-display win)
-                                             (x11-window-screen win)
-                                             :rgba
-                                             :red-size 4
-                                             :green-size 4
-                                             :blue-size 4
-                                             :alpha-size (if alpha-size 4 0)
-                                             :depth-size depth-size
-                                             (if double-buffer :double-buffer :single-buffer))))
+          (let ((attribs (list :rgba ;; no indexed buffer
+                               :red-size red-size
+                               :green-size green-size
+                               :blue-size blue-size
+                               :alpha-size alpha-size
+                               :depth-size depth-size)))
+            (when double-buffer
+              (push :double-buffer attribs))
+            (when stereo
+              (push :stereo attribs))
+            (when accum-buffer
+              (push :accum-red-size attribs)
+              (push accum-red-size attribs)
+              (push :accum-green-size attribs)
+              (push accum-green-size attribs)
+              (push :accum-blue-size attribs)
+              (push accum-blue-size attribs))
+            (setf (x11-window-visual-infos win)
+                  (glop-x11::glx-choose-visual (x11-window-display win)
+                                               (x11-window-screen win)
+                                               attribs))))
       ;; create window
       (setf (x11-window-id win) (glop-x11::x-create-window
                                  (x11-window-display win)
