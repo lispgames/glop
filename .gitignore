@@ -1,3 +1,5 @@
+*.lx*fsl
+*.o
 *.fas
 *.fasl
 *.lib
