@@ -320,7 +320,7 @@
 (defun correct-context? (major minor)
   (multiple-value-bind (maj min) 
       (parse-gl-version-string-values (foreign-string-to-lisp (get-string (foreign-enum-value 'gl-enum :version))))
-    (unless (and (eq maj major) (eq min minor))
+    (unless (and (>= maj major) (>= min minor))
       (error "unable to create requested context"))))
 
 ;; GLOP implementation
