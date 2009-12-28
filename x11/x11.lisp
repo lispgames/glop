@@ -411,8 +411,10 @@
                                                   stencil-buffer (stencil-size 0))
   (declare (ignorable stencil-buffer stencil-size))
   (without-fp-traps
+    (format t "opening display~%")
     (let ((win (make-x11-window :display (glop-x11::x-open-display "")
                                 :screen 0)))
+      (format t "Window structure: ~S~%" win)
       ;;GLX attributes
       (let ((attribs (list :rgba t
 			   :red-size red-size
@@ -431,6 +433,7 @@
 	  (push accum-blue-size attribs))
 	;; if major *and* minor are specified use fb config code path
 	;; otherwise just use old style visual selection and context creation
+	(format t "Creating fb-config and visuals~%")
 	(if (and major minor)
 	    ;;create fb-config and visual
 	    (progn
@@ -441,6 +444,7 @@
                   (glop-x11::glx-choose-visual (x11-window-display win)
                                                (x11-window-screen win)
                                                attribs))))
+      (format t "Creating window ~%Window structure: ~S~%" win)
       ;; create window
       (setf (x11-window-id win) (glop-x11::x-create-window
                                  (x11-window-display win)
@@ -451,6 +455,7 @@
       ;; set title
       (glop-x11::x-store-name (x11-window-display win) (x11-window-id win) title)
       (setf (slot-value win 'title) title)
+      (format t "Creating Contexts ~%Window structure: ~S~%" win)
       ;; create a GL context and make it current same as for the visual regarding to major/minor
       ;; values
       (setf (window-gl-context win) (create-gl-context win :major major :minor minor
