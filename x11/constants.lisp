@@ -294,6 +294,9 @@
   (:sample-buffers 100000)
   (:samples 100001))
 
+(defcenum (gl-enum :unsigned-int)
+  (:version #x1F02))
+
 (defcenum (glx-context-attributes :unsigned-int)
   (:major-version #x2091)
   (:minor-version #x2092)

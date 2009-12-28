@@ -180,6 +180,9 @@
 
 (defctype fb-config :pointer)
 
+(defcfun ("glGetString" get-string) :pointer
+  (name :unsigned-int))
+
 (defcfun ("glXWaitGL" glx-wait-gl) :void)
 
 (defcfun ("glXChooseVisual" %glx-choose-visual) visual-info
@@ -304,6 +307,22 @@
 (defcfun ("glXGetProcAddress" glx-get-proc-address) :pointer
   (proc-name :string))
 
+(defun parse-gl-version-string-values (string)
+  ;; major version is integer value up to first #\.
+  ;; minor version is integer from first #\. to a #\. or #\space
+  (let ((dot (position #\. string)))
+    (values
+     (values (parse-integer string :end dot :junk-allowed t)) ; major
+     (if dot ; minor
+         (values (parse-integer string :start (1+ dot) :junk-allowed t))
+         0))))
+
+(defun correct-context? (major minor)
+  (multiple-value-bind (maj min) 
+      (parse-gl-version-string-values (foreign-string-to-lisp (get-string (foreign-enum-value 'gl-enum :version))))
+    (unless (and (eq maj major) (eq min minor))
+      (error "unable to create requested context"))))
+
 ;; GLOP implementation
 (in-package #:glop)
 
@@ -360,14 +379,8 @@
       (when make-current
         (attach-gl-context win ctx))
       (when (and major minor)
-	(correct-context? major minor))
+	(glop-x11::correct-context? major minor))
       ctx))
-
-(defun correct-context? (major minor)
-  (multiple-value-bind (maj min) 
-      (gl::parse-gl-version-string-values (gl:get-string :version))
-    (unless (and (eq maj major) (eq min minor))
-      (error "unable to create requested context"))))
 
 (defmethod destroy-gl-context (ctx)
   (detach-gl-context ctx)
