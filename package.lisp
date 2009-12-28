@@ -18,8 +18,3 @@
    #:with-window #:with-idle-forms))
 
 
-#+win32
-(defpackage :glop-win32
-  (:use #:cl #:cffi)
-  (:export))
-

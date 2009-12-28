@@ -13,6 +13,7 @@
                                (:file "glop-x11")))
    #+win32(:module "win32"
                    :serial t
-                   :components ((:file "constants")
-                                (:file "win32")))))
+                   :components ((:file "win32")
+                                (:file "wgl")
+                                (:file "glop-win32")))))
 
