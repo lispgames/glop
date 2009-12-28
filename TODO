@@ -1,0 +1,4 @@
+- fullscreen mode
+- key repeat
+- sdl:with-events like helper macro
+- OSX (X11 version should work)

@@ -1,6 +1,10 @@
 ;;;; -*- Mode: Lisp; indent-tabs-mode: nil -*-
 
 (defsystem glop
+  :license "MIT"
+  :version "git"
+  :description "Direct FFI bindings for OpenGL window and context management"
+  :author "Morgan Veyret <patzy at appart kicks-ass net>"
   :depends-on (cffi)
   :serial t
   :components

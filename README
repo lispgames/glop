@@ -13,10 +13,3 @@ Tested on:
  - SBCL/X11
 
 Usage: see test.lisp
-
-
-Todo:
-- fullscreen mode
-- key repeat
-- sdl:with-events like helper macro
-- OSX (X11 version should work)
