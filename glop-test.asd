@@ -3,5 +3,8 @@
 (defsystem glop-test
   :depends-on (glop cl-opengl cl-glu)
   :components
-  ((:file "test")))
+  ((:module "test"
+            :serial t
+            :components
+            ((:file "test")))))
 
