@@ -178,19 +178,75 @@
   (t (:default "libGL")))
 (use-foreign-library opengl)
 
+(defctype fb-config :pointer)
+
 (defcfun ("glXWaitGL" glx-wait-gl) :void)
 
 (defcfun ("glXChooseVisual" %glx-choose-visual) visual-info
   (display-ptr :pointer) (screen :int) (attribs :pointer))
 
+(defcfun ("glXChooseFBConfig" %glx-choose-fb-config) (:pointer fb-config)
+  (display-ptr :pointer)
+  (screen :int)
+  (attrib_list (:pointer :int))
+  (nelements (:pointer :int)))
+
+(defcfun ("glXGetFBConfigAttrib" %glx-get-fb-config-attrib) :int
+  (display-ptr :pointer)
+  (fb-config :pointer)
+  (attribute :int)
+  (value (:pointer :int)))
+
+(defcfun ("glXGetVisualFromFBConfig" %glx-get-visual-from-fb-config) visual-info
+  (display-ptr :pointer)
+  (fb-config (:pointer fb-config)))
+
+(defun glx-get-fb-config-attrib (dpy fb-config attrib)
+  (with-foreign-object (value :int)
+    (values (%glx-get-fb-config-attrib dpy fb-config (foreign-enum-value 'glx-attributes attrib) value) (mem-aref value :int))))
+
+(defun glx-choose-fb-config (dpy screen attribs-list)
+  (with-foreign-object (fb-config-count :int)
+    (with-foreign-object (atts :int (1+ (length attribs-list)))
+      (loop 
+	for i below (length attribs-list)
+	for attr in attribs-list do  
+	  (setf (mem-aref atts :int i)
+		(cond 
+		  ((eq attr nil) 0)
+		  ((eq attr t) 1)
+		  (t (typecase attr
+		       (keyword (foreign-enum-value 'glx-attributes attr))
+		       (t attr))))))
+      (setf (mem-aref atts :int (length attribs-list)) 0)
+      (let ((fb-configs (%glx-choose-fb-config dpy screen atts fb-config-count)))
+	(loop
+	  for index below (mem-ref fb-config-count :int)
+	  with vi = (null-pointer)
+	  with best-samples = -1
+	  with cur-samples = -1
+	  with best-fbc = 0  do
+	    (setf vi (%glx-get-visual-from-fb-config dpy (mem-aref fb-configs 'fb-config index)))
+	    (unless (null-pointer-p vi)
+	      (setf cur-samples 
+		    (multiple-value-bind (rtn value) 
+			(glx-get-fb-config-attrib dpy (mem-aref fb-configs 'fb-config index) :sample-buffers)
+		      (declare (ignore rtn)) value))
+	      (when (> cur-samples best-samples)
+		(setf best-samples cur-samples)
+		(setf best-fbc index)))
+	    (x-free vi) 
+	  finally (return (mem-aref fb-configs 'fb-config best-fbc)))))))
+
 (defun glx-choose-visual (dpy screen attribs)
   (with-foreign-object (atts :int (1+ (length attribs)))
     (loop for i below (length attribs)
          for attr = (nth i attribs)
-       do  (setf (mem-aref atts :int i)
-                 (typecase attr
-                   (keyword (foreign-enum-value 'glx-attributes attr))
-                   (t attr))))
+       do (unless (or (eq attr nil) (eq attr t))
+		      (setf (mem-aref atts :int i)
+			    (typecase attr
+			      (keyword (foreign-enum-value 'glx-attributes attr))
+			      (t attr)))))
     (setf (mem-aref atts :int (length attribs)) 0)
     (%glx-choose-visual dpy screen atts)))
 
@@ -202,6 +258,27 @@
 
 (defun glx-create-context (dpy visual)
   (%glx-create-context dpy visual (null-pointer) 1))
+
+(defmethod glx-create-specific-context (dpy fbc context-attribs)
+  (with-foreign-object ( atts :int (1+ (length context-attribs)))
+    (loop
+      for i below (length context-attribs)
+      for attr in context-attribs do
+	(setf (mem-aref atts :int i)
+	      (typecase attr
+		(keyword (foreign-enum-value 'glx-context-attributes attr))
+		(t attr))))
+    (setf (mem-aref atts :int (length context-attribs)) 0)
+    (let ((ptr (glop-x11::glx-get-proc-address "glXCreateContextAttribsARB")))      
+      (when (null-pointer-p ptr)
+	(error "glXCreateContextAttribsARB unavailable"))
+      (cffi:foreign-funcall-pointer ptr ()
+				    :pointer dpy 
+				    :pointer fbc
+				    :pointer (null-pointer) 
+				    :int 1 
+				    (:pointer :int) atts
+				    :pointer))))
 
 (defcfun ("glXDestroyContext" glx-destroy-context) :void
   (display-ptr :pointer) (context glx-context))
@@ -263,6 +340,7 @@
   screen       ;; X screen number
   id           ;; X window ID
   visual-infos ;; X visual format of the window
+  fb-config ;; X framebuffer config
 )
 
 (defstruct glx-context
@@ -273,13 +351,23 @@
 (defmethod create-gl-context ((win x11-window) &key (make-current t) major minor)
     (let ((ctx (make-glx-context
                 :ctx (if (and major minor)
-                         (error "Specific context creation for X11 not implemented yet.")
+			 (glop-x11::glx-create-specific-context (x11-window-display win) 
+								(x11-window-fb-config win)
+								`(:major-version ,major :minor-version ,minor))
                          (glop-x11::glx-create-context (x11-window-display win)
                                                        (x11-window-visual-infos win)))
                 :display (x11-window-display win))))
       (when make-current
         (attach-gl-context win ctx))
+      (when (and major minor)
+	(correct-context? major minor))
       ctx))
+
+(defun correct-context? (major minor)
+  (multiple-value-bind (maj min) 
+      (gl::parse-gl-version-string-values (gl:get-string :version))
+    (unless (and (eq maj major) (eq min minor))
+      (error "unable to create requested context"))))
 
 (defmethod destroy-gl-context (ctx)
   (detach-gl-context ctx)
@@ -308,31 +396,34 @@
                                                   (accum-green-size 0)
                                                   (accum-blue-size 0)
                                                   stencil-buffer (stencil-size 0))
+  (declare (ignorable stencil-buffer stencil-size))
   (without-fp-traps
     (let ((win (make-x11-window :display (glop-x11::x-open-display "")
                                 :screen 0)))
-      ;; if major *and* minor are specified use fb config code path
-      ;; otherwise just use old style visual selection and context creation
-      (if (and major minor)
-          (error "FB Config visual selection not implemented yet.")
-          ;; create old style visual
-          (let ((attribs (list :rgba ;; no indexed buffer
-                               :red-size red-size
-                               :green-size green-size
-                               :blue-size blue-size
-                               :alpha-size alpha-size
-                               :depth-size depth-size)))
-            (when double-buffer
-              (push :double-buffer attribs))
-            (when stereo
-              (push :stereo attribs))
-            (when accum-buffer
-              (push :accum-red-size attribs)
-              (push accum-red-size attribs)
-              (push :accum-green-size attribs)
-              (push accum-green-size attribs)
-              (push :accum-blue-size attribs)
-              (push accum-blue-size attribs))
+      ;;GLX attributes
+      (let ((attribs (list :rgba t
+			   :red-size red-size
+			   :green-size green-size
+			   :blue-size blue-size
+			   :alpha-size alpha-size
+			   :depth-size depth-size
+			   :double-buffer double-buffer
+			   :stereo stereo)))
+	(when accum-buffer
+	  (push :accum-red-size attribs)
+	  (push accum-red-size attribs)
+	  (push :accum-green-size attribs)
+	  (push accum-green-size attribs)
+	  (push :accum-blue-size attribs)
+	  (push accum-blue-size attribs))
+	;; if major *and* minor are specified use fb config code path
+	;; otherwise just use old style visual selection and context creation
+	(if (and major minor)
+	    ;;create fb-config and visual
+	    (progn
+	      (setf (x11-window-fb-config win) (glop-x11::glx-choose-fb-config (x11-window-display win) (x11-window-screen win) attribs))
+	      (setf (x11-window-visual-infos win) (glop-x11::%glx-get-visual-from-fb-config (x11-window-display win) (x11-window-fb-config win))))
+	    ;; create old style visual
             (setf (x11-window-visual-infos win)
                   (glop-x11::glx-choose-visual (x11-window-display win)
                                                (x11-window-screen win)

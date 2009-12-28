@@ -80,6 +80,7 @@
    If :blocking is true wait until an event occur."))
 
 (defmethod next-event :around (window &key blocking)
+  (declare (ignorable blocking))
   (let ((pushed-evt (window-pushed-event window)))
     (if pushed-evt
         (progn (setf (window-pushed-event window) nil)
@@ -122,14 +123,14 @@
 (defmacro with-idle-forms (window &body idle-forms)
   (let ((blocking (unless idle-forms t))
         (res (gensym)))
-    `(loop with ,res = (dispatch-events window :blocking ,blocking)
+    `(loop with ,res = (dispatch-events ,window :blocking ,blocking)
         while ,res
         do ,(if idle-forms
                   `(progn ,@idle-forms)
                   t))))
 
-(defmacro with-window ((win-sym title width height) &body body)
-  `(let ((,win-sym (create-window ,title ,width ,height)))
+(defmacro with-window ((win-sym title width height &key major minor) &body body)
+  `(let ((,win-sym (create-window ,title ,width ,height :major ,major :minor ,minor)))
      (when ,win-sym
        (unwind-protect (progn ,@body)
          (destroy-window ,win-sym)))))
