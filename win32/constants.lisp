@@ -193,7 +193,7 @@
   (visible-mask :int32)
   (damage-mask :int32))
 
-(defbitfield pfd-flags
+(defbitfield (pfd-flags :int32)
   (:pfd-draw-to-window 4)
   (:pfd-draw-to-bitmap 8)
   (:pfd-support-gdi 16)
@@ -213,4 +213,4 @@
 
 (defcenum pfd-pixel-type
   (:pfd-type-rgba 0)
-  (:pdf-type-color-index 1))
+  (:pfd-type-color-index 1))

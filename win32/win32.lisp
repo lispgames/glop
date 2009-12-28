@@ -258,9 +258,24 @@
 (defcfun ("SetPixelFormat" %set-pixel-format) bool
   (dc hdc) (pixel-format :int) (pfd :pointer))
 
-(defun choose-pixel-format (dc &key (double-buffer t) (depth 24) (alpha t))
+(defun choose-pixel-format (dc &key (double-buffer t)
+                                    stereo
+                                    (red-size 0)
+                                    (green-size 0)
+                                    (blue-size 0)
+                                    (alpha-size 0)
+                                    (depth-size 0)
+                                    accum-buffer
+                                    (accum-red-size 0)
+                                    (accum-green-size 0)
+                                    (accum-blue-size 0)
+                                    stencil-buffer (stencil-size 0))
   (with-foreign-object (pfd 'pixelformatdescriptor)
+    (format t "Creating PIXELFORMATDESCRIPTOR struct~%")
     (with-foreign-slots ((size version flags pixel-type color-bits
+                               red-bits green-bits blue-bits alpha-bits
+                               accum-bits accum-red-bits accum-green-bits accum-blue-bits
+                               stencil-bits
                                depth-bits) pfd pixelformatdescriptor)
       (setf size (foreign-type-size 'pixelformatdescriptor)
             version 1
@@ -268,10 +283,26 @@
                        (list :pfd-draw-to-window :pfd-support-opengl
                              (if double-buffer
                                  :pfd-double-buffer
-                                 :pfd-double-buffer-dont-care)))
+                                 :pfd-double-buffer-dont-care)
+                             (if stereo
+                                 :pfd-stereo
+                                 :pfd-stereo-dont-care)
+                             ))
             pixel-type (foreign-enum-value 'pfd-pixel-type :pfd-type-rgba)
-            color-bits (if alpha 32 24)
-            depth-bits depth))
+            color-bits 32 ;; we want proper RGBA but not sure to understand this struct field
+            red-bits red-size
+            green-bits green-size
+            blue-bits blue-size
+            alpha-bits alpha-size
+            accum-bits (if accum-buffer
+                           (+ accum-red-size accum-green-size accum-blue-size)
+                           0)
+            accum-red-bits accum-red-size
+            accum-green-bits accum-green-size
+            accum-blue-bits accum-blue-size
+            depth-bits depth-size
+            stencil-bits stencil-size))
+    (format t "Choosing pixel format !!~%")
     (let ((fmt (%choose-pixel-format dc pfd)))
       (%set-pixel-format dc fmt pfd)
       fmt)))
@@ -318,7 +349,7 @@
 (defstruct wgl-context
   ctx)
 
-(defmethod create-gl-context ((win win32-window) &key (make-current t))
+(defmethod create-gl-context ((win win32-window) &key (make-current t) major minor)
   (let ((ctx (make-wgl-context)))
     (let ((wgl-ctx (glop-win32::wgl-create-context (win32-window-dc win))))
       (unless wgl-ctx
@@ -338,9 +369,23 @@
 (defmethod detach-gl-context ((ctx wgl-context))
   (glop-win32::wgl-make-current (cffi:null-pointer) (cffi:null-pointer)))
 
-(defmethod create-window (title width height &key (double-buffer t) accum (alpha t) (depth 24))
+(defmethod create-window (title width height &key major minor
+                                                  (double-buffer t)
+                                                  stereo
+                                                  (red-size 0)
+                                                  (green-size 0)
+                                                  (blue-size 0)
+                                                  (alpha-size 0)
+                                                  (depth-size 0)
+                                                  accum-buffer
+                                                  (accum-red-size 0)
+                                                  (accum-green-size 0)
+                                                  (accum-blue-size 0)
+                                                  stencil-buffer (stencil-size 0))
   (let ((win (make-win32-window
               :module-handle (glop-win32::get-module-handle (cffi:null-pointer)))))
+    (when (and major minor)
+      (error "Specific context creation isn't supported yet. Leave :major and :minor as NIL."))
     ;; create window class
     (glop-win32::create-and-register-class (win32-window-module-handle win) "OpenGL")
     (setf (win32-window-class-name win) "OpenGL")
@@ -351,15 +396,28 @@
                                   0 0 width height (cffi:null-pointer) (cffi:null-pointer)
                                   (win32-window-module-handle win) (cffi:null-pointer))))
       (unless wnd
-        (format t "Error creating window: ~S~%" (glop-win32::get-last-error))
-        (return-from create-window))
+        (error "Can't create window (error ~S)~%" (glop-win32::get-last-error)))
       (setf (win32-window-id win) wnd))
     (setf (win32-window-width win) width)
     (setf (win32-window-height win) height)
     (setf (win32-window-dc win) (glop-win32::get-dc (win32-window-id win)))
     ;; choose pixel format
+    ;; XXX: kwargs passing is ugly here and we need something else...
     (setf (win32-window-pixel-format win) (glop-win32::choose-pixel-format
-                                            (win32-window-dc win)))
+                                           (win32-window-dc win)
+                                           :double-buffer double-buffer
+                                           :stereo stereo
+                                           :red-size red-size
+                                           :green-size green-size
+                                           :blue-size blue-size
+                                           :alpha-size alpha-size
+                                           :depth-size depth-size
+                                           :accum-buffer accum-buffer
+                                           :accum-red-size accum-red-size
+                                           :accum-green-size accum-green-size
+                                           :accum-blue-size accum-blue-size
+                                           :stencil-buffer stencil-buffer
+                                           :stencil-size stencil-size))
     ;; create GL context and make it current
     (setf (window-gl-context win) (create-gl-context win :make-current t))
     ;; show window
