@@ -8,8 +8,9 @@
    (:file "glop")
    #+unix(:module "x11"
                   :serial t
-                  :components ((:file "constants")
-                               (:file "x11")))
+                  :components ((:file "xlib")
+                               (:file "glx")
+                               (:file "glop-x11")))
    #+win32(:module "win32"
                    :serial t
                    :components ((:file "constants")

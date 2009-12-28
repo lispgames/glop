@@ -18,11 +18,6 @@
    #:with-window #:with-idle-forms))
 
 
-#+unix
-(defpackage :glop-x11
-  (:use #:cl #:cffi)
-  (:export))
-
 #+win32
 (defpackage :glop-win32
   (:use #:cl #:cffi)
