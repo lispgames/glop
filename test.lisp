@@ -6,24 +6,30 @@
 (in-package #:glop-test)
 
 (defmethod glop:on-key (window state key)
+  (declare (ignore state))
   (format t "Key: ~S~%" key)
   (when (eql key #\Escape)
     (glop:push-close-event window)))
 
 (defmethod glop:on-button (window state button)
+  (declare (ignore window state))
   (format t "Button: ~S~%" button))
 
 (defmethod glop:on-mouse-motion (window x y dx dy)
+  (declare (ignore window x y dx dy))
   (format t "Mouse motion !!~%"))
 
 (defmethod glop:on-resize (window w h)
+  (declare (ignore window))
   (gl:viewport 0 0 w h)
   (format t "Resize: ~Sx~S !!~%" w h))
 
 (defmethod glop:on-draw (window)
+  (declare (ignore window))
   (format t "Draw !!~%"))
 
 (defmethod glop:on-close (window)
+  (declare (ignore window))
   (format t "Close !!~%"))
 
 
