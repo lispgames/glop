@@ -1,8 +1,8 @@
 ;;; GLOP implementation
 (in-package #:glop)
 
-(setf gl-get-proc-address #'glop-wgl:wgl-get-proc-address)
-
+(defun gl-get-proc-address (proc-name)
+  (glop-wgl:wgl-get-proc-address proc-name))
 
 (defstruct (win32-window (:include window))
   module-handle
@@ -14,7 +14,7 @@
 (defstruct wgl-context
   ctx)
 
-(defmethod create-gl-context ((win win32-window) &key (make-current t) major minor)
+(defun create-gl-context (win &key (make-current t) major minor)
   (let ((ctx (make-wgl-context)))
     (let ((wgl-ctx (glop-wgl:wgl-create-context (win32-window-dc win))))
       (unless wgl-ctx
@@ -24,33 +24,33 @@
       (attach-gl-context win ctx))
     ctx))
 
-(defmethod destroy-gl-context (ctx)
+(defun destroy-gl-context (ctx)
   (detach-gl-context ctx)
   (glop-wgl:wgl-delete-context (wgl-context-ctx ctx)))
 
-(defmethod attach-gl-context ((win win32-window) (ctx wgl-context))
+(defun attach-gl-context (win ctx)
   (glop-wgl:wgl-make-current (win32-window-dc win) (wgl-context-ctx ctx)))
 
-(defmethod detach-gl-context ((ctx wgl-context))
+(defun detach-gl-context (ctx)
   (glop-wgl::wgl-make-current (cffi:null-pointer) (cffi:null-pointer)))
 
-(defmethod create-window (title width height &key major minor
-                                                  (double-buffer t)
-                                                  stereo
-                                                  (red-size 0)
-                                                  (green-size 0)
-                                                  (blue-size 0)
-                                                  (alpha-size 0)
-                                                  (depth-size 0)
-                                                  accum-buffer
-                                                  (accum-red-size 0)
-                                                  (accum-green-size 0)
-                                                  (accum-blue-size 0)
-                                                  stencil-buffer (stencil-size 0))
+(defun create-window (title width height &key major minor fullscreen
+                                              (double-buffer t)
+                                              stereo
+                                              (red-size 0)
+                                              (green-size 0)
+                                              (blue-size 0)
+                                              (alpha-size 0)
+                                              (depth-size 0)
+                                              accum-buffer
+                                              (accum-red-size 0)
+                                              (accum-green-size 0)
+                                              (accum-blue-size 0)
+                                              stencil-buffer (stencil-size 0))
+  (when (or (and major minor) fullscreen)
+      (error 'not-implemented))
   (let ((win (make-win32-window
               :module-handle (glop-win32:get-module-handle (cffi:null-pointer)))))
-    (when (and major minor)
-      (error "Specific context creation isn't supported yet. Leave :major and :minor as NIL."))
     ;; create window class
     (glop-win32:create-and-register-class (win32-window-module-handle win) "OpenGL")
     (setf (win32-window-class-name win) "OpenGL")
@@ -92,26 +92,26 @@
     ;; return created window
     win))
 
-(defmethod show-window ((win win32-window))
+(defun show-window (win)
   (glop-win32:show-window (win32-window-id win) :sw-show)
   (glop-win32:set-focus (win32-window-id win)))
 
-(defmethod hide-window ((win win32-window))
+(defun hide-window (win)
   (glop-win32::show-window (win32-window-id win) :sw-hide))
 
-(defmethod set-window-title ((win win32-window) title)
+(defun set-window-title (win title)
   (setf (slot-value win 'title) title)
   (glop-win32:set-window-text (win32-window-id win) title))
 
-(defmethod destroy-window ((win win32-window))
+(defun destroy-window (win)
   (glop-win32:destroy-window (win32-window-id win))
   (glop-win32:unregister-class (win32-window-class-name win)
                                  (win32-window-module-handle win)))
 
-(defmethod swap-buffers ((win win32-window))
+(defun swap-buffers (win)
   (glop-win32:swap-buffers (win32-window-dc win)))
 
-(defmethod next-event ((win win32-window) &key blocking)
+(defun %next-event (win &key blocking)
   (let ((evt (glop-win32:next-event (win32-window-id win) blocking)))
     (setf glop-win32:%event% nil)
     evt))
