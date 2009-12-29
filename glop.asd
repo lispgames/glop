@@ -16,6 +16,7 @@
                            :serial t
                            :components ((:file "xlib")
                                         (:file "glx")
+                                        (:file "display-ctrl")
                                         (:file "glop-x11")))
             #+win32(:module "win32"
                             :serial t

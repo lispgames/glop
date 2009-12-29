@@ -83,21 +83,3 @@
 	     screen-size)
 	  (values best-size width height))
 	(values 0 (display-width dpy screen) (display-height dpy screen)))))
-
-#|
-(defun get-available-video-modes (dpy screen max-count)
-  (let ((vis-list (null-pointer))
-	(rgb-list nil))
-    (with-foreign-object (vis-count :int)
-      (with-foreign-object (dummy visual-info)
-	(setf vis-list (get-visual-info dpy 0 dummy vis-count)))
-      (loop 
-	for vis-index below (mem-aref vis-count :int) 
-	with gl = (null-pointer)
-	with rgba = (null-pointer) do
-	  (glx-get-config dpy (mem-aref vis-list 'visual-info vis-index)
-			      (foreign-enum-value 'glx-attributes :use-gl) gl)
-	  (glx-get-config dpy (mem-aref vis-list 'visual-info vis-index)
-			      (foreign-enum-value 'glx-attributes :rgba) rgba)
-	  (unless (or (zerop (mem-aref gl :int)) (zerop (mem-aref rgba :int)))|#
-	    

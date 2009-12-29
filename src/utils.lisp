@@ -1,5 +1,11 @@
 (in-package #:glop)
 
+(defstruct (video-mode
+	     (:constructor make-video-mode (width height depth)))
+  (width 0 :type integer)
+  (height 0 :type integer)
+  (depth 0 :type integer))
+
 ;; base window structure
 ;; all implementations should inherit from it
 (defstruct window
@@ -7,7 +13,8 @@
   height
   title
   gl-context
-  pushed-event)
+  pushed-event
+  (previous-video-mode nil))
 
 ;; Helper macros from bordeaux-threads
 ;; http://common-lisp.net/project/bordeaux-threads/

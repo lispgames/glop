@@ -63,7 +63,6 @@
 (defdfun swap-buffers (window)
   "Swaps GL buffers."
   (error 'not-implemented))
->>>>>>> 5c37713718f5c386ca39728a77960eb2195cf1ef:src/glop.lisp
 
 ;;; Events handling
 (defstruct event
