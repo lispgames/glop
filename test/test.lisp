@@ -10,7 +10,7 @@
   (when (eql key #\Escape)
     (glop:push-close-event window))
   (when (and (eql key #\f) (eql state :press))
-    (glop::toggle-fullscreen window)))
+    (glop:toggle-fullscreen window)))
 
 (defmethod glop:on-button (window state button)
   (declare (ignore window state))

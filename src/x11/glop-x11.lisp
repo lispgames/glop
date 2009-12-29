@@ -172,7 +172,7 @@
 		   (previous-video-mode window-previous-video-mode)
 		   (fullscreen window-fullscreen))
       win
-    (when previous-video-mode
+    (when fullscreen
       (toggle-fullscreen win)
       (setf fullscreen nil))
     (glop-xlib:x-destroy-window display id)
