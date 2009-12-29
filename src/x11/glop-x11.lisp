@@ -121,10 +121,10 @@
 	(when fullscreen
 	  (setf previous-video-mode 
 		(multiple-value-bind (width height depth)
-		    (glop-xlib::get-current-display-mode display screen)
+		    (glop-xlib:get-current-display-mode display screen)
 		  (make-video-mode width height depth)))
-	  (glop-xlib::set-video-mode display screen
-				     (glop-xlib::get-closest-video-mode display screen 
+	  (glop-xlib:set-video-mode display screen
+				     (glop-xlib:get-closest-video-mode display screen 
 									width height 0) 0)
 	  (glop-xlib:make-fullscreen id display))
 	;; return created window
