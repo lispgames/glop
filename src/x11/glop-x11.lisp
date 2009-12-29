@@ -125,9 +125,17 @@
       ;; show created window
       (show-window win)
       (glop-xlib:x-flush (x11-window-display win))
-      ;; return created window
+      ;;make window fullscreen
       (when fullscreen
+	(x11-window-previous-video-mode 
+	 (multiple-value-bind (width height depth)
+	     (glop-xlib::get-current-display-mode (x11-window-display win) 
+						  (x11-window-screen win))
+	   (make-video-mode width height depth)) win)
+	(glop-xlib::set-video-mode (x11-window-display win) (x11-window-screen win)
+				   (glop-xlib::get-closest-video-mode 
 	(glop-xlib:make-fullscreen (x11-window-id win) (x11-window-display win)))
+      ;; return created window
       win)))
 
 (defmethod show-window ((win x11-window))

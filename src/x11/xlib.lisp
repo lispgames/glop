@@ -285,6 +285,22 @@
   (t (:default "libX11")))
 (use-foreign-library xlib)
 
+(defcfun ("XDisplayWidth" display-width) :int
+  (display-ptr :pointer)
+  (screen :int))
+
+(defcfun ("XDisplayHeight" display-height) :int
+  (display-ptr :pointer)
+  (screen :int))
+
+(defcfun ("XDefaultDepth" default-depth) :int
+  (display-ptr :pointer)
+  (screen :int))
+
+(defcfun ("XRootWindow" root-window) :int
+  (display-ptr :pointer)
+  (screen :int))
+
 (defcfun ("XSendEvent" x-send-event) :int
   (display-ptr :pointer)
   (win window)
@@ -296,6 +312,12 @@
   (display-ptr :pointer)
   (atom-name :string)
   (only-if-exists :boolean))
+
+(defcfun ("XGetVisualInfo" get-visual-info) :pointer
+  (display-ptr :pointer)
+  (vinfo-mask :int)
+  (vinfo-template :pointer)
+  (nitems-returned :int))
 
 (defcfun ("XOpenDisplay" %x-open-display) :pointer
   (display-name :string))

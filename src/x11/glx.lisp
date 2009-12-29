@@ -72,6 +72,12 @@
   (attrib_list (:pointer :int))
   (nelements (:pointer :int)))
 
+(defcfun ("glXGetConfig" glx-get-config) :int
+  (display-ptr :pointer)
+  (visual-info :pointer)
+  (attribute :int)
+  (value (:pointer :int)))
+
 (defcfun ("glXGetFBConfigAttrib" %glx-get-fb-config-attrib) :int
   (display-ptr :pointer)
   (fb-config :pointer)

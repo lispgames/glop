@@ -3,13 +3,19 @@
 ;; GL/OS interface
 (defvar gl-get-proc-address nil)
 
+(defstruct video-mode
+  (width 0 :type integer)
+  (height 0 :type integer)
+  (depth 0 :type integer))
+
 ;; Windows and GL context
 (defstruct window
   width
   height
   title
   gl-context
-  pushed-event)
+  pushed-event
+  (previous-video-mode nil))
 
 (defgeneric create-gl-context (window &key make-current major minor)
   (:documentation "Creates a new OpenGL context of the specified version for the provided window
