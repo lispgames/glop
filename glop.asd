@@ -11,7 +11,7 @@
            :serial t
            :components
            ((:file "package")
-            (:file "glop")
+            (:file "utils")
             #+unix(:module "x11"
                            :serial t
                            :components ((:file "xlib")
@@ -21,5 +21,6 @@
                             :serial t
                             :components ((:file "win32")
                                          (:file "wgl")
-                                         (:file "glop-win32")))))))
+                                         (:file "glop-win32")))
+            (:file "glop")))))
 

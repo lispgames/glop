@@ -3,61 +3,64 @@
 ;; GL/OS interface
 (defvar gl-get-proc-address nil)
 
-;; Windows and GL context
-(defstruct window
-  width
-  height
-  title
-  gl-context
-  pushed-event)
+;; Default implementation
+(defdfun create-gl-context (window &key make-current major minor)
+  "Creates a new OpenGL context of the specified version for the provided window
+   and optionally make it current. If major and minor are NIL old style context creation is
+   used."
+  (error 'not-implemented))
 
-(defgeneric create-gl-context (window &key make-current major minor)
-  (:documentation "Creates a new OpenGL context of the specified version for the provided window
-      and optionally make it current. If major and minor are NIL old style context creation is
-      used.I"))
+(defdfun destroy-gl-context (ctx)
+  "Detach and release the provided OpenGL context."
+  (error 'not-implemented))
 
-(defgeneric destroy-gl-context (ctx)
-  (:documentation "Detach and release the provided OpenGL context."))
+(defdfun attach-gl-context (window ctx)
+  "Makes CTX the current OpenGL context and attach it to WINDOW."
+  (error 'not-implemented))
 
-(defgeneric attach-gl-context (window ctx)
-  (:documentation "Makes CTX the current OpenGL context and attach it to WINDOW."))
+(defdfun detach-gl-context (ctx)
+  "Make the provided OpenGL context no longer current."
+  (error 'not-implemented))
 
-(defgeneric detach-gl-context (ctx)
-  (:documentation "Make the provided OpenGL context no longer current."))
+(defdfun create-window (title width height &key major minor
+                                                double-buffer
+                                                stereo
+                                                red-size
+                                                green-size
+                                                blue-size
+                                                alpha-size
+                                                depth-size
+                                                accum-buffer
+                                                accum-red-size
+                                                accum-green-size
+                                                accum-blue-size
+                                                stencil-buffer
+                                                stencil-size)
+  "Creates a new GL window using the provided visual attributes.
+   Major and minor arguments specify the context version to use, when NIL
+   (default value) old style gl context is created, otherwise framebuffer config
+    based context creation is used."
+  (error 'not-implemented))
 
-(defgeneric create-window (title width height &key major minor
-                                                   double-buffer
-                                                   stereo
-                                                   red-size
-                                                   green-size
-                                                   blue-size
-                                                   alpha-size
-                                                   depth-size
-                                                   accum-buffer
-                                                   accum-red-size
-                                                   accum-green-size
-                                                   accum-blue-size
-                                                   stencil-buffer
-                                                   stencil-size)
-  (:documentation "Creates a new GL window using the provided visual attributes.
-                   Major and minor arguments specify the context version to use, when NIL
-                   (default value) old style gl context is created, otherwise framebuffer config
-                   based context creation is used."))
+(defdfun destroy-window (window)
+  "Destroy the provided GL window."
+  (error 'not-implemented))
 
-(defgeneric destroy-window (window)
-  (:documentation "Destroy the provided GL window."))
+(defdfun show-window (window)
+  "Make WINDOW visible."
+  (error 'not-implemented))
 
-(defgeneric show-window (window)
-  (:documentation "Make WINDOW visible."))
+(defdfun hide-window (window)
+  "Make WINDOW not visible."
+  (error 'not-implemented))
 
-(defgeneric hide-window (window)
-  (:documentation "Make WINDOW not visible."))
+(defdfun set-window-title (window title)
+  "Set WINDOW title to TITLE."
+  (error 'not-implemented))
 
-(defgeneric set-window-title (window title)
-  (:documentation "Set WINDOW title to TITLE."))
-
-(defgeneric swap-buffers (window)
-  (:documentation "Swaps GL buffers."))
+(defdfun swap-buffers (window)
+  "Swaps GL buffers."
+  (error 'not-implemented))
 
 ;;; Events handling
 (defstruct event
@@ -70,22 +73,27 @@
 )
 
 (defun push-event (window evt)
+  "Artificially push an event into the event processing system.
+   The pushed event is internal to glaw and never makes it to the underlying
+   system."
   (setf (window-pushed-event window) evt))
 
 (defun push-close-event (window)
+  "Push an artificial :close event into the event processing system."
   (push-event window (make-event :type :close)))
 
-(defgeneric next-event (window &key blocking)
-  (:documentation "Returns next available event for manual processing.
-   If :blocking is true wait until an event occur."))
-
-(defmethod next-event :around (window &key blocking)
-  (declare (ignorable blocking))
+(defdfun next-event (window &key blocking)
+  "Returns next available event for manual processing.
+   If :blocking is true wait until an event occur."
   (let ((pushed-evt (window-pushed-event window)))
     (if pushed-evt
         (progn (setf (window-pushed-event window) nil)
                pushed-evt)
-        (call-next-method))))
+        (%next-event window :blocking blocking))))
+
+(defdfun %next-event (window &key blocking)
+  "Real next-event implementation."
+  (error 'not-implemented))
 
 ;; method based event handling
 (defun dispatch-events (window &key blocking)
@@ -130,7 +138,8 @@
                   t))))
 
 (defmacro with-window ((win-sym title width height &key major minor fullscreen) &body body)
-  `(let ((,win-sym (create-window ,title ,width ,height :major ,major :minor ,minor :fullscreen ,fullscreen)))
+  `(let ((,win-sym (create-window ,title ,width ,height
+                                  :major ,major :minor ,minor :fullscreen ,fullscreen)))
      (when ,win-sym
        (unwind-protect (progn ,@body)
          (destroy-window ,win-sym)))))
