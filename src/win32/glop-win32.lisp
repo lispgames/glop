@@ -1,7 +1,8 @@
 ;;; GLOP implementation
 (in-package #:glop)
 
-(setf gl-get-proc-address #'glop-wgl:wgl-get-proc-address)
+(defun gl-get-proc-address (proc-name)
+  (glop-wgl:wgl-get-proc-address proc-name))
 
 (defstruct (win32-window (:include window))
   module-handle

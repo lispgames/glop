@@ -1,7 +1,9 @@
 (in-package #:glop)
 
 ;; GL/OS interface
-(defvar gl-get-proc-address nil)
+(defdfun gl-get-proc-address (proc-name)
+  "Get foreign pointer to the GL extension designed by PROC-NAME."
+  (error 'not-implemented))
 
 ;; Default implementation
 (defdfun create-gl-context (window &key make-current major minor)

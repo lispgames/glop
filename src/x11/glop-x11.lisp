@@ -1,7 +1,8 @@
 ;; GLOP implementation
 (in-package #:glop)
 
-(setf gl-get-proc-address #'glop-glx:glx-get-proc-address)
+(defun gl-get-proc-address (proc-name)
+  (glop-glx:glx-get-proc-address proc-name))
 
 (defstruct (x11-window (:include window))
   display      ;; X display ptr
