@@ -129,8 +129,8 @@
                   `(progn ,@idle-forms)
                   t))))
 
-(defmacro with-window ((win-sym title width height &key major minor) &body body)
-  `(let ((,win-sym (create-window ,title ,width ,height :major ,major :minor ,minor)))
+(defmacro with-window ((win-sym title width height &key major minor fullscreen) &body body)
+  `(let ((,win-sym (create-window ,title ,width ,height :major ,major :minor ,minor :fullscreen ,fullscreen)))
      (when ,win-sym
        (unwind-protect (progn ,@body)
          (destroy-window ,win-sym)))))

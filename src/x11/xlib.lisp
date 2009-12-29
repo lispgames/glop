@@ -285,6 +285,18 @@
   (t (:default "libX11")))
 (use-foreign-library xlib)
 
+(defcfun ("XSendEvent" x-send-event) :int
+  (display-ptr :pointer)
+  (win window)
+  (propogate :boolean)
+  (event-mask :long)
+  (event-send :pointer))
+
+(defcfun ("XInternAtom" x-intern-atom) x-atom
+  (display-ptr :pointer)
+  (atom-name :string)
+  (only-if-exists :boolean))
+
 (defcfun ("XOpenDisplay" %x-open-display) :pointer
   (display-name :string))
 
@@ -310,6 +322,22 @@
   (display-ptr :pointer) (parent window) (x :int) (y :int) (width :int) (height :int)
   (border-width :int) (depth :int) (win-class x-window-class) (visual :pointer)
   (value-mask x-window-attributes-flags) (attributes set-window-attributes))
+
+(defun make-fullscreen (window dpy)
+  (let ((wm-state (x-intern-atom dpy "_NET_WM_STATE" nil))
+	(fullscreen (x-intern-atom dpy "_NET_WM_STATE_FULLSCREEN" nil)))
+    (with-foreign-object (msg 'x-event)
+      (with-foreign-slots ((type) msg x-event) 
+	(setf type (foreign-enum-value 'x-event-name :client-message))
+	(with-foreign-slots ((win message-type format data) msg x-client-message-event)	
+	(setf win window)
+	(setf message-type wm-state)
+	(setf format 32)
+	(with-foreign-slots ((l) data x-client-message-event-data)
+	  (setf (mem-aref l :long 0) 1)
+	  (setf (mem-aref l :long 1) fullscreen)
+	  (setf (mem-aref l :long 2) 0))))  
+      (x-send-event dpy (x-default-root-window dpy) nil (foreign-bitfield-value 'x-event-mask-flags '(:structure-notify-mask)) msg))))
 
 (defun x-open-display (display-name)
   (let ((display (%x-open-display display-name)))

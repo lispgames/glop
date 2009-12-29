@@ -58,7 +58,7 @@
 (defmethod detach-gl-context ((ctx glx-context))
   (glop-glx:glx-release-context (glx-context-display ctx)))
 
-(defmethod create-window (title width height &key major minor
+(defmethod create-window (title width height &key major minor fullscreen
                                                   (double-buffer t)
                                                   stereo
                                                   (red-size 0)
@@ -126,6 +126,8 @@
       (show-window win)
       (glop-xlib:x-flush (x11-window-display win))
       ;; return created window
+      (when fullscreen
+	(glop-xlib::make-fullscreen (x11-window-id win) (x11-window-display win)))
       win)))
 
 (defmethod show-window ((win x11-window))

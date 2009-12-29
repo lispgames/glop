@@ -118,6 +118,28 @@
          (gl:flush)
          (glop:swap-buffers win))))
 
+(defun test-gl-hello-fullscreen ()
+  (glop:with-window (win "Glop test window" 800 600 :fullscreen t)
+    (format t "Created window: ~S~%" win)
+    ;; GL init
+    (gl:clear-color 0.3 0.3 1.0 0)
+    ;; setup view
+    (gl:matrix-mode :projection)
+    (gl:load-identity)
+    (gl:ortho 0 1 0 1 -1 1)
+    ;; idle loop, we draw here anyway
+    (loop while (glop:dispatch-events win :blocking nil) do
+         ;; rendering
+         (gl:clear :color-buffer)
+         (gl:color 1 1 1)
+         (gl:with-primitive :polygon
+           (gl:vertex 0.25 0.25 0)
+           (gl:vertex 0.75 0.25 0)
+           (gl:vertex 0.75 0.75 0)
+           (gl:vertex 0.25 0.75 0))
+         (gl:flush)
+         (glop:swap-buffers win))))
+
 (defun test-gl-hello-gl3 (&optional (major 3) (minor 1))
   (glop:with-window (win "Glop test window" 800 600 :major major :minor minor)
     (format t "Created window: ~S~%" win)
