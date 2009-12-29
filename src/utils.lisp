@@ -14,6 +14,7 @@
   title
   gl-context
   pushed-event
+  (fullscreen nil)
   (previous-video-mode nil))
 
 ;; Helper macros from bordeaux-threads

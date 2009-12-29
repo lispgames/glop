@@ -6,10 +6,11 @@
 (in-package #:glop-test)
 
 (defmethod glop:on-key (window state key)
-  (declare (ignore state))
   (format t "Key: ~S~%" key)
   (when (eql key #\Escape)
-    (glop:push-close-event window)))
+    (glop:push-close-event window))
+  (when (and (eql key #\f) (eql state :press))
+    (glop::toggle-fullscreen window)))
 
 (defmethod glop:on-button (window state button)
   (declare (ignore window state))
@@ -31,7 +32,6 @@
 (defmethod glop:on-close (window)
   (declare (ignore window))
   (format t "Close !!~%"))
-
 
 (defun test-manual-create ()
   (let ((win (glop:create-window "Glop test window" 800 600)))

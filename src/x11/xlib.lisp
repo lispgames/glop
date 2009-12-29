@@ -5,7 +5,7 @@
            #:x-open-display #:x-create-window #:x-default-root-window
            #:x-store-name #:x-flush #:x-map-raised #:x-unmap-window
            #:x-destroy-window #:x-close-display #:x-next-event
-           #:x-free #:make-fullscreen #:get-closest-video-mode
+           #:x-free #:set-fullscreen #:get-closest-video-mode
 	   #:get-current-display-mode #:set-video-mode))
 
 (in-package #:glop-xlib)
@@ -346,7 +346,7 @@
   (border-width :int) (depth :int) (win-class x-window-class) (visual :pointer)
   (value-mask x-window-attributes-flags) (attributes set-window-attributes))
 
-(defun make-fullscreen (window dpy)
+(defun set-fullscreen (window dpy be-fullscreen)
   (let ((wm-state (x-intern-atom dpy "_NET_WM_STATE" nil))
 	(fullscreen (x-intern-atom dpy "_NET_WM_STATE_FULLSCREEN" nil)))
     (with-foreign-object (msg 'x-event)
@@ -357,7 +357,7 @@
 	(setf message-type wm-state)
 	(setf format 32)
 	(with-foreign-slots ((l) data x-client-message-event-data)
-	  (setf (mem-aref l :long 0) 1)
+	  (setf (mem-aref l :long 0) (if be-fullscreen 1 0))
 	  (setf (mem-aref l :long 1) fullscreen)
 	  (setf (mem-aref l :long 2) 0))))  
       (x-send-event dpy (x-default-root-window dpy) nil (foreign-bitfield-value 'x-event-mask-flags '(:structure-notify-mask)) msg))))
