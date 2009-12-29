@@ -285,7 +285,7 @@
   (t (:default "libX11")))
 (use-foreign-library xlib)
 
-(defcfun ("XOpenDisplay" x-open-display) :pointer
+(defcfun ("XOpenDisplay" %x-open-display) :pointer
   (display-name :string))
 
 (defcfun("XCloseDisplay" x-close-display) :pointer
@@ -311,6 +311,12 @@
   (border-width :int) (depth :int) (win-class x-window-class) (visual :pointer)
   (value-mask x-window-attributes-flags) (attributes set-window-attributes))
 
+(defun x-open-display (display-name)
+  (let ((display (%x-open-display display-name)))
+    (when (null-pointer-p display)
+      (error "Unable to open display"))
+    display))
+
 (defun x-create-window (dpy parent width height visual-infos)
   (let ((root-win (x-default-root-window dpy)))
     (with-foreign-slots ((visual-id visual depth) visual-infos visual-info)
@@ -326,10 +332,9 @@
                                   :visibility-change-mask
                                   :pointer-motion-mask)))
             (%x-create-window dpy parent 0 0 width height 0
-                              depth :input-output visual
-                              '(:cw-colormap :cw-event-mask)
-                              win-attrs)))))))
-
+			      depth :input-output visual
+			      '(:cw-colormap :cw-event-mask)
+			      win-attrs)))))))
 
 (defcfun ("XDestroyWindow" x-destroy-window) :int
   (display-ptr :pointer) (win window))

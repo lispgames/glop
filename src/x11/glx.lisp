@@ -78,9 +78,15 @@
   (attribute :int)
   (value (:pointer :int)))
 
-(defcfun ("glXGetVisualFromFBConfig" glx-get-visual-from-fb-config) visual-info
+(defcfun ("glXGetVisualFromFBConfig" %glx-get-visual-from-fb-config) visual-info
   (display-ptr :pointer)
   (fb-config (:pointer fb-config)))
+
+(defun glx-get-visual-from-fb-config (display-ptr fb-config)
+  (let ((vis (%glx-get-visual-from-fb-config display-ptr fb-config)))
+    (when (null-pointer-p vis) 
+      (error "Unable to create visual info"))
+    vis))
 
 (defun glx-get-fb-config-attrib (dpy fb-config attrib)
   (with-foreign-object (value :int)
@@ -101,6 +107,8 @@
                        (t attr))))))
       (setf (mem-aref atts :int (length attribs-list)) 0)
       (let ((fb-configs (%glx-choose-fb-config dpy screen atts fb-config-count)))
+	(when (= (mem-aref fb-config-count :int) 0)
+	  (error "Unable to find any suitable frame buffer configs"))
         (loop
           for index below (mem-ref fb-config-count :int)
           with vi = (null-pointer)
@@ -138,7 +146,10 @@
                   (keyword (foreign-enum-value 'glx-attributes attr))
                   (t attr))))
     (setf (mem-aref atts :int (length attribs)) 0)
-    (%glx-choose-visual dpy screen atts)))
+    (let ((vis (%glx-choose-visual dpy screen atts)))
+      (when (null-pointer-p vis) 
+	(error "Unable to create visual info"))
+      vis)))
 
 (defctype glx-context :pointer)
 
@@ -147,7 +158,10 @@
   (redirect bool))
 
 (defun glx-create-context (dpy visual)
-  (%glx-create-context dpy visual (null-pointer) 1))
+  (let ((ctx (%glx-create-context dpy visual (null-pointer) 1)))
+    (when (null-pointer-p ctx) 
+      (error "Unable to create context"))
+    ctx))
 
 (defmethod glx-create-specific-context (dpy fbc context-attribs)
   (with-foreign-object ( atts :int (1+ (length context-attribs)))
@@ -162,13 +176,16 @@
     (let ((ptr (glx-get-proc-address "glXCreateContextAttribsARB")))
       (when (null-pointer-p ptr)
         (error "glXCreateContextAttribsARB unavailable"))
-      (cffi:foreign-funcall-pointer ptr ()
-                                    :pointer dpy
-                                    :pointer fbc
-                                    :pointer (null-pointer)
-                                    :int 1
-                                    (:pointer :int) atts
-                                    :pointer))))
+      (let ((ctx (cffi:foreign-funcall-pointer ptr ()
+					       :pointer dpy
+					       :pointer fbc
+					       :pointer (null-pointer)
+					       :int 1
+					       (:pointer :int) atts
+					       :pointer)))
+	(when (null-pointer-p ctx) 
+	  (error "Unable to create context"))
+	ctx))))
 
 (defcfun ("glXDestroyContext" glx-destroy-context) :void
   (display-ptr :pointer) (context glx-context))
