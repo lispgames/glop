@@ -127,7 +127,7 @@
       (glop-xlib:x-flush (x11-window-display win))
       ;; return created window
       (when fullscreen
-	(glop-xlib::make-fullscreen (x11-window-id win) (x11-window-display win)))
+	(glop-xlib:make-fullscreen (x11-window-id win) (x11-window-display win)))
       win)))
 
 (defmethod show-window ((win x11-window))

@@ -1,7 +1,7 @@
 (defpackage :glop-test
   (:use #:cl)
   (:export #:test-manual-create #:test-multiple-contexts #:test-with-window #:test-manual-events
-           #:test-gl-hello #:test-gl-hello-gl3))
+           #:test-gl-hello #:test-gl-hello-fullscreen #:test-gl-hello-gl3))
 
 (in-package #:glop-test)
 
