@@ -8,9 +8,7 @@
 (defmethod glop:on-key (window state key)
   (format t "Key: ~S~%" key)
   (when (eql key #\Escape)
-    (glop:push-close-event window))
-  (when (and (eql key #\f) (eql state :press))
-    (glop:toggle-fullscreen window)))
+    (glop:push-close-event window)))
 
 (defmethod glop:on-button (window state button)
   (declare (ignore window state))
@@ -119,6 +117,10 @@
          (glop:swap-buffers win))))
 
 (defun test-gl-hello-fullscreen ()
+  (defmethod glop:on-key :after (window state key)
+    (format t "Key: ~S~%" key)
+    (when (and (eql key #\f) (eql state :press))
+      (glop:toggle-fullscreen window)))
   (glop:with-window (win "Glop test window" 800 600 :fullscreen t)
     (format t "Created window: ~S~%" win)
     ;; GL init
@@ -162,3 +164,47 @@
            (gl:vertex 0.25 0.75 0))
          (gl:flush)
          (glop:swap-buffers win))))
+
+(defun test-multiple-windows ()
+  (let ((window-1 (glop:create-window "window 1" 800 600))
+	(window-2 (glop:create-window "window 2" 800 600)))
+    (when (and window-1 window-2)
+      (unwind-protect 
+	   (progn
+	     (glop:attach-gl-context window-1 (glop:window-gl-context window-1))
+	     (gl:clear-color 0.3 0.3 1.0 0)
+	     ;; setup view
+	     (gl:matrix-mode :projection)
+	     (gl:load-identity)
+	     (gl:ortho 0 1 0 1 -1 1)
+	     (glop:attach-gl-context window-2 (glop:window-gl-context window-2))
+	     (gl:clear-color 0.3 0.3 1.0 0)
+	     ;; setup view
+	     (gl:matrix-mode :projection)
+	     (gl:load-identity)
+	     (gl:ortho 0 1 0 1 -1 1)
+	     (loop 
+	       while (and (glop:dispatch-events window-1 :blocking nil)
+			 (glop:dispatch-events window-2 :blocking nil)) do
+			   (glop:attach-gl-context window-1 (glop:window-gl-context window-1))
+			   (gl:clear :color-buffer)
+			   (gl:color 1 1 1)
+			   (gl:with-primitive :polygon
+			     (gl:vertex 0.25 0.25 0)
+			     (gl:vertex 0.75 0.25 0)
+			     (gl:vertex 0.75 0.75 0)
+			     (gl:vertex 0.25 0.75 0))
+			   (gl:flush)
+			   (glop:swap-buffers window-1)
+			   (glop:attach-gl-context window-2 (glop:window-gl-context window-2))
+			   (gl:clear :color-buffer)
+			   (gl:color 1 1 1)
+			   (gl:with-primitive :polygon
+			     (gl:vertex 0.25 0.25 0)
+			     (gl:vertex 0.75 0.25 0)
+			     (gl:vertex 0.75 0.75 0)
+			     (gl:vertex 0.25 0.75 0))
+			   (gl:flush)
+			   (glop:swap-buffers window-2)))
+	(glop:destroy-window window-1)
+	(glop:destroy-window window-2)))))
