@@ -1,3 +1,5 @@
+;;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; Base: 10; indent-tabs-mode: nil -*-
+
 (defpackage :glop-test
   (:use #:cl)
   (:export #:test-manual-create #:test-multiple-contexts #:test-with-window #:test-manual-events

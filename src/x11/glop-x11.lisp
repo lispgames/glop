@@ -1,3 +1,5 @@
+;;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; Base: 10; indent-tabs-mode: nil -*-
+
 ;; GLOP implementation
 (in-package #:glop)
 
@@ -59,101 +61,101 @@
                                                   (accum-green-size 0)
                                                   (accum-blue-size 0)
                                                   stencil-buffer (stencil-size 0))
-  (without-fp-traps    
+  (without-fp-traps
     (let ((win (make-x11-window :display (glop-xlib::x-open-display "")
                                 :screen 0)))
       ;;GLX attributes
       (with-accessors (
-		       (display  x11-window-display)
-		       (screen  x11-window-screen)
-		       (id x11-window-id)
-		       (visual-infos x11-window-visual-infos)
-		       (fb-config x11-window-fb-config)
-		       (win-width window-width)
-		       (win-height window-height)
-		       (win-title window-title)
-		       (gl-ctx window-gl-context))		       
-	  win
-	(let ((attribs (list :rgba t
-			     :red-size red-size
-			     :green-size green-size
-			     :blue-size blue-size
-			     :alpha-size alpha-size
-			     :depth-size depth-size
-			     :double-buffer double-buffer
-			     :stereo stereo)))
-	  (when accum-buffer
-	    (push accum-red-size attribs)
-	    (push :accum-red-size attribs)
-	    (push accum-green-size attribs)
-	    (push :accum-green-size attribs)
-	    (push accum-blue-size attribs)
-	    (push :accum-blue-size attribs))
-	  (when stencil-buffer
-	    (push stencil-size attribs)
-	    (push :stencil-size attribs))
-	  ;; if major *and* minor are specified use fb config code path
-	  ;; otherwise just use old style visual selection and context creation
-	  (if (and major minor)
-	      ;;create fb-config and visual
-	      (setf fb-config (glop-glx:glx-choose-fb-config display screen attribs)
-		    visual-infos (glop-glx:glx-get-visual-from-fb-config display fb-config))
-	      ;; create old style visual
-	      (setf visual-infos (glop-glx:glx-choose-visual display screen attribs))))
-	;; create window
-	(setf id (glop-xlib:x-create-window display
-					    (glop-xlib:x-default-root-window display)
-					    width height visual-infos))
-	(setf win-width width)
-	(setf win-height height)
-	;; set title
-	(glop-xlib:x-store-name display id title)
-	(setf win-title title)
-	;; create a GL context and make it current same as for the visual regarding to major/minor
-	;; values
-	(setf gl-ctx (create-gl-context win :major major :minor minor
-					:make-current t))
-	;; show created window
-	(show-window win)
-	(glop-xlib:x-flush display)
-	;;make window fullscreen
-	(when fullscreen
-	  (toggle-fullscreen win))
-	  ;; return created window
-	win))))
+                       (display  x11-window-display)
+                       (screen  x11-window-screen)
+                       (id x11-window-id)
+                       (visual-infos x11-window-visual-infos)
+                       (fb-config x11-window-fb-config)
+                       (win-width window-width)
+                       (win-height window-height)
+                       (win-title window-title)
+                       (gl-ctx window-gl-context))
+          win
+        (let ((attribs (list :rgba t
+                             :red-size red-size
+                             :green-size green-size
+                             :blue-size blue-size
+                             :alpha-size alpha-size
+                             :depth-size depth-size
+                             :double-buffer double-buffer
+                             :stereo stereo)))
+          (when accum-buffer
+            (push accum-red-size attribs)
+            (push :accum-red-size attribs)
+            (push accum-green-size attribs)
+            (push :accum-green-size attribs)
+            (push accum-blue-size attribs)
+            (push :accum-blue-size attribs))
+          (when stencil-buffer
+            (push stencil-size attribs)
+            (push :stencil-size attribs))
+          ;; if major *and* minor are specified use fb config code path
+          ;; otherwise just use old style visual selection and context creation
+          (if (and major minor)
+              ;;create fb-config and visual
+              (setf fb-config (glop-glx:glx-choose-fb-config display screen attribs)
+                    visual-infos (glop-glx:glx-get-visual-from-fb-config display fb-config))
+              ;; create old style visual
+              (setf visual-infos (glop-glx:glx-choose-visual display screen attribs))))
+        ;; create window
+        (setf id (glop-xlib:x-create-window display
+                                            (glop-xlib:x-default-root-window display)
+                                            width height visual-infos))
+        (setf win-width width)
+        (setf win-height height)
+        ;; set title
+        (glop-xlib:x-store-name display id title)
+        (setf win-title title)
+        ;; create a GL context and make it current same as for the visual regarding to major/minor
+        ;; values
+        (setf gl-ctx (create-gl-context win :major major :minor minor
+                                        :make-current t))
+        ;; show created window
+        (show-window win)
+        (glop-xlib:x-flush display)
+        ;;make window fullscreen
+        (when fullscreen
+          (toggle-fullscreen win))
+          ;; return created window
+        win))))
 
 (defun toggle-fullscreen (win)
   (with-accessors (
-		   (display  x11-window-display)
-		   (screen  x11-window-screen)
-		   (id x11-window-id)
-		   (previous-video-mode window-previous-video-mode)
-		   (win-width window-width)
-		   (win-height window-height)
-		   (fullscreen window-fullscreen))
+                   (display  x11-window-display)
+                   (screen  x11-window-screen)
+                   (id x11-window-id)
+                   (previous-video-mode window-previous-video-mode)
+                   (win-width window-width)
+                   (win-height window-height)
+                   (fullscreen window-fullscreen))
       win
     (if fullscreen
-	(progn
-	  (with-accessors (
-			   (height video-mode-height)
-			   (width video-mode-width))
-	      previous-video-mode
-	    (glop-xlib:set-fullscreen id display nil)
-	    (glop-xlib:set-video-mode display screen
-				      (glop-xlib:get-closest-video-mode display screen 
-									width height 0) 0))
-	  (setf fullscreen nil))
-	(progn
-	  (setf previous-video-mode 
-		(multiple-value-bind (width height depth)
-		    (glop-xlib:get-current-display-mode display screen)
-		  (make-video-mode width height depth)))
-	  (glop-xlib:set-video-mode display screen
-				    (glop-xlib:get-closest-video-mode display screen 
-								      win-width win-height 0) 0)
-	  (glop-xlib:set-fullscreen id display t)
-	  (setf fullscreen t)))))
-	
+        (progn
+          (with-accessors (
+                           (height video-mode-height)
+                           (width video-mode-width))
+              previous-video-mode
+            (glop-xlib:set-fullscreen id display nil)
+            (glop-xlib:set-video-mode display screen
+                                      (glop-xlib:get-closest-video-mode display screen
+                                                                        width height 0) 0))
+          (setf fullscreen nil))
+        (progn
+          (setf previous-video-mode
+                (multiple-value-bind (width height depth)
+                    (glop-xlib:get-current-display-mode display screen)
+                  (make-video-mode width height depth)))
+          (glop-xlib:set-video-mode display screen
+                                    (glop-xlib:get-closest-video-mode display screen
+                                                                      win-width win-height 0) 0)
+          (glop-xlib:set-fullscreen id display t)
+          (setf fullscreen t)))))
+
 (defun show-window (win)
   (glop-xlib:x-map-raised (x11-window-display win) (x11-window-id win)))
 
@@ -166,11 +168,11 @@
 
 (defun destroy-window (win)
   (with-accessors (
-		   (display  x11-window-display)
-		   (screen  x11-window-screen)
-		   (id x11-window-id)
-		   (previous-video-mode window-previous-video-mode)
-		   (fullscreen window-fullscreen))
+                   (display  x11-window-display)
+                   (screen  x11-window-screen)
+                   (id x11-window-id)
+                   (previous-video-mode window-previous-video-mode)
+                   (fullscreen window-fullscreen))
       win
     (when fullscreen
       (toggle-fullscreen win)

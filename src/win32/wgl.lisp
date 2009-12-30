@@ -1,3 +1,5 @@
+;;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; Base: 10; indent-tabs-mode: nil -*-
+
 ;; WGL bindings
 (defpackage :glop-wgl
   (:use #:cl #:cffi #:glop-win32)

@@ -1,4 +1,4 @@
-;;;; -*- Mode: Lisp; indent-tabs-mode: nil -*-
+;;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; Base: 10; indent-tabs-mode: nil -*-
 
 (defsystem glop
   :license "MIT"
