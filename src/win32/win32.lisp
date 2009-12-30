@@ -1,3 +1,5 @@
+;;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; Base: 10; indent-tabs-mode: nil -*-
+
 ;; Win32  bindings
 (defpackage :glop-win32
   (:use #:cl #:cffi)

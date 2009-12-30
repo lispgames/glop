@@ -1,11 +1,12 @@
+;;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; Base: 10; indent-tabs-mode: nil -*-
+
 (in-package #:glop)
 
-;; GL/OS interface
+;; Default implementation
 (defdfun gl-get-proc-address (proc-name)
   "Get foreign pointer to the GL extension designed by PROC-NAME."
   (error 'not-implemented))
 
-;; Default implementation
 (defdfun create-gl-context (window &key make-current major minor)
   "Creates a new OpenGL context of the specified version for the provided window
    and optionally make it current. If major and minor are NIL old style context creation is
@@ -46,6 +47,10 @@
 
 (defdfun destroy-window (window)
   "Destroy the provided GL window."
+  (error 'not-implemented))
+
+(defdfun toggle-fullscreen (window)
+  "Switch display resolution to WINDOW dimensions and make WINDOW fullscreen."
   (error 'not-implemented))
 
 (defdfun show-window (window)

@@ -1,3 +1,5 @@
+;;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; Base: 10; indent-tabs-mode: nil -*-
+
 ;;; GLX bindings
 (defpackage :glop-glx
   (:use #:cl #:cffi #:glop-xlib)
@@ -113,8 +115,8 @@
                        (t attr))))))
       (setf (mem-aref atts :int (length attribs-list)) 0)
       (let ((fb-configs (%glx-choose-fb-config dpy screen atts fb-config-count)))
-	(when (= (mem-aref fb-config-count :int) 0)
-	  (error "Unable to find any suitable frame buffer configs"))
+        (when (= (mem-aref fb-config-count :int) 0)
+          (error "Unable to find any suitable frame buffer configs"))
         (loop
           for index below (mem-ref fb-config-count :int)
           with vi = (null-pointer)
@@ -154,7 +156,7 @@
     (setf (mem-aref atts :int (length attribs)) 0)
     (let ((vis (%glx-choose-visual dpy screen atts)))
       (when (null-pointer-p vis) 
-	(error "Unable to create visual info"))
+        (error "Unable to create visual info"))
       vis)))
 
 (defctype glx-context :pointer)
@@ -183,15 +185,15 @@
       (when (null-pointer-p ptr)
         (error "glXCreateContextAttribsARB unavailable"))
       (let ((ctx (cffi:foreign-funcall-pointer ptr ()
-					       :pointer dpy
-					       :pointer fbc
-					       :pointer (null-pointer)
-					       :int 1
-					       (:pointer :int) atts
-					       :pointer)))
-	(when (null-pointer-p ctx) 
-	  (error "Unable to create context"))
-	ctx))))
+                                               :pointer dpy
+                                               :pointer fbc
+                                               :pointer (null-pointer)
+                                               :int 1
+                                               (:pointer :int) atts
+                                               :pointer)))
+        (when (null-pointer-p ctx) 
+          (error "Unable to create context"))
+        ctx))))
 
 (defcfun ("glXDestroyContext" glx-destroy-context) :void
   (display-ptr :pointer) (context glx-context))
