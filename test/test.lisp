@@ -169,7 +169,7 @@
   (let ((window-1 (glop:create-window "window 1" 800 600))
 	(window-2 (glop:create-window "window 2" 800 600)))
     (when (and window-1 window-2)
-      (unwind-protect 
+      (unwind-protect
 	   (progn
 	     (glop:attach-gl-context window-1 (glop:window-gl-context window-1))
 	     (gl:clear-color 0.3 0.3 1.0 0)
@@ -183,7 +183,7 @@
 	     (gl:matrix-mode :projection)
 	     (gl:load-identity)
 	     (gl:ortho 0 1 0 1 -1 1)
-	     (loop 
+	     (loop
 	       while (and (glop:dispatch-events window-1 :blocking nil)
 			 (glop:dispatch-events window-2 :blocking nil)) do
 			   (glop:attach-gl-context window-1 (glop:window-gl-context window-1))
