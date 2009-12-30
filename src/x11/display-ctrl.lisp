@@ -69,7 +69,7 @@
       (do
 	  ((index 0 (1+ index))
 	   (size size-list (inc-pointer size (foreign-type-size 'xrr-screen-size))))
-	  ((= index (mem-aref size-count :int)))
+	  ((>= index (mem-aref size-count :int)))
 	(with-foreign-slots ((width height) size screen-size)
 	  (let ((match (+ (* (- desired-width width) (- desired-width width))
 			  (* (- desired-height height) (- desired-height height)))))
