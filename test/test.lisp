@@ -218,4 +218,4 @@
                  ((eq win window-1) (setf windows (remove window-1 windows))
                   (glop:destroy-window window-1))
                  ((eq win window-2) (setf windows (remove window-2 windows))
-                  (glop:destroy-window window-2))))))))))
+                  (glop:destroy-window window-2)))))))))
