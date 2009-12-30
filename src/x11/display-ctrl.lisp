@@ -79,7 +79,7 @@
     (if (>= best-size 0)
 	(with-foreign-slots 
 	    ((width height) (inc-pointer size-list 
-					 (* (1+ best-size) (foreign-type-size 'xrr-screen-size)))
+					 (* best-size (foreign-type-size 'xrr-screen-size)))
 	     screen-size)
 	  (values best-size width height))
 	(values 0 (display-width dpy screen) (display-height dpy screen)))))

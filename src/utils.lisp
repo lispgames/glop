@@ -33,6 +33,22 @@
      (setf (documentation ',name 'function)
            (or (documentation ',name 'function) ,doc))))
 
+;;; Create multiple foreign object pointers at once convience macro
+;;; Usage example:
+;;; (with-foreign-objects ((i j k) :int) 
+;;;   (setf (cffi:mem-aref i :int) 0)
+;;;   (setf (cffi:mem-aref j :int) 0)
+;;;   (setf (cffi:mem-aref k :int) 0))
+;;;***NOTE NOT FULLY TESTED NEEDS REVIEW***
+(defmacro with-foreign-objects ((object-list type) &body body)
+  (let ((items (gensym)))
+    `(with-foreign-object (,items ,type ,(length object-list))
+       (let ,(loop 
+	       for index from 0 
+	       for item in object-list 
+	       collect `(,item (inc-pointer ,items (* ,index (foreign-type-size ,type)))))
+	 ,@body))))
+
 ;;; Execute BODY with floating-point traps disabled. This seems to be
 ;;; necessary on (at least) Linux/x86-64 where SIGFPEs are signalled
 ;;; when creating making a GLX context active.
