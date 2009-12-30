@@ -8,7 +8,8 @@
            #:x-store-name #:x-flush #:x-map-raised #:x-unmap-window
            #:x-destroy-window #:x-close-display #:x-next-event
            #:x-free #:set-fullscreen #:get-closest-video-mode
-           #:get-current-display-mode #:set-video-mode))
+           #:get-current-display-mode #:set-video-mode
+           #:get-available-display-modes))
 
 (in-package #:glop-xlib)
 
@@ -320,7 +321,7 @@
   (display-ptr :pointer)
   (vinfo-mask :int)
   (vinfo-template :pointer)
-  (nitems-returned :int))
+  (nitems-returned :pointer))
 
 (defcfun ("XOpenDisplay" %x-open-display) :pointer
   (display-name :string))

@@ -83,3 +83,32 @@
 	     screen-size)
 	  (values best-size width height))
 	(values 0 (display-width dpy screen) (display-height dpy screen)))))
+
+(defun get-available-display-modes (dpy screen)
+  (with-foreign-objects ((count :int) (gl :int) (rgba :int) (dummy 'visual-info))
+    (let ((rtn-list (get-visual-info dpy 0 dummy count))
+	  (sc (xrr-get-screen-info dpy (root-window dpy screen)))
+	  (depth-list nil)
+	  (resolution-list nil))
+      (unless (null-pointer-p rtn-list)
+	(do
+	    ((index 0 (1+ index))
+	     (vi rtn-list (inc-pointer vi (foreign-type-size 'visual-info))))
+	    ((>= index (mem-aref count :int)))
+	  (glop-glx::glx-get-config dpy vi 
+				    (foreign-enum-value 'glop-glx::glx-attributes :use-gl) gl)
+	  (glop-glx::glx-get-config dpy vi 
+				    (foreign-enum-value 'glop-glx::glx-attributes :rgba) rgba)
+	  (when (and (= 1 (mem-aref gl :int) (mem-aref rgba :int))
+			(not (member (foreign-slot-value vi 'visual-info 'depth) depth-list)))
+	    (push (foreign-slot-value vi 'visual-info 'depth) depth-list)))
+	(x-free rtn-list)
+	(setf rtn-list (xrr-config-sizes sc count))
+	(xrr-free-screen-config-info sc)
+	(do
+	    ((index 0 (1+ index))
+	     (sizes rtn-list (inc-pointer sizes (foreign-type-size 'xrr-screen-size))))
+	    ((>= index (mem-aref count :int)))
+	  (with-foreign-slots ((width height) sizes screen-size)
+	    (push `(,width ,height) resolution-list)))
+	(values depth-list resolution-list)))))
