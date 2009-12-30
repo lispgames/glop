@@ -132,8 +132,6 @@
 (defgeneric on-draw (window))
 (defgeneric on-close (window))
 
-;;; Some helper macros
-
 ;; main loop anyone?
 (defmacro with-idle-forms (window &body idle-forms)
   (let ((blocking (unless idle-forms t))
@@ -145,8 +143,14 @@
                   t))))
 
 (defmacro with-window ((win-sym title width height &key major minor fullscreen) &body body)
+  "Creates a window and binds it to WIN-SYM, the window is detroyed when body exits."
   `(let ((,win-sym (create-window ,title ,width ,height
                                   :major ,major :minor ,minor :fullscreen ,fullscreen)))
      (when ,win-sym
        (unwind-protect (progn ,@body)
          (destroy-window ,win-sym)))))
+
+;; multiple windows management
+(defun set-gl-window (window)
+  "Make WINDOW current for GL rendering."
+  (attach-gl-context window (window-gl-context window)))

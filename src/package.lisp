@@ -17,6 +17,8 @@
    #:dispatch-events
    #:on-key #:on-button #:on-mouse-motion #:on-resize #:on-draw #:on-close
    ;; helper macros
-   #:with-window #:with-idle-forms))
+   #:with-window #:with-idle-forms
+   ;; multiple windows
+   #:set-gl-window))
 
 
