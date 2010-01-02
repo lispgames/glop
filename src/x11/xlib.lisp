@@ -263,9 +263,7 @@
   :key-up
   :key-right
   :key-down
-  :key-prior
   :key-page-up
-  :key-next
   :key-page-down
   :key-end
   :key-begin
