@@ -28,6 +28,7 @@ Then you can run an hello world test with:
     (glop-test:test-gl-hello)
     
 Available tests are:
+
  - `test-manual-create`: manual window create/destroy
  - `test-multiple-contexts`: multiple OpenGL contexts for a single window
  - `test-with-window`: glop:with-window macro usage
