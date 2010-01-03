@@ -12,7 +12,9 @@
     (:press (format t "Key pressed: ~S~%" key))
     (:release (format t "Key released: ~S~%" key)))
   (when (eql key #\Escape)
-    (glop:push-close-event window)))
+    (glop:push-close-event window))
+  (when (and (eql key #\f) (eql state :press))
+    (glop::toggle-fullscreen window)))
 
 (defmethod glop:on-button (window state button)
   (declare (ignore window))
