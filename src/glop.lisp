@@ -5,24 +5,29 @@
 ;; Default implementation
 (defdfun gl-get-proc-address (proc-name)
   "Get foreign pointer to the GL extension designed by PROC-NAME."
+  (declare (ignore proc-name))
   (error 'not-implemented))
 
 (defdfun create-gl-context (window &key make-current major minor)
   "Creates a new OpenGL context of the specified version for the provided window
    and optionally make it current. If major and minor are NIL old style context creation is
    used."
+  (declare (ignore window make-current major minor))
   (error 'not-implemented))
 
 (defdfun destroy-gl-context (ctx)
   "Detach and release the provided OpenGL context."
+  (declare (ignore ctx))
   (error 'not-implemented))
 
 (defdfun attach-gl-context (window ctx)
   "Makes CTX the current OpenGL context and attach it to WINDOW."
+  (declare (ignore window ctx))
   (error 'not-implemented))
 
 (defdfun detach-gl-context (ctx)
   "Make the provided OpenGL context no longer current."
+  (declare (ignore ctx))
   (error 'not-implemented))
 
 (defdfun create-window (title width height &key major minor
@@ -43,30 +48,39 @@
    Major and minor arguments specify the context version to use, when NIL
    (default value) old style gl context is created, otherwise framebuffer config
     based context creation is used."
+  (declare (ignore title width height major minor double-buffer stereo red-size
+                   green-size blue-size alpha-size depth-size accum-buffer accum-red-size
+                   accum-green-size accum-blue-size stencil-buffer stencil-size))
   (error 'not-implemented))
 
 (defdfun destroy-window (window)
   "Destroy the provided GL window."
+  (declare (ignore window))
   (error 'not-implemented))
 
 (defdfun toggle-fullscreen (window)
   "Switch display resolution to WINDOW dimensions and make WINDOW fullscreen."
+  (declare (ignore window))
   (error 'not-implemented))
 
 (defdfun show-window (window)
   "Make WINDOW visible."
+  (declare (ignore window))
   (error 'not-implemented))
 
 (defdfun hide-window (window)
   "Make WINDOW not visible."
+  (declare (ignore window))
   (error 'not-implemented))
 
 (defdfun set-window-title (window title)
   "Set WINDOW title to TITLE."
+  (declare (ignore window title))
   (error 'not-implemented))
 
 (defdfun swap-buffers (window)
   "Swaps GL buffers."
+  (declare (ignore window))
   (error 'not-implemented))
 
 ;;; Events handling
@@ -100,6 +114,7 @@
 
 (defdfun %next-event (window &key blocking)
   "Real next-event implementation."
+  (declare (ignore window blocking))
   (error 'not-implemented))
 
 ;; method based event handling
