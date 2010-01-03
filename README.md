@@ -55,5 +55,17 @@ Now you can just do:
            ;; gl code here
            (glop:swap-buffers win)))
 
+The `glop:dispatch-events` function will take care of processing glop events and call corresponding
+methods. Generic functions for these methods are:
+
+ - `(on-key window state key)`
+ - `(on-button window state button)`
+ - `(on-mouse-motion window x y dx dy)`
+ - `(on-resize window new-width new-height)`
+ - `(on-draw window)`
+ - `(on-close window)`
+ 
+None of them have a default definition, so you should implement all these methods in you application.
+
 See `test.lisp` for a few examples.
 
