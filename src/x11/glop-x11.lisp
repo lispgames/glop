@@ -118,12 +118,11 @@
         (show-window win)
         (glop-xlib:x-flush display)
         ;;make window fullscreen
-        (when fullscreen
-          (toggle-fullscreen win))
+        (set-fullscreen win fullscreen)
           ;; return created window
         win))))
 
-(defun toggle-fullscreen (win)
+(defun set-fullscreen (win &optional (state (not (window-fullscreen win))))
   (with-accessors ((display x11-window-display)
                    (screen x11-window-screen)
                    (id x11-window-id)
@@ -132,26 +131,27 @@
                    (win-height window-height)
                    (fullscreen window-fullscreen))
       win
-    (if fullscreen
-        (progn
-          (with-accessors ((height video-mode-height)
-                           (width video-mode-width))
-              previous-video-mode
-            (glop-xlib:set-fullscreen id display nil)
-            (glop-xlib:set-video-mode display screen
-                                      (glop-xlib:get-closest-video-mode display screen
-                                                                        width height 0) 0))
-          (setf fullscreen nil))
-        (progn
-          (setf previous-video-mode
-                (multiple-value-bind (width height depth)
-                    (glop-xlib:get-current-display-mode display screen)
-                  (make-video-mode width height depth)))
-          (glop-xlib:set-video-mode display screen
-                                    (glop-xlib:get-closest-video-mode display screen
-                                                                      win-width win-height 0) 0)
-          (glop-xlib:set-fullscreen id display t)
-          (setf fullscreen t)))))
+    (unless (eq state fullscreen)
+     (if state
+         (progn
+           (setf previous-video-mode
+                 (multiple-value-bind (width height depth)
+                     (glop-xlib:get-current-display-mode display screen)
+                   (make-video-mode width height depth)))
+           (glop-xlib:set-video-mode display screen
+                                     (glop-xlib:get-closest-video-mode display screen
+                                                                       win-width win-height 0) 0)
+           (glop-xlib:set-fullscreen id display t)
+           (setf fullscreen t))
+         (progn
+           (with-accessors ((height video-mode-height)
+                            (width video-mode-width))
+               previous-video-mode
+             (glop-xlib:set-fullscreen id display nil)
+             (glop-xlib:set-video-mode display screen
+                                       (glop-xlib:get-closest-video-mode display screen
+                                                                         width height 0) 0))
+           (setf fullscreen nil))))))
 
 (defun show-window (win)
   (glop-xlib:x-map-raised (x11-window-display win) (x11-window-id win)))
@@ -170,9 +170,7 @@
                    (previous-video-mode window-previous-video-mode)
                    (fullscreen window-fullscreen))
       win
-    (when fullscreen
-      (toggle-fullscreen win)
-      (setf fullscreen nil))
+    (set-fullscreen win nil)
     (glop-xlib:x-destroy-window display id)
     (glop-xlib:x-close-display display)))
 
