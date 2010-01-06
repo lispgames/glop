@@ -293,32 +293,32 @@
          (:wm-lbutton-down
           (set-capture wnd)
           (setf %event% (glop::make-event :type :button-press
-                                          :button :left-button))
+                                          :button 1))
           (return-from window-proc 0))
          (:wm-lbutton-up
           (release-capture)
           (setf %event% (glop::make-event :type :button-release
-                                          :button :left-button))
+                                          :button 1))
           (return-from window-proc 0))
          (:wm-rbutton-down
           (set-capture wnd)
           (setf %event% (glop::make-event :type :button-press
-                                          :button :right-button))
+                                          :button 3))
           (return-from window-proc 0))
          (:wm-rbutton-up
           (release-capture)
           (setf %event% (glop::make-event :type :button-release
-                                          :button :right-button))
+                                          :button 3))
           (return-from window-proc 0))
          (:wm-mbutton-down
           (set-capture wnd)
           (setf %event% (glop::make-event :type :button-press
-                                          :button :middle-button))
+                                          :button 2))
           (return-from window-proc 0))
          (:wm-mbutton-up
           (release-capture)
           (setf %event% (glop::make-event :type :button-release
-                                          :button :middle-button))
+                                          :button 2))
           (return-from window-proc 0))
          (:wm-key-up
           (let ((key (win32-lookup-key w-param l-param)))
@@ -336,7 +336,7 @@
           (format t "WM_MOUSEWHEEL: ~S => ~S~%" w-param (high-word w-param))
           (setf %event% (glop::make-event :type :button-press
                                           :button (if (> w-param 0)
-                                                      :wheel-up :wheel-down)))
+                                                      4 5)))
           (return-from window-proc 0))
          (:wm-size
           (format t"WM_SIZE !!!!~%")

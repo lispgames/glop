@@ -425,14 +425,6 @@
                  (%x-next-event dpy evt)
                  (process-event evt))))))
 
-(defun x-translate-mouse-button (button)
-  (case button
-    (1 :left-button)
-    (2 :middle-button)
-    (3 :right-button)
-    (4 :wheel-up)
-    (5 :wheel-down)))
-
 (let ((last-x 0)
       (last-y 0))
   (defun process-event (evt)
@@ -448,11 +440,11 @@
         (:button-press
          (with-foreign-slots ((button) evt x-button-pressed-event)
            (glop::make-event :type :button-press
-                             :button (x-translate-mouse-button button))))
+                             :button button)))
         (:button-release
          (with-foreign-slots ((button) evt x-button-pressed-event)
            (glop::make-event :type :button-release
-                             :button (x-translate-mouse-button button))))
+                             :button button)))
         (:motion-notify
          (with-foreign-slots ((x y) evt x-motion-event)
            (let ((glop-evt (glop::make-event :type :mouse-motion
