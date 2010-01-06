@@ -14,7 +14,7 @@
   (when (eql key #\Escape)
     (glop:push-close-event window))
   (when (and (eql key #\f) (eql state :press))
-    (glop::set-fullscreen window)))
+    (glop:set-fullscreen window)))
 
 (defmethod glop:on-button (window state button)
   (declare (ignore window))
@@ -125,10 +125,6 @@
          (glop:swap-buffers win))))
 
 (defun test-gl-hello-fullscreen ()
-  (defmethod glop:on-key :after (window state key)
-    (format t "Key: ~S~%" key)
-    (when (and (eql key #\f) (eql state :press))
-      (glop:set-fullscreen window)))
   (glop:with-window (win "Glop test window" 800 600 :fullscreen t)
     (format t "Created window: ~S~%" win)
     ;; GL init
