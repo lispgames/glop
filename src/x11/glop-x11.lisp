@@ -65,9 +65,8 @@
     (let ((win (make-x11-window :display (glop-xlib::x-open-display "")
                                 :screen 0)))
       ;;GLX attributes
-      (with-accessors (
-                       (display  x11-window-display)
-                       (screen  x11-window-screen)
+      (with-accessors ((display x11-window-display)
+                       (screen x11-window-screen)
                        (id x11-window-id)
                        (visual-infos x11-window-visual-infos)
                        (fb-config x11-window-fb-config)
@@ -125,9 +124,8 @@
         win))))
 
 (defun toggle-fullscreen (win)
-  (with-accessors (
-                   (display  x11-window-display)
-                   (screen  x11-window-screen)
+  (with-accessors ((display x11-window-display)
+                   (screen x11-window-screen)
                    (id x11-window-id)
                    (previous-video-mode window-previous-video-mode)
                    (win-width window-width)
@@ -136,8 +134,7 @@
       win
     (if fullscreen
         (progn
-          (with-accessors (
-                           (height video-mode-height)
+          (with-accessors ((height video-mode-height)
                            (width video-mode-width))
               previous-video-mode
             (glop-xlib:set-fullscreen id display nil)
@@ -167,9 +164,8 @@
   (glop-xlib:x-store-name (x11-window-display win) (x11-window-id win) title))
 
 (defun destroy-window (win)
-  (with-accessors (
-                   (display  x11-window-display)
-                   (screen  x11-window-screen)
+  (with-accessors ((display x11-window-display)
+                   (screen x11-window-screen)
                    (id x11-window-id)
                    (previous-video-mode window-previous-video-mode)
                    (fullscreen window-fullscreen))
