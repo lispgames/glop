@@ -96,12 +96,9 @@
           ;; if major *and* minor are specified use fb config code path
           ;; otherwise just use old style visual selection and context creation
           (if (and major minor)
-              ;;create fb-config and visual
               (setf fb-config (glop-glx:glx-choose-fb-config display screen attribs)
                     visual-infos (glop-glx:glx-get-visual-from-fb-config display fb-config))
-              ;; create old style visual
               (setf visual-infos (glop-glx:glx-choose-visual display screen attribs))))
-        ;; create window
         (setf id (glop-xlib:x-create-window display
                                             (glop-xlib:x-default-root-window display)
                                             width height visual-infos))
@@ -110,16 +107,12 @@
         ;; set title
         (glop-xlib:x-store-name display id title)
         (setf win-title title)
-        ;; create a GL context and make it current same as for the visual regarding to major/minor
-        ;; values
+        
         (setf gl-ctx (create-gl-context win :major major :minor minor
                                         :make-current t))
-        ;; show created window
         (show-window win)
         (glop-xlib:x-flush display)
-        ;;make window fullscreen
         (set-fullscreen win fullscreen)
-          ;; return created window
         win))))
 
 (defun set-fullscreen (win &optional (state (not (window-fullscreen win))))
