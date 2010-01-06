@@ -193,31 +193,17 @@
       (loop while windows do
          (dolist (win windows)
            (if (glop:dispatch-events win :blocking nil)
-               (cond
-                 ((eq win window-1) ;; render in first window
-                  (glop:set-gl-window window-1)
-                  (gl:clear :color-buffer)
-                  (gl:color 1 1 1)
-                  (gl:with-primitive :polygon
-                    (gl:vertex 0.25 0.25 0)
-                    (gl:vertex 0.75 0.25 0)
-                    (gl:vertex 0.75 0.75 0)
-                    (gl:vertex 0.25 0.75 0))
-                  (gl:flush)
-                  (glop:swap-buffers window-1))
-                 ((eq win window-2) ;; render in second window
-                  (glop:set-gl-window window-2)
-                  (gl:clear :color-buffer)
-                  (gl:color 1 1 1)
-                  (gl:with-primitive :polygon
-                    (gl:vertex 0.25 0.25 0)
-                    (gl:vertex 0.75 0.25 0)
-                    (gl:vertex 0.75 0.75 0)
-                    (gl:vertex 0.25 0.75 0))
-                  (gl:flush)
-                  (glop:swap-buffers window-2)))
-               (cond
-                 ((eq win window-1) (setf windows (remove window-1 windows))
-                  (glop:destroy-window window-1))
-                 ((eq win window-2) (setf windows (remove window-2 windows))
-                  (glop:destroy-window window-2)))))))))
+               (progn
+                 (glop:set-gl-window win)
+                 (gl:clear :color-buffer)
+                 (gl:color 1 1 1)
+                 (gl:with-primitive :polygon
+                  (gl:vertex 0.25 0.25 0)
+                  (gl:vertex 0.75 0.25 0)
+                  (gl:vertex 0.75 0.75 0)
+                  (gl:vertex 0.25 0.75 0))
+                (gl:flush)
+                (glop:swap-buffers win))
+               (progn
+                 (setf windows (remove win windows))
+                 (glop:destroy-window win))))))))
