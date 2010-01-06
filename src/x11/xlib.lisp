@@ -488,8 +488,8 @@
 
 (defun x-lookup-key (key-event)
   "Returns either a char or an x-keysym-value keyword."
-  (with-foreign-objects ((buffer :char #x20) (keysym 'keysym) (compose 'x-compose-status))
-    (%x-lookup-string key-event buffer #x20 keysym compose)
+  (with-foreign-objects ((buffer :char 32) (keysym 'keysym) (compose 'x-compose-status))
+    (%x-lookup-string key-event buffer 32 keysym compose)
     ;; do we have an interesting keysym?
     (let ((sym (foreign-enum-keyword 'x-keysym-value (mem-ref keysym 'keysym) :errorp nil)))
       (or sym (code-char (mem-aref buffer :char 0))))))
