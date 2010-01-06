@@ -24,20 +24,20 @@
 
 (defmethod glop:on-mouse-motion (window x y dx dy)
   (declare (ignore window x y dx dy))
-  (format t "Mouse motion !!~%"))
+  (format t "Mouse motion~%"))
 
 (defmethod glop:on-resize (window w h)
   (declare (ignore window))
   (gl:viewport 0 0 w h)
-  (format t "Resize: ~Sx~S !!~%" w h))
+  (format t "Resize: ~Sx~S~%" w h))
 
 (defmethod glop:on-draw (window)
   (declare (ignore window))
-  (format t "Draw !!~%"))
+  (format t "Draw~%"))
 
 (defmethod glop:on-close (window)
   (declare (ignore window))
-  (format t "Close !!~%"))
+  (format t "Close~%"))
 
 (defun test-manual-create ()
   (let ((win (glop:create-window "Glop test window" 800 600)))
