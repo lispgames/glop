@@ -94,9 +94,8 @@
 )
 
 (defun push-event (window evt)
-  "Artificially push an event into the event processing system.
-   The pushed event is internal to glaw and never makes it to the underlying
-   system."
+  "Push an artificial event into the event processing system.
+Note that this has no effect on the underlying window system."
   (setf (window-pushed-event window) evt))
 
 (defun push-close-event (window)
@@ -105,7 +104,7 @@
 
 (defdfun next-event (window &key blocking)
   "Returns next available event for manual processing.
-   If :blocking is true wait until an event occur."
+If :blocking is true, wait for an event."
   (let ((pushed-evt (window-pushed-event window)))
     (if pushed-evt
         (progn (setf (window-pushed-event window) nil)
@@ -120,9 +119,9 @@
 ;; method based event handling
 (defun dispatch-events (window &key blocking)
   "Process all pending system events and call corresponding methods.
-   When :blocking is non-nil calls event handling func that will block
-   until an event occur.
-   Returns NIL on :CLOSE event, T otherwise."
+When :blocking is non-nil calls event handling func that will block
+until an event occurs.
+Returns NIL on :CLOSE event, T otherwise."
   (loop for evt = (next-event window :blocking blocking)
     while evt
     do  (case (event-type evt)
@@ -158,7 +157,7 @@
                   t))))
 
 (defmacro with-window ((win-sym title width height &key major minor fullscreen) &body body)
-  "Creates a window and binds it to WIN-SYM, the window is detroyed when body exits."
+  "Creates a window and binds it to WIN-SYM.  The window is detroyed when body exits."
   `(let ((,win-sym (create-window ,title ,width ,height
                                   :major ,major :minor ,minor :fullscreen ,fullscreen)))
      (when ,win-sym
