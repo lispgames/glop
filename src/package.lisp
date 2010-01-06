@@ -9,7 +9,7 @@
    ;; window
    #:create-window #:destroy-window #:show-window #:hide-window #:set-window-title
    #:swap-buffers
-   #:window-width #:window-height #:window-gl-context #:toggle-fullscreen
+   #:window-width #:window-height #:window-gl-context #:set-fullscreen
    ;; events
    #:next-event #:push-event #:push-close-event
    #:event-type #:event-x #:event-y #:event-dx #:event-dy #:event-key #:event-button
