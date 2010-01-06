@@ -51,4 +51,4 @@
   () (:documentation "Any glop specific error should inherit this."))
 
 (define-condition not-implemented (glop-error)
-  () (:documentation "Non implemented functionnality."))
+  () (:documentation "Unimplemented."))
