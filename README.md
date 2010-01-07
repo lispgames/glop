@@ -36,7 +36,8 @@ Available tests are:
  - `test-gl-hello`: cl-opengl hello world example
  - `test-gl-hello-fullscreen`: same in fullscreen
  - `test-gl-hello-gl3`: same with OpenGL 3.x context
- - `test-multiple-windows`: two hello world windows
+ - `test-multiple-windows`: two hello world windows each one with its own GL context
+ - `test-on-event`: hello world using the on-event dispatch code
  
 In all tests except `test-manual-events` you can press the ESC key to close the window
 and the 'f' key to toggle fullscreen.
@@ -55,7 +56,7 @@ Now you can just do:
            ;; gl code here
            (glop:swap-buffers win)))
 
-The `glop:dispatch-events` function will take care of processing glop events and call corresponding
+The `glop:dispatch-events` macro will take care of processing glop events and call corresponding
 methods. Generic functions for these methods are:
 
  - `(on-key window state key)`
@@ -67,8 +68,8 @@ methods. Generic functions for these methods are:
  
 None of them have a default definition, so you should implement all these methods in you application.
 
-There's also another method based dispatch mechanism with the `on-event` generic function.
-To use this just pass `:on-foo nil` to `glop:dispatch-events`.
+There's another method based dispatch mechanism with the `on-event` generic function.
+To use it just pass `:on-foo nil` to `glop:dispatch-events`.
 In that case the `(on-event window event)` method will be called instead of `on-foo` methods.
 
 The `glop:dispatch-events` macro isn't mandatory and you can use your own event dispatch code,
