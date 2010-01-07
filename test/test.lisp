@@ -8,13 +8,13 @@
 
 (in-package #:glop-test)
 
-(defmethod glop:on-key (window pressed key string)
+(defmethod glop:on-key (window pressed keycode keysym string)
   (if pressed
-      (format t "Key pressed: ~D (~S)~%" key string)
-      (format t "Key released: ~D (~S) ~%" key string))
-  (when (= key 9)                       ;ESC
+      (format t "Key pressed: ~D (~A ~S)~%" keycode keysym string)
+      (format t "Key released: ~D (~A ~S) ~%" keycode keysym string))
+  (when (= keycode 9)                       ;ESC
     (glop:push-close-event window))
-  (when (and pressed (= key 41))        ;F
+  (when (and pressed (string-equal string "f"))
     (glop::toggle-fullscreen window)))
 
 (defmethod glop:on-button (window pressed button)
@@ -93,7 +93,7 @@
          if evt
          do (typecase evt
               (glop:key-press-event
-               (when (= (glop:event-key evt) 9) ;ESC
+               (when (= (glop:event-keycode evt) 9) ;ESC
                  (glop:push-close-event win)))
               (glop:close-event (setf running nil))
               (t (format t "Unhandled event: ~A~%" evt)))
@@ -208,10 +208,10 @@
 
 ;; on-event based dispatching test
 (defmethod glop:on-event (window (event glop:key-event))
-  (format t "Key ~:[released~;pressed~]: ~S~%" (glop:event-pressed event) (glop:event-key event))
-  (when (= (glop:event-key event) 9)    ;ESC
+  (format t "Key ~:[released~;pressed~]: ~A~%" (glop:event-pressed event) (glop:event-keycode event))
+  (when (= (glop:event-keycode event) 9)    ;ESC
       (glop:push-close-event window))
-  (when (and (glop:event-pressed event) (= (glop:event-key event) 41)) ;F
+  (when (and (glop:event-pressed event) (= (glop:event-keycode event) 41)) ;F
     (glop:set-fullscreen window)))
 
 (defmethod glop:on-event (window (event glop:button-event))

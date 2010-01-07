@@ -16,7 +16,8 @@
    #:button-event #:button-press-event #:button-release-event
    #:mouse-motion-event #:expose-event #:configure-event
    #:map-event #:map-in-event #:map-out-event #:close-event
-   #:event-pressed #:event-mapped #:event-width #:event-height #:event-key #:event-button
+   #:event-pressed #:event-mapped #:event-width #:event-height
+   #:event-keycode #:event-keysym #:event-string #:event-button
    #:event-x #:event-y #:event-dx #:event-dy
    ;; events methods
    #:dispatch-events

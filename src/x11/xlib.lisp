@@ -433,14 +433,18 @@
       (case type
         (:key-press
          (with-foreign-slots ((keycode) evt x-key-event)
-          (make-instance 'glop:key-press-event
-                         :key keycode
-                         :string (x-lookup-string evt))))
+           (multiple-value-bind (string keysym) (x-lookup-string evt)
+            (make-instance 'glop:key-press-event
+                           :keycode keycode
+                           :keysym keysym
+                           :string string))))
         (:key-release
          (with-foreign-slots ((keycode) evt x-key-event)
-           (make-instance 'glop:key-release-event
-                          :key keycode
-                          :string (x-lookup-string evt))))
+           (multiple-value-bind (string keysym) (x-lookup-string evt)
+            (make-instance 'glop:key-release-event
+                           :keycode keycode
+                           :keysym keysym
+                           :string string))))
         (:button-press
          (with-foreign-slots ((button) evt x-button-pressed-event)
            (make-instance 'glop:button-press-event
@@ -489,9 +493,10 @@
   (with-foreign-objects ((buffer :char 32) (keysym 'keysym))
     (%x-lookup-string key-event buffer 32 keysym (null-pointer))
     (let ((string (foreign-string-to-lisp buffer)))
-      (if (> (length string) 0)
-          string
-          nil))))
+      (values (if (> (length string) 0)
+                  string
+                  nil)
+              keysym))))
 
 (defcfun ("XGetGeometry" %x-get-geometry) x-status
   (display-ptr :pointer) (d drawable) (root-return :pointer)

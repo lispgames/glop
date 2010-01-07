@@ -88,7 +88,8 @@
   (:documentation "Common ancestor for all events."))
 
 (defclass key-event (event)
-  ((key :initarg :key :reader event-key)
+  ((keycode :initarg :keycode :reader event-keycode)
+   (keysym :initarg :keysym :reader event-keysym)
    (string :initarg :string :reader event-string)
    (pressed :initarg :pressed :reader event-pressed))
   (:documentation "Keyboard key press or release."))
@@ -181,8 +182,8 @@ Returns NIL on :CLOSE event, T otherwise."
       while ,evt
       do ,(if on-foo
               `(typecase ,evt
-                 (key-press-event (on-key ,window t (event-key ,evt) (event-string ,evt)))
-                 (key-release-event (on-key ,window nil (event-key ,evt) (event-string ,evt)))
+                 (key-press-event (on-key ,window t (event-keycode ,evt) (event-keysym ,evt) (event-string ,evt)))
+                 (key-release-event (on-key ,window nil (event-keycode ,evt) (event-keysym ,evt) (event-string ,evt)))
                  (button-press-event (on-button ,window t (event-button ,evt)))
                  (button-release-event (on-button ,window nil (event-button ,evt)))
                  (mouse-motion-event (on-mouse-motion ,window (event-x ,evt) (event-y ,evt)
@@ -206,7 +207,7 @@ Returns NIL on :CLOSE event, T otherwise."
   (format t "Unhandled event: ~S~%" event))
 
 ;; implemented those when calling dispatch-events with :on-foo T
-(defgeneric on-key (window pressed key string))
+(defgeneric on-key (window pressed keycode keysym string))
 (defgeneric on-button (window pressed button))
 (defgeneric on-mouse-motion (window x y dx dy))
 (defgeneric on-resize (window w h))
