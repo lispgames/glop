@@ -12,9 +12,9 @@
   (if pressed
       (format t "Key pressed: ~D (~S)~%" key string)
       (format t "Key released: ~D (~S) ~%" key string))
-  (when (eql key #\Escape)
+  (when (= key 9)                       ;ESC
     (glop:push-close-event window))
-  (when (and pressed (eql key #\f))
+  (when (and pressed (= key 41))        ;F
     (glop::toggle-fullscreen window)))
 
 (defmethod glop:on-button (window pressed button)
@@ -93,7 +93,7 @@
          if evt
          do (typecase evt
               (glop:key-press-event
-               (when (eql (glop:event-key evt) #\Escape)
+               (when (= (glop:event-key evt) 9) ;ESC
                  (glop:push-close-event win)))
               (glop:close-event (setf running nil))
               (t (format t "Unhandled event: ~A~%" evt)))
@@ -209,9 +209,9 @@
 ;; on-event based dispatching test
 (defmethod glop:on-event (window (event glop:key-event))
   (format t "Key ~:[released~;pressed~]: ~S~%" (glop:event-pressed event) (glop:event-key event))
-  (when (eql (glop:event-key event) #\Escape)
+  (when (= (glop:event-key event) 9)    ;ESC
       (glop:push-close-event window))
-  (when (and (glop:event-pressed event) (eql (glop:event-key event) #\f))
+  (when (and (glop:event-pressed event) (= (glop:event-key event) 41)) ;F
     (glop:set-fullscreen window)))
 
 (defmethod glop:on-event (window (event glop:button-event))
