@@ -8,10 +8,10 @@
 
 (in-package #:glop-test)
 
-(defmethod glop:on-key (window state key)
+(defmethod glop:on-key (window state key string)
   (case state
-    (:press (format t "Key pressed: ~S~%" key))
-    (:release (format t "Key released: ~S~%" key)))
+    (:press (format t "Key pressed: ~D (~S)~%" key string))
+    (:release (format t "Key released: ~D (~S) ~%" key string)))
   (when (eql key #\Escape)
     (glop:push-close-event window))
   (when (and (eql key #\f) (eql state :press))

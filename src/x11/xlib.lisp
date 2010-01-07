@@ -432,11 +432,15 @@
     (with-foreign-slots ((type) evt x-event)
       (case type
         (:key-press
-           (make-instance 'glop:key-press-event
-                          :key (x-lookup-key evt)))
+         (with-foreign-slots ((keycode) evt x-key-event)
+          (make-instance 'glop:key-press-event
+                         :key keycode
+                         :string (x-lookup-string evt))))
         (:key-release
+         (with-foreign-slots ((keycode) evt x-key-event)
            (make-instance 'glop:key-release-event
-                          :key (x-lookup-key evt)))
+                          :key keycode
+                          :string (x-lookup-string evt))))
         (:button-press
          (with-foreign-slots ((button) evt x-button-pressed-event)
            (make-instance 'glop:button-press-event
@@ -480,13 +484,14 @@
   (evt x-key-event) (buffer-return :pointer) (bytes-buffer :int)
   (keysym-return :pointer) (status-in-out :pointer))
 
-(defun x-lookup-key (key-event)
-  "Returns either a char or an x-keysym-value keyword."
-  (with-foreign-objects ((buffer :char 32) (keysym 'keysym) (compose 'x-compose-status))
-    (%x-lookup-string key-event buffer 32 keysym compose)
-    ;; do we have an interesting keysym?
-    (let ((sym (foreign-enum-keyword 'x-keysym-value (mem-ref keysym 'keysym) :errorp nil)))
-      (or sym (code-char (mem-aref buffer :char 0))))))
+(defun x-lookup-string (key-event)
+  "Returns the input string corresponding to a keypress."
+  (with-foreign-objects ((buffer :char 32) (keysym 'keysym))
+    (%x-lookup-string key-event buffer 32 keysym (null-pointer))
+    (let ((string (foreign-string-to-lisp buffer)))
+      (if (> (length string) 0)
+          string
+          nil))))
 
 (defcfun ("XGetGeometry" %x-get-geometry) x-status
   (display-ptr :pointer) (d drawable) (root-return :pointer)
