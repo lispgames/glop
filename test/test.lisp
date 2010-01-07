@@ -8,20 +8,20 @@
 
 (in-package #:glop-test)
 
-(defmethod glop:on-key (window state key string)
-  (case state
-    (:press (format t "Key pressed: ~D (~S)~%" key string))
-    (:release (format t "Key released: ~D (~S) ~%" key string)))
+(defmethod glop:on-key (window pressed key string)
+  (if pressed
+      (format t "Key pressed: ~D (~S)~%" key string)
+      (format t "Key released: ~D (~S) ~%" key string))
   (when (eql key #\Escape)
     (glop:push-close-event window))
-  (when (and (eql key #\f) (eql state :press))
+  (when (and pressed (eql key #\f))
     (glop::toggle-fullscreen window)))
 
-(defmethod glop:on-button (window state button)
+(defmethod glop:on-button (window pressed button)
   (declare (ignore window))
-  (case state
-    (:press (format t "Button pressed: ~S~%" button))
-    (:release (format t "Button released: ~S~%" button))))
+  (if pressed
+      (format t "Button pressed: ~S~%" button)
+      (format t "Button released: ~S~%" button)))
 
 (defmethod glop:on-mouse-motion (window x y dx dy)
   (declare (ignore window x y dx dy))

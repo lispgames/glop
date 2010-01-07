@@ -181,10 +181,10 @@ Returns NIL on :CLOSE event, T otherwise."
       while ,evt
       do ,(if on-foo
               `(typecase ,evt
-                 (key-press-event (on-key ,window :press (event-key ,evt) (event-string ,evt)))
-                 (key-release-event (on-key ,window :release (event-key ,evt) (event-string ,evt)))
-                 (button-press-event (on-button ,window :press (event-button ,evt)))
-                 (button-release-event (on-button ,window :release (event-button ,evt)))
+                 (key-press-event (on-key ,window t (event-key ,evt) (event-string ,evt)))
+                 (key-release-event (on-key ,window nil (event-key ,evt) (event-string ,evt)))
+                 (button-press-event (on-button ,window t (event-button ,evt)))
+                 (button-release-event (on-button ,window nil (event-button ,evt)))
                  (mouse-motion-event (on-mouse-motion ,window (event-x ,evt) (event-y ,evt)
                                                       (event-dx ,evt) (event-dy ,evt)))
                  (configure-event (on-resize ,window (event-width ,evt) (event-height ,evt)))
@@ -206,8 +206,8 @@ Returns NIL on :CLOSE event, T otherwise."
   (format t "Unhandled event: ~S~%" event))
 
 ;; implemented those when calling dispatch-events with :on-foo T
-(defgeneric on-key (window state key string))
-(defgeneric on-button (window state button))
+(defgeneric on-key (window pressed key string))
+(defgeneric on-button (window pressed button))
 (defgeneric on-mouse-motion (window x y dx dy))
 (defgeneric on-resize (window w h))
 (defgeneric on-draw (window))
