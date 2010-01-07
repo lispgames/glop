@@ -9,7 +9,7 @@
 
 (defmethod glop:on-event (window (event glop:key-event))
   (with-slots (pressed key) event
-    (format t "Key ~:[pressed~;released~]: ~S~%" pressed key)
+    (format t "Key ~:[released~;pressed~]: ~S~%" pressed key)
     (when (eql key #\Escape)
       (glop:push-close-event window))
     (when (and pressed (eql key #\f))
@@ -17,7 +17,7 @@
 
 (defmethod glop:on-event (window (event glop:button-event))
   (declare (ignore window))
-  (format t "Button ~:[pressed~;released~]: ~S~%" (glop:pressed event) (glop:button event)))
+  (format t "Button ~:[released~;pressed~]: ~S~%" (glop:pressed event) (glop:button event)))
 
 (defmethod glop:on-event (window (event glop:motion-event))
   (declare (ignore window))
