@@ -67,5 +67,12 @@ methods. Generic functions for these methods are:
  
 None of them have a default definition, so you should implement all these methods in you application.
 
-See `test.lisp` for a few examples.
+There's also another method based dispatch mechanism with the `on-event` generic function.
+To use this just pass `:on-foo nil` to `glop:dispatch-events`.
+In that case the `(on-event window event)` method will be called instead of `on-foo` methods.
+
+The `glop:dispatch-events` macro isn't mandatory and you can use your own event dispatch code,
+see `glop-test:test-manual-events` for an example of how to do this.
+
+See `test.lisp` for more details.
 
