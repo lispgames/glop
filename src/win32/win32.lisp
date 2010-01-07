@@ -268,7 +268,7 @@
      (let ((msg-type (foreign-enum-keyword 'msg-type msg :errorp nil)))
        (case msg-type
          (:wm-close
-          (setf %event% (glop::make-event :type :close))
+          (setf %event% (glop::make-instance 'glop:close-event))
           (return-from window-proc 0))
          (:wm-destroy
           (%post-quit-message 0)
@@ -277,66 +277,66 @@
           (let ((low (low-word l-param))
                 (high (high-word l-param)))
             (when (or (/= low last-x) (/= high last-y))
-              (setf %event% (glop::make-event :type :mouse-motion
-                                              :x low :y high
-                                              :dx (- low last-x) :dy (- high last-y)))
+              (setf %event% (glop::make-instance 'glop:mouse-motion-event
+                                                 :x low :y high
+                                                 :dx (- low last-x) :dy (- high last-y)))
               (setf last-x low last-y high))
             (return-from window-proc 0)))
          (:wm-paint
           ;; XXX: this is an ugly hack but WM_SIZE acts strangely...
           (multiple-value-bind (x y width height) (get-geometry wnd)
-            (setf %event% (glop::make-event :type (if from-configure
-                                                      (progn (setf from-configure nil)
-                                                             :configure)
-                                                      :expose)
+            (setf %event% (glop::make-instance (if from-configure
+                                                   (progn (setf from-configure nil)
+                                                          'glop:configure-event)
+                                                      'glop:expose-event)
                                                 :width width :height height))))
          (:wm-lbutton-down
           (set-capture wnd)
-          (setf %event% (glop::make-event :type :button-press
-                                          :button 1))
+          (setf %event% (glop::make-instance 'glop:button-press-event
+                                             :button 1))
           (return-from window-proc 0))
          (:wm-lbutton-up
           (release-capture)
-          (setf %event% (glop::make-event :type :button-release
-                                          :button 1))
+          (setf %event% (glop::make-instance 'glop:button-release-event
+                                             :button 1))
           (return-from window-proc 0))
          (:wm-rbutton-down
           (set-capture wnd)
-          (setf %event% (glop::make-event :type :button-press
-                                          :button 3))
+          (setf %event% (glop::make-instance 'glop:button-press-event
+                                             :button 3))
           (return-from window-proc 0))
          (:wm-rbutton-up
           (release-capture)
-          (setf %event% (glop::make-event :type :button-release
-                                          :button 3))
+          (setf %event% (glop::make-instance 'glop:button-release-event
+                                             :button 3))
           (return-from window-proc 0))
          (:wm-mbutton-down
           (set-capture wnd)
-          (setf %event% (glop::make-event :type :button-press
-                                          :button 2))
+          (setf %event% (glop::make-instance 'glop:button-press-event
+                                             :button 2))
           (return-from window-proc 0))
          (:wm-mbutton-up
           (release-capture)
-          (setf %event% (glop::make-event :type :button-release
-                                          :button 2))
+          (setf %event% (glop::make-instance 'glop:button-release-event
+                                             :button 2))
           (return-from window-proc 0))
          (:wm-key-up
           (let ((key (win32-lookup-key w-param l-param)))
             (when key
-              (setf %event% (glop::make-event :type :key-release
-                                              :key  key))))
+              (setf %event% (glop::make-instance 'glop:key-release-event
+                                                 :key  key))))
           (return-from window-proc 0))
          (:wm-key-down
           (let ((key (win32-lookup-key w-param l-param)))
             (when key
-              (setf %event% (glop::make-event :type :key-press
-                                              :key  key))))
+              (setf %event% (glop::make-instance 'glop:key-press-event
+                                                 :key  key))))
           (return-from window-proc 0))
          (:wm-mouse-wheel
           (format t "WM_MOUSEWHEEL: ~S => ~S~%" w-param (high-word w-param))
-          (setf %event% (glop::make-event :type :button-press
-                                          :button (if (> w-param 0)
-                                                      4 5)))
+          (setf %event% (glop::make-instance 'glop:button-press-event
+                                             :button (if (> w-param 0)
+                                                         4 5)))
           (return-from window-proc 0))
          (:wm-size
           (format t"WM_SIZE !!!!~%")
@@ -351,10 +351,9 @@
           (return-from window-proc 0))
          (:wm-show-window
           (multiple-value-bind (x y width height) (get-geometry wnd)
-            (setf %event% (glop::make-event :type (if (zerop w-param)
-                                                      :hide
-                                                      :show)
-                                            :width width :height height))))
+            (setf %event% (glop::make-instance (if (zerop w-param)
+                                                   'glop:map-in-event
+                                                   'glop:map-out-event)))))
          (:wm-set-focus
           (format t "WM_SETFOCUS~%")
           (return-from window-proc 0)))

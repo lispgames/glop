@@ -88,9 +88,8 @@
   (:documentation "Common ancestor for all events."))
 
 (defclass key-event (event)
-  ((keycode :initargs :keycode :reader key)
-   (text :initargs :character :reader text)
-   (pressed :initargs :pressed :reader pressed))
+  ((key :initarg :key :reader event-key)
+   (pressed :initarg :pressed :reader event-pressed))
   (:documentation "Keyboard key press or release."))
 
 (defclass key-press-event (key-event)
@@ -102,8 +101,8 @@
   (:documentation "Keyboard key release."))
 
 (defclass button-event (event)
-  ((button :initargs :button :reader button)
-   (pressed :initargs :pressed :reader pressed))
+  ((button :initarg :button :reader event-button)
+   (pressed :initarg :pressed :reader event-pressed))
   (:documentation "Mouse button press or release."))
 
 (defclass button-press-event (button-event)
@@ -114,32 +113,32 @@
   ((pressed :initform nil))
   (:documentation "Mouse button release."))
 
-(defclass motion-event (event)
-  ((x-pos :initargs :x-pos :reader x-pos)
-   (y-pos :initargs :y-pos :reader y-pos)
-   (x-delta :initargs :x-delta :reader x-delta)
-   (y-delta :initargs :y-delta :reader y-delta))
+(defclass mouse-motion-event (event)
+  ((x :initarg :x :reader event-x)
+   (y :initarg :y :reader event-y)
+   (dx :initarg :dx :reader event-dx)
+   (dy :initarg :dy :reader event-dy))
   (:documentation "Mouse motion."))
 
 (defclass expose-event (event)
-  ((width :initargs :width :reader width)
-   (height :initargs :height :reader height))
+  ((width :initarg :width :reader event-width)
+   (height :initarg :height :reader event-height))
   (:documentation "Window expose."))
 
-(defclass resize-event (event)
-  ((width :initargs :width :reader width)
-   (height :initargs :height :reader height))
+(defclass configure-event (event)
+  ((width :initarg :width :reader event-width)
+   (height :initarg :height :reader event-height))
   (:documentation "Window reconfiguration."))
 
 (defclass map-event (event)
-  ((mapped :initargs :mapped :reader mapped))
+  ((mapped :initarg :mapped :reader event-mapped))
   (:documentation "Window mapped or unmapped."))
 
-(defclass map-in-event (map-change-event)
+(defclass map-in-event (map-event)
   ((mapped :initform t))
   (:documentation "Window mapped in."))
 
-(defclass map-out-event (map-change-event)
+(defclass map-out-event (map-event)
   ((mapped :initform nil))
   (:documentation "Window unmapped."))
 
@@ -170,18 +169,48 @@ If :blocking is true, wait for an event."
   (error 'not-implemented))
 
 ;; method based event handling
-(defgeneric on-event (window event))
-
-(defun dispatch-events (window &key blocking)
+(defmacro dispatch-events (window &key blocking (on-foo t))
   "Process all pending system events and call corresponding methods.
 When :blocking is non-nil calls event handling func that will block
 until an event occurs.
 Returns NIL on :CLOSE event, T otherwise."
-  (loop for evt = (next-event window :blocking blocking)
-    while evt
-    do (on-event window evt)
-    finally (return t)))
+  (let ((evt (gensym)))
+  `(block dispatch-events
+     (loop for ,evt = (next-event ,window :blocking ,blocking)
+      while ,evt
+      do ,(if on-foo
+              `(typecase ,evt
+                 (key-press-event (on-key ,window :press (event-key ,evt)))
+                 (key-release-event (on-key ,window :release (event-key ,evt)))
+                 (button-press-event (on-button ,window :press (event-button ,evt)))
+                 (button-release-event (on-button ,window :release (event-button ,evt)))
+                 (mouse-motion-event (on-mouse-motion ,window (event-x ,evt) (event-y ,evt)
+                                                      (event-dx ,evt) (event-dy ,evt)))
+                 (configure-event (on-resize ,window (event-width ,evt) (event-height ,evt)))
+                 (expose-event (on-draw ,window))
+                 (close-event (on-close ,window)
+                              (return-from dispatch-events nil))
+                 (t (format t "Unhandled event type: ~S~%" (type-of ,evt))))
+              `(progn (on-event ,window ,evt)
+                      (when (eql (type-of ,evt) 'close-event)
+                        (return-from dispatch-events nil))))
+      finally (return t)))))
 
+
+;; implement this genfun when calling dispatch-events with :on-foo NIL
+(defgeneric on-event (window event))
+
+(defmethod on-event (window event)
+  (declare (ignore window))
+  (format t "Unhandled event: ~S~%" event))
+
+;; implemented those when calling dispatch-events with :on-foo T
+(defgeneric on-key (window state key))
+(defgeneric on-button (window state button))
+(defgeneric on-mouse-motion (window x y dx dy))
+(defgeneric on-resize (window w h))
+(defgeneric on-draw (window))
+(defgeneric on-close (window))
 
 ;; main loop anyone?
 (defmacro with-idle-forms (window &body idle-forms)

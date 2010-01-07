@@ -14,10 +14,10 @@
    #:on-event #:next-event #:push-event #:push-close-event
    #:event #:key-event #:key-press-event #:key-release-event
    #:button-event #:button-press-event #:button-release-event
-   #:motion-event #:expose-event #:resize-event
+   #:mouse-motion-event #:expose-event #:configure-event
    #:map-event #:map-in-event #:map-out-event #:close-event
-   #:pressed #:mapped #:width #:height #:key #:button
-   #:x-pos #:y-pos #:x-delta #:y-delta
+   #:event-pressed #:event-mapped #:event-width #:event-height #:event-key #:event-button
+   #:event-x #:event-y #:event-dx #:event-dy
    ;; events methods
    #:dispatch-events
    #:on-key #:on-button #:on-mouse-motion #:on-resize #:on-draw #:on-close

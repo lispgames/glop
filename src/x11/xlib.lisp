@@ -447,10 +447,10 @@
                           :button button)))
         (:motion-notify
          (with-foreign-slots ((x y) evt x-motion-event)
-           (let ((glop-evt (make-instance 'glop:motion-event
-                                          :x-pos x :y-pos y
-                                          :x-delta (- x last-x)
-                                          :y-delta (- y last-y))))
+           (let ((glop-evt (make-instance 'glop:mouse-motion-event
+                                          :x x :y y
+                                          :dx (- x last-x)
+                                          :dy (- y last-y))))
              (setf last-x x last-y y)
              glop-evt)))
         (:expose
@@ -462,7 +462,7 @@
                             :width width :height height))))
         (:configure-notify
          (with-foreign-slots ((width height) evt x-configure-event)
-           (make-instance 'glop:resize-event
+           (make-instance 'glop:configure-event
                           :width width :height height)))
         (:map-notify
          (make-instance 'glop:map-in-event))
