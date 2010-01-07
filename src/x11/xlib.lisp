@@ -432,23 +432,25 @@
     (with-foreign-slots ((type) evt x-event)
       (case type
         (:key-press
-           (glop::make-event :type :key-press
-                             :key (x-lookup-key evt)))
+           (make-instance 'glop:key-press-event
+                          :key (x-lookup-key evt)))
         (:key-release
-           (glop::make-event :type :key-release
-                             :key (x-lookup-key evt)))
+           (make-instance 'glop:key-release-event
+                          :key (x-lookup-key evt)))
         (:button-press
          (with-foreign-slots ((button) evt x-button-pressed-event)
-           (glop::make-event :type :button-press
-                             :button button)))
+           (make-instance 'glop:button-press-event
+                          :button button)))
         (:button-release
          (with-foreign-slots ((button) evt x-button-pressed-event)
-           (glop::make-event :type :button-release
-                             :button button)))
+           (make-instance 'glop:button-release-event
+                          :button button)))
         (:motion-notify
          (with-foreign-slots ((x y) evt x-motion-event)
-           (let ((glop-evt (glop::make-event :type :mouse-motion
-                                             :x x :y y :dx (- x last-x) :dy (- y last-y))))
+           (let ((glop-evt (make-instance 'glop:motion-event
+                                          :x-pos x :y-pos y
+                                          :x-delta (- x last-x)
+                                          :y-delta (- y last-y))))
              (setf last-x x last-y y)
              glop-evt)))
         (:expose
@@ -456,22 +458,22 @@
            (multiple-value-bind (root x y width height border-width depth)
                (x-get-geometry display-ptr win)
              (declare (ignorable x y root border-width depth))
-             (glop::make-event :type :expose
-                               :width width :height height))))
+             (make-instance 'glop:expose-event
+                            :width width :height height))))
         (:configure-notify
          (with-foreign-slots ((width height) evt x-configure-event)
-           (glop::make-event :type :configure
-                             :width width :height height)))
+           (make-instance 'glop:resize-event
+                          :width width :height height)))
         (:map-notify
-         (glop::make-event :type :show))
+         (make-instance 'glop:map-in-event))
         (:unmap-notify
-         (glop::make-event :type :hide))
+         (make-instance 'glop:map-out-event))
         (:client-message
          (with-foreign-slots ((display-ptr message-type data) evt x-client-message-event)
            (with-foreign-slots ((l) data x-client-message-event-data)
              (let ((atom-name (x-get-atom-name display-ptr (mem-ref l :long))))
                (when (string= atom-name "WM_DELETE_WINDOW")
-                 (glop::make-event :type :close))))))
+                 (make-instance 'glop:close-event))))))
         (t (format t "Unhandled X11 event: ~S~%" type))))))
 
 (defcfun ("XLookupString" %x-lookup-string) :int

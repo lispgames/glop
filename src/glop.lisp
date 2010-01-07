@@ -84,14 +84,67 @@
   (error 'not-implemented))
 
 ;;; Events handling
-(defstruct event
-  type
-  width height ;; for :configure :expose :show
-  key          ;; for :key-press :key-release
-  button       ;; for :button-press :button-release
-  x y          ;; mouse position (all events)
-  dx dy        ;; for :mouse-motion
-)
+(defclass event () ()
+  (:documentation "Common ancestor for all events."))
+
+(defclass key-event (event)
+  ((keycode :initargs :keycode :reader key)
+   (text :initargs :character :reader text)
+   (pressed :initargs :pressed :reader pressed))
+  (:documentation "Keyboard key press or release."))
+
+(defclass key-press-event (key-event)
+  ((pressed :initform t))
+  (:documentation "Keyboard key press."))
+
+(defclass key-release-event (key-event)
+  ((pressed :initform nil))
+  (:documentation "Keyboard key release."))
+
+(defclass button-event (event)
+  ((button :initargs :button :reader button)
+   (pressed :initargs :pressed :reader pressed))
+  (:documentation "Mouse button press or release."))
+
+(defclass button-press-event (button-event)
+  ((pressed :initform t))
+  (:documentation "Mouse button press."))
+
+(defclass button-release-event (button-event)
+  ((pressed :initform nil))
+  (:documentation "Mouse button release."))
+
+(defclass motion-event (event)
+  ((x-pos :initargs :x-pos :reader x-pos)
+   (y-pos :initargs :y-pos :reader y-pos)
+   (x-delta :initargs :x-delta :reader x-delta)
+   (y-delta :initargs :y-delta :reader y-delta))
+  (:documentation "Mouse motion."))
+
+(defclass expose-event (event)
+  ((width :initargs :width :reader width)
+   (height :initargs :height :reader height))
+  (:documentation "Window expose."))
+
+(defclass resize-event (event)
+  ((width :initargs :width :reader width)
+   (height :initargs :height :reader height))
+  (:documentation "Window reconfiguration."))
+
+(defclass map-event (event)
+  ((mapped :initargs :mapped :reader mapped))
+  (:documentation "Window mapped or unmapped."))
+
+(defclass map-in-event (map-change-event)
+  ((mapped :initform t))
+  (:documentation "Window mapped in."))
+
+(defclass map-out-event (map-change-event)
+  ((mapped :initform nil))
+  (:documentation "Window unmapped."))
+
+(defclass close-event (event) ()
+  (:documentation "Window closed."))
 
 (defun push-event (window evt)
   "Push an artificial event into the event processing system.
@@ -100,7 +153,7 @@ Note that this has no effect on the underlying window system."
 
 (defun push-close-event (window)
   "Push an artificial :close event into the event processing system."
-  (push-event window (make-event :type :close)))
+  (push-event window (make-instance 'close-event)))
 
 (defdfun next-event (window &key blocking)
   "Returns next available event for manual processing.
@@ -117,6 +170,8 @@ If :blocking is true, wait for an event."
   (error 'not-implemented))
 
 ;; method based event handling
+(defgeneric on-event (window event))
+
 (defun dispatch-events (window &key blocking)
   "Process all pending system events and call corresponding methods.
 When :blocking is non-nil calls event handling func that will block
@@ -124,27 +179,9 @@ until an event occurs.
 Returns NIL on :CLOSE event, T otherwise."
   (loop for evt = (next-event window :blocking blocking)
     while evt
-    do  (case (event-type evt)
-          (:key-press (on-key window :press (event-key evt)))
-          (:key-release (on-key window :release (event-key evt)))
-          (:button-press (on-button window :press (event-button evt)))
-          (:button-release (on-button window :release (event-button evt)))
-          (:mouse-motion (on-mouse-motion window (event-x evt) (event-y evt)
-                                          (event-dx evt) (event-dy evt)))
-          (:configure (on-resize window (event-width evt) (event-height evt)))
-          (:expose (on-draw window))
-          (:close (on-close window)
-                  (return-from dispatch-events nil))
-          (t (format t "Unhandled event type: ~S~%" (event-type evt))))
+    do (on-event window evt)
     finally (return t)))
 
-
-(defgeneric on-key (window state key))
-(defgeneric on-button (window state button))
-(defgeneric on-mouse-motion (window x y dx dy))
-(defgeneric on-resize (window w h))
-(defgeneric on-draw (window))
-(defgeneric on-close (window))
 
 ;; main loop anyone?
 (defmacro with-idle-forms (window &body idle-forms)

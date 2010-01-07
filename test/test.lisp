@@ -7,35 +7,33 @@
 
 (in-package #:glop-test)
 
-(defmethod glop:on-key (window state key)
-  (case state
-    (:press (format t "Key pressed: ~S~%" key))
-    (:release (format t "Key released: ~S~%" key)))
-  (when (eql key #\Escape)
-    (glop:push-close-event window))
-  (when (and (eql key #\f) (eql state :press))
-    (glop:set-fullscreen window)))
+(defmethod glop:on-event (window (event glop:key-event))
+  (with-slots (pressed key) event
+    (format t "Key ~:[pressed~;released~]: ~S~%" pressed key)
+    (when (eql key #\Escape)
+      (glop:push-close-event window))
+    (when (and pressed (eql key #\f))
+      (glop:set-fullscreen window))))
 
-(defmethod glop:on-button (window state button)
+(defmethod glop:on-event (window (event glop:button-event))
   (declare (ignore window))
-  (case state
-    (:press (format t "Button pressed: ~S~%" button))
-    (:release (format t "Button released: ~S~%" button))))
+  (format t "Button ~:[pressed~;released~]: ~S~%" (glop:pressed event) (glop:button event)))
 
-(defmethod glop:on-mouse-motion (window x y dx dy)
-  (declare (ignore window x y dx dy))
+(defmethod glop:on-event (window (event glop:motion-event))
+  (declare (ignore window))
   (format t "Mouse motion~%"))
 
-(defmethod glop:on-resize (window w h)
+(defmethod glop:on-event (window (event glop:resize-event))
   (declare (ignore window))
-  (gl:viewport 0 0 w h)
-  (format t "Resize: ~Sx~S~%" w h))
+  (with-slots (width height) event
+   (gl:viewport 0 0 width height)
+   (format t "Resize: ~Sx~S~%" width height)))
 
-(defmethod glop:on-draw (window)
+(defmethod glop:on-event (window (event glop:expose-event))
   (declare (ignore window))
-  (format t "Draw~%"))
+  (format t "Expose~%"))
 
-(defmethod glop:on-close (window)
+(defmethod glop:on-event (window (event glop:close-event))
   (declare (ignore window))
   (format t "Close~%"))
 
@@ -90,12 +88,12 @@
          with running = t
          while running
          if evt
-         do (case (glop:event-type evt)
-              (:key-press
-               (when (eql (glop:event-key evt) #\Escape)
+         do (case (type-of evt)
+              (glop:key-press-event
+               (when (eql (glop:key evt) #\Escape)
                  (glop:push-close-event win)))
-              (:close (setf running nil))
-              (t (format t "Unhandled event: ~S~%" (glop:event-type evt))))
+              (glop:close-event (setf running nil))
+              (t (format t "Unhandled event: ~A~%" evt)))
          else do (gl:clear :color-buffer)
                  (gl:flush)
                  (glop:swap-buffers win))
