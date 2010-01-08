@@ -1,16 +1,6 @@
 ;;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; Base: 10; indent-tabs-mode: nil -*-
 
 ;;; Xlib bindings
-(defpackage :glop-xlib
-  (:use #:cl #:cffi)
-  (:export #:visual-info #:bool #:drawable
-           #:x-open-display #:x-create-window #:x-default-root-window
-           #:x-store-name #:x-flush #:x-map-raised #:x-unmap-window
-           #:x-destroy-window #:x-close-display #:x-next-event
-           #:x-free #:set-fullscreen #:get-closest-video-mode
-           #:get-current-display-mode #:set-video-mode
-           #:get-available-display-modes))
-
 (in-package #:glop-xlib)
 
 (defctype xid :unsigned-long)
@@ -20,7 +10,6 @@
 (defctype pixmap xid)
 (defctype cursor xid)
 (defctype gcontext xid)
-(defctype keysym xid)
 
 (defctype bool :int)
 
@@ -436,14 +425,14 @@
            (multiple-value-bind (string keysym) (x-lookup-string evt)
             (make-instance 'glop:key-press-event
                            :keycode keycode
-                           :keysym keysym
+                           :keysym (foreign-enum-keyword 'keysym keysym)
                            :string string))))
         (:key-release
          (with-foreign-slots ((keycode) evt x-key-event)
            (multiple-value-bind (string keysym) (x-lookup-string evt)
             (make-instance 'glop:key-release-event
                            :keycode keycode
-                           :keysym keysym
+                           :keysym (foreign-enum-keyword 'keysym keysym)
                            :string string))))
         (:button-press
          (with-foreign-slots ((button) evt x-button-pressed-event)
