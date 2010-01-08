@@ -52,6 +52,7 @@
 	  (default-depth dpy screen)))
 
 (defun set-video-mode (dpy screen mode rate)
+  (declare (ignore rate))
   (let* ((root (root-window dpy screen))
 	 (sc (xrr-get-screen-info dpy root)))
     (xrr-set-screen-config dpy sc root mode 
@@ -59,6 +60,7 @@
     (xrr-free-screen-config-info sc)))
 
 (defun get-closest-video-mode (dpy screen desired-width desired-height rate)
+  (declare (ignore rate))
   (let ((sc (xrr-get-screen-info dpy (root-window dpy screen)))
 	(size-list (null-pointer))
 	(best-size -1)
