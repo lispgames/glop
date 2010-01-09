@@ -10,8 +10,8 @@
 
 (defmethod glop:on-key (window pressed keycode keysym string)
   (if pressed
-      (format t "Key pressed: ~D (~A ~S)~%" keycode keysym string)
-      (format t "Key released: ~D (~A ~S) ~%" keycode keysym string))
+      (format t "Key pressed: ~D (~S ~S)~%" keycode keysym string)
+      (format t "Key released: ~D (~S ~S) ~%" keycode keysym string))
   (when (= keycode 9)                       ;ESC
     (glop:push-close-event window))
   (when (and pressed (string-equal string "f"))

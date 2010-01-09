@@ -425,14 +425,14 @@
            (multiple-value-bind (string keysym) (x-lookup-string evt)
             (make-instance 'glop:key-press-event
                            :keycode keycode
-                           :keysym (foreign-enum-keyword 'keysym keysym)
+                           :keysym keysym
                            :string string))))
         (:key-release
          (with-foreign-slots ((keycode) evt x-key-event)
            (multiple-value-bind (string keysym) (x-lookup-string evt)
             (make-instance 'glop:key-release-event
                            :keycode keycode
-                           :keysym (foreign-enum-keyword 'keysym keysym)
+                           :keysym keysym
                            :string string))))
         (:button-press
          (with-foreign-slots ((button) evt x-button-pressed-event)
@@ -485,7 +485,7 @@
       (values (if (> (length string) 0)
                   string
                   nil)
-              keysym))))
+              (mem-ref keysym 'keysym)))))
 
 (defcfun ("XGetGeometry" %x-get-geometry) x-status
   (display-ptr :pointer) (d drawable) (root-return :pointer)
