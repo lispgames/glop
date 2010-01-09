@@ -431,32 +431,32 @@
   (:greater #x003e)  ; u+003e greater-than sign
   (:question #x003f)  ; u+003f question mark
   (:at #x0040)  ; u+0040 commercial at
-  (:capital-capital-a #x0041)  ; u+0041 latin capital letter a
-  (:capital-capital-b #x0042)  ; u+0042 latin capital letter b
-  (:capital-capital-c #x0043)  ; u+0043 latin capital letter c
-  (:capital-capital-d #x0044)  ; u+0044 latin capital letter d
-  (:capital-capital-e #x0045)  ; u+0045 latin capital letter e
-  (:capital-capital-f #x0046)  ; u+0046 latin capital letter f
-  (:capital-capital-g #x0047)  ; u+0047 latin capital letter g
-  (:capital-capital-h #x0048)  ; u+0048 latin capital letter h
-  (:capital-capital-i #x0049)  ; u+0049 latin capital letter i
-  (:capital-capital-j #x004a)  ; u+004a latin capital letter j
-  (:capital-capital-k #x004b)  ; u+004b latin capital letter k
-  (:capital-capital-l #x004c)  ; u+004c latin capital letter l
-  (:capital-capital-m #x004d)  ; u+004d latin capital letter m
-  (:capital-capital-n #x004e)  ; u+004e latin capital letter n
-  (:capital-capital-o #x004f)  ; u+004f latin capital letter o
-  (:capital-capital-p #x0050)  ; u+0050 latin capital letter p
-  (:capital-capital-q #x0051)  ; u+0051 latin capital letter q
-  (:capital-capital-r #x0052)  ; u+0052 latin capital letter r
-  (:capital-capital-s #x0053)  ; u+0053 latin capital letter s
-  (:capital-capital-t #x0054)  ; u+0054 latin capital letter t
-  (:capital-capital-u #x0055)  ; u+0055 latin capital letter u
-  (:capital-capital-v #x0056)  ; u+0056 latin capital letter v
-  (:capital-capital-w #x0057)  ; u+0057 latin capital letter w
-  (:capital-capital-x #x0058)  ; u+0058 latin capital letter x
-  (:capital-capital-y #x0059)  ; u+0059 latin capital letter y
-  (:capital-capital-z #x005a)  ; u+005a latin capital letter z
+  (:capital-a #x0041)  ; u+0041 latin capital letter a
+  (:capital-b #x0042)  ; u+0042 latin capital letter b
+  (:capital-c #x0043)  ; u+0043 latin capital letter c
+  (:capital-d #x0044)  ; u+0044 latin capital letter d
+  (:capital-e #x0045)  ; u+0045 latin capital letter e
+  (:capital-f #x0046)  ; u+0046 latin capital letter f
+  (:capital-g #x0047)  ; u+0047 latin capital letter g
+  (:capital-h #x0048)  ; u+0048 latin capital letter h
+  (:capital-i #x0049)  ; u+0049 latin capital letter i
+  (:capital-j #x004a)  ; u+004a latin capital letter j
+  (:capital-k #x004b)  ; u+004b latin capital letter k
+  (:capital-l #x004c)  ; u+004c latin capital letter l
+  (:capital-m #x004d)  ; u+004d latin capital letter m
+  (:capital-n #x004e)  ; u+004e latin capital letter n
+  (:capital-o #x004f)  ; u+004f latin capital letter o
+  (:capital-p #x0050)  ; u+0050 latin capital letter p
+  (:capital-q #x0051)  ; u+0051 latin capital letter q
+  (:capital-r #x0052)  ; u+0052 latin capital letter r
+  (:capital-s #x0053)  ; u+0053 latin capital letter s
+  (:capital-t #x0054)  ; u+0054 latin capital letter t
+  (:capital-u #x0055)  ; u+0055 latin capital letter u
+  (:capital-v #x0056)  ; u+0056 latin capital letter v
+  (:capital-w #x0057)  ; u+0057 latin capital letter w
+  (:capital-x #x0058)  ; u+0058 latin capital letter x
+  (:capital-y #x0059)  ; u+0059 latin capital letter y
+  (:capital-z #x005a)  ; u+005a latin capital letter z
   (:bracketleft #x005b)  ; u+005b left square bracket
   (:backslash #x005c)  ; u+005c reverse solidus
   (:bracketright #x005d)  ; u+005d right square bracket
@@ -526,14 +526,14 @@
   (:onehalf #x00bd)  ; u+00bd vulgar fraction one half
   (:threequarters #x00be)  ; u+00be vulgar fraction three quarters
   (:questiondown #x00bf)  ; u+00bf inverted question mark
-  (:capital-capital-agrave #x00c0)  ; u+00c0 latin capital letter a with grave
-  (:capital-capital-aacute #x00c1)  ; u+00c1 latin capital letter a with acute
-  (:capital-capital-acircumflex #x00c2)  ; u+00c2 latin capital letter a with circumflex
-  (:capital-capital-atilde #x00c3)  ; u+00c3 latin capital letter a with tilde
-  (:capital-capital-adiaeresis #x00c4)  ; u+00c4 latin capital letter a with diaeresis
-  (:capital-capital-aring #x00c5)  ; u+00c5 latin capital letter a with ring above
-  (:capital-capital-ae #x00c6)  ; u+00c6 latin capital letter ae
-  (:capital-capital-ccedilla #x00c7)  ; u+00c7 latin capital letter c with cedilla
+  (:capital-agrave #x00c0)  ; u+00c0 latin capital letter a with grave
+  (:capital-aacute #x00c1)  ; u+00c1 latin capital letter a with acute
+  (:capital-acircumflex #x00c2)  ; u+00c2 latin capital letter a with circumflex
+  (:capital-atilde #x00c3)  ; u+00c3 latin capital letter a with tilde
+  (:capital-adiaeresis #x00c4)  ; u+00c4 latin capital letter a with diaeresis
+  (:capital-aring #x00c5)  ; u+00c5 latin capital letter a with ring above
+  (:capital-ae #x00c6)  ; u+00c6 latin capital letter ae
+  (:capital-ccedilla #x00c7)  ; u+00c7 latin capital letter c with cedilla
   (:capital-egrave #x00c8)  ; u+00c8 latin capital letter e with grave
   (:capital-eacute #x00c9)  ; u+00c9 latin capital letter e with acute
   (:capital-ecircumflex #x00ca)  ; u+00ca latin capital letter e with circumflex
