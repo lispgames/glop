@@ -482,9 +482,7 @@
   (with-foreign-objects ((buffer :char 32) (keysym 'keysym))
     (%x-lookup-string key-event buffer 32 keysym (null-pointer))
     (let ((string (foreign-string-to-lisp buffer)))
-      (values (if (> (length string) 0)
-                  string
-                  nil)
+      (values (if (zerop (length string)) nil string)
               (mem-ref keysym 'keysym)))))
 
 (defcfun ("XGetGeometry" %x-get-geometry) x-status
