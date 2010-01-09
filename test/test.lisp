@@ -8,20 +8,20 @@
 
 (in-package #:glop-test)
 
-(defmethod glop:on-key (window state key)
-  (case state
-    (:press (format t "Key pressed: ~S~%" key))
-    (:release (format t "Key released: ~S~%" key)))
-  (when (eql key #\Escape)
+(defmethod glop:on-key (window pressed keycode keysym string)
+  (if pressed
+      (format t "Key pressed: ~D (~S ~S)~%" keycode keysym string)
+      (format t "Key released: ~D (~S ~S) ~%" keycode keysym string))
+  (when (= keycode 9)                       ;ESC
     (glop:push-close-event window))
-  (when (and (eql key #\f) (eql state :press))
+  (when (and pressed (string-equal string "f"))
     (glop::toggle-fullscreen window)))
 
-(defmethod glop:on-button (window state button)
+(defmethod glop:on-button (window pressed button)
   (declare (ignore window))
-  (case state
-    (:press (format t "Button pressed: ~S~%" button))
-    (:release (format t "Button released: ~S~%" button))))
+  (if pressed
+      (format t "Button pressed: ~S~%" button)
+      (format t "Button released: ~S~%" button)))
 
 (defmethod glop:on-mouse-motion (window x y dx dy)
   (declare (ignore window x y dx dy))
@@ -93,7 +93,7 @@
          if evt
          do (typecase evt
               (glop:key-press-event
-               (when (eql (glop:event-key evt) #\Escape)
+               (when (= (glop:event-keycode evt) 9) ;ESC
                  (glop:push-close-event win)))
               (glop:close-event (setf running nil))
               (t (format t "Unhandled event: ~A~%" evt)))
@@ -208,10 +208,10 @@
 
 ;; on-event based dispatching test
 (defmethod glop:on-event (window (event glop:key-event))
-  (format t "Key ~:[released~;pressed~]: ~S~%" (glop:event-pressed event) (glop:event-key event))
-  (when (eql (glop:event-key event) #\Escape)
+  (format t "Key ~:[released~;pressed~]: ~A~%" (glop:event-pressed event) (glop:event-keycode event))
+  (when (= (glop:event-keycode event) 9)    ;ESC
       (glop:push-close-event window))
-  (when (and (glop:event-pressed event) (eql (glop:event-key event) #\f))
+  (when (and (glop:event-pressed event) (= (glop:event-keycode event) 41)) ;F
     (glop:set-fullscreen window)))
 
 (defmethod glop:on-event (window (event glop:button-event))

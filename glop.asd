@@ -14,7 +14,9 @@
              (:file "utils")
              #+unix(:module "x11"
                             :serial t
-                            :components ((:file "xlib")
+                            :components ((:file "package")
+                                         (:file "keysymdef")
+                                         (:file "xlib")
                                          (:file "glx")
                                          (:file "display-ctrl")
                                          (:file "glop-x11")))

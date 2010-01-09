@@ -1,16 +1,6 @@
 ;;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; Base: 10; indent-tabs-mode: nil -*-
 
 ;;; Xlib bindings
-(defpackage :glop-xlib
-  (:use #:cl #:cffi)
-  (:export #:visual-info #:bool #:drawable
-           #:x-open-display #:x-create-window #:x-default-root-window
-           #:x-store-name #:x-flush #:x-map-raised #:x-unmap-window
-           #:x-destroy-window #:x-close-display #:x-next-event
-           #:x-free #:set-fullscreen #:get-closest-video-mode
-           #:get-current-display-mode #:set-video-mode
-           #:get-available-display-modes))
-
 (in-package #:glop-xlib)
 
 (defctype xid :unsigned-long)
@@ -20,7 +10,6 @@
 (defctype pixmap xid)
 (defctype cursor xid)
 (defctype gcontext xid)
-(defctype keysym xid)
 
 (defctype bool :int)
 
@@ -432,11 +421,19 @@
     (with-foreign-slots ((type) evt x-event)
       (case type
         (:key-press
-           (make-instance 'glop:key-press-event
-                          :key (x-lookup-key evt)))
+         (with-foreign-slots ((keycode) evt x-key-event)
+           (multiple-value-bind (string keysym) (x-lookup-string evt)
+            (make-instance 'glop:key-press-event
+                           :keycode keycode
+                           :keysym keysym
+                           :string string))))
         (:key-release
-           (make-instance 'glop:key-release-event
-                          :key (x-lookup-key evt)))
+         (with-foreign-slots ((keycode) evt x-key-event)
+           (multiple-value-bind (string keysym) (x-lookup-string evt)
+            (make-instance 'glop:key-release-event
+                           :keycode keycode
+                           :keysym keysym
+                           :string string))))
         (:button-press
          (with-foreign-slots ((button) evt x-button-pressed-event)
            (make-instance 'glop:button-press-event
@@ -480,13 +477,15 @@
   (evt x-key-event) (buffer-return :pointer) (bytes-buffer :int)
   (keysym-return :pointer) (status-in-out :pointer))
 
-(defun x-lookup-key (key-event)
-  "Returns either a char or an x-keysym-value keyword."
-  (with-foreign-objects ((buffer :char 32) (keysym 'keysym) (compose 'x-compose-status))
-    (%x-lookup-string key-event buffer 32 keysym compose)
-    ;; do we have an interesting keysym?
-    (let ((sym (foreign-enum-keyword 'x-keysym-value (mem-ref keysym 'keysym) :errorp nil)))
-      (or sym (code-char (mem-aref buffer :char 0))))))
+(defun x-lookup-string (key-event)
+  "Returns the input string corresponding to a keypress."
+  (with-foreign-objects ((buffer :char 32) (keysym 'keysym))
+    (%x-lookup-string key-event buffer 32 keysym (null-pointer))
+    (let ((string (foreign-string-to-lisp buffer)))
+      (values (if (> (length string) 0)
+                  string
+                  nil)
+              (mem-ref keysym 'keysym)))))
 
 (defcfun ("XGetGeometry" %x-get-geometry) x-status
   (display-ptr :pointer) (d drawable) (root-return :pointer)
