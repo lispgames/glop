@@ -432,6 +432,7 @@
          (:wm-paint
           ;; XXX: this is an ugly hack but WM_SIZE acts strangely...
           (multiple-value-bind (x y width height) (get-geometry wnd)
+            (declare (ignore x y))
             (setf %event% (glop::make-instance (if from-configure
                                                    (progn (setf from-configure nil)
                                                           'glop:configure-event)
