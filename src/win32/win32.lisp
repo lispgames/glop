@@ -116,32 +116,176 @@
   (:wm-sys-command 274))
 
 (defcenum vkey-type
-  (:key-up 38)
-  (:key-down 40)
-  (:key-left 37)
-  (:key-right 39)
-  (:key-prior 33)
-  (:key-next 34)
-  (:key-home 36)
-  (:key-end 35)
-  (:key-clear 12)
-  (:key-insert 45)
-  (:key-delete 46)
-  (:key-f1 #x70)
-  :key-f2
-  :key-f3
-  :key-f4
-  :key-f5
-  :key-f6
-  :key-f7
-  :key-f8
-  :key-f9
-  :key-f10
-  :key-f11
-  (:key-lshift #xA0)
-  :key-rshift
-  :key-lcontrol
-  :key-rcontrol)
+  (:l-button 1)
+  :r-button
+  :cancel
+  :m-button
+  :x-button1
+  :x-button2
+  :backspace
+  :tab
+  :clear
+  :return
+  (:shift 16)
+  (:control 17)
+  :menu
+  :pause
+  :capital
+  (:kana #x15)
+  (:junja #x17)
+  (:final #x18)
+  (:hanja #x19)
+  (:escape #x1B)
+  (:convert #x1C)
+  (:no-convert #x1D)
+  (:accept #x1E)
+  (:mode-change #x1F)
+  (:space 32)
+  (:page-up 33)
+  (:page-down 34)
+  (:end 35)
+  (:home 36)
+  (:left 37)
+  (:up 38)
+  (:right 39)
+  (:down 40)
+  (:select 41)
+  (:print 42)
+  (:execute 43)
+  (:snapshot 44)
+  (:insert 45)
+  (:delete 46)
+  (:help 47)
+  (:0 #x30)
+  :1
+  :2
+  :3
+  :4
+  :5
+  :6
+  :7
+  :8
+  :9
+  (:a #x41)
+  :b
+  :c
+  :d
+  :e
+  :f
+  :g
+  :h
+  :i
+  :j
+  :k
+  :l
+  :m
+  :n
+  :o
+  :p
+  :q
+  :r
+  :s
+  :t
+  :u
+  :v
+  :w
+  :x
+  :y
+  :z
+  (:lwin #x5B)
+  (:rwin #x5C)
+  (:apps #x5D)
+  (:sleep #x5F)
+  (:numpad0 #x60)
+  (:numpad1 #x61)
+  (:numpad2 #x62)
+  (:numpad3 #x63)
+  (:numpad4 #x64)
+  (:numpad5 #x65)
+  (:numpad6 #x66)
+  (:numpad7 #x67)
+  (:numpad8 #x68)
+  (:numpad9 #x69)
+  (:multiply #x6A)
+  (:add #x6B)
+  (:separator #x6C)
+  (:substract #x6D)
+  (:decimal #x6E)
+  (:divide #x6F)
+  (:f1 #x70)
+  :f2
+  :f3
+  :f4
+  :f5
+  :f6
+  :f7
+  :f8
+  :f9
+  :f10
+  :f11
+  :f12
+  :f13
+  :f14
+  :f15
+  :f16
+  :f17
+  :f18
+  :f19
+  :f20
+  :f21
+  :f22
+  :f23
+  :f24
+  (:numlock #x90)
+  :scroll
+  (:shift-l #xA0)
+  :shift-r
+  :control-l
+  :control-r
+  :menu-l
+  :menu-r
+  :browser-back
+  :browser-forward
+  :browser-refresh
+  :browser-stop
+  :browser-search
+  :browser-favorites
+  :browser-home
+  :volume-mute
+  :volume-down
+  :volume-up
+  :media-next-track
+  :media-prev-track
+  :media-stop
+  :media-play-pause
+  :launch-mail
+  :maunch-media-select
+  :launch-app1
+  :launch-app2
+  :oem1
+  :oem-plus
+  :oem-comma
+  :oem-minus
+  :oem-period
+  :oem2
+  (:oem3 #xC0)
+  (:oem4 #xDB)
+  :oem5
+  :oem6
+  :oem7
+  :oem8
+  (:oem102 #xE2)
+  (:process-key #xE5)
+  (:packet #xE7)
+  (:attn #xF6)
+  :crsel
+  :exsel
+  :ereof
+  :play
+  :zoom
+  :no-name
+  :pa1
+  :oem-clear)
 
 (defcenum system-command-type
   (:sc-minimize #xf020)
