@@ -396,13 +396,16 @@
   (logand (ash value -16) #xFFFF))
 
 (defun win32-lookup-key (w-param l-param)
-  (let ((key (foreign-enum-keyword 'vkey-type w-param :errorp nil)))
-    (or key
-        (with-foreign-object (kbd-state :char 256)
-          (when (get-keyboard-state kbd-state)
-            (with-foreign-object (buffer :int16)
-              (unless (/= (to-ascii w-param l-param kbd-state buffer 0) 1)
-                (code-char (mem-ref buffer :char)))))))))
+  (values (foreign-enum-keyword 'vkey-type w-param :errorp nil)
+          (with-foreign-object (kbd-state :char 256)
+            (when (get-keyboard-state kbd-state)
+              (with-foreign-object (buffer :int16)
+                (let ((res (to-ascii (ldb (byte 32 0) w-param)
+                                     (ldb (byte 32 0) l-param)
+                                     kbd-state buffer 0)))
+                  (case res
+                    (0 nil)
+                    (t (foreign-string-to-lisp buffer)))))))))
 
 
 (let ((last-x 0)
@@ -465,25 +468,25 @@
                                              :button 2))
           (return-from window-proc 0))
          (:wm-key-up
-          (let ((key (win32-lookup-key w-param l-param)))
-            (when key
-              (setf %event% (glop::make-instance 'glop:key-release-event
-                                                 :key  key))))
+          (multiple-value-bind (keysym string) (win32-lookup-key w-param l-param)
+            (setf %event% (glop::make-instance 'glop:key-release-event
+                                               :keycode  w-param
+                                               :keysym keysym
+                                               :string string)))
           (return-from window-proc 0))
          (:wm-key-down
-          (let ((key (win32-lookup-key w-param l-param)))
-            (when key
-              (setf %event% (glop::make-instance 'glop:key-press-event
-                                                 :key  key))))
+          (multiple-value-bind (keysym string) (win32-lookup-key w-param l-param)
+            (setf %event% (glop::make-instance 'glop:key-press-event
+                                               :keycode  w-param
+                                               :keysym keysym
+                                               :string string)))
           (return-from window-proc 0))
          (:wm-mouse-wheel
-          (format t "WM_MOUSEWHEEL: ~S => ~S~%" w-param (high-word w-param))
           (setf %event% (glop::make-instance 'glop:button-press-event
                                              :button (if (> w-param 0)
                                                          4 5)))
           (return-from window-proc 0))
          (:wm-size
-          (format t"WM_SIZE !!!!~%")
           ;; XXX: other part of above ugly hack...
           ;; Not sure why but it looks WM_SIZE doesn't get out of window-proc
           ;; until mouse button is released...
@@ -499,7 +502,6 @@
                                                    'glop:map-in-event
                                                    'glop:map-out-event)))))
          (:wm-set-focus
-          (format t "WM_SETFOCUS~%")
           (return-from window-proc 0)))
        ;; (:wm-sys-command
        ;;  (format t "WM_SYSCOMMAND~%")))
