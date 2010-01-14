@@ -13,7 +13,7 @@
   (when (eq keysym :escape)
     (glop:push-close-event window))
   (when (and pressed (eq keysym :f))
-    (glop::toggle-fullscreen window)))
+    (glop:set-fullscreen window)))
 
 (defmethod glop:on-button (window pressed button)
   (declare (ignore window))
