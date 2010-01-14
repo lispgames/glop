@@ -58,8 +58,8 @@
   (declare (ignore window))
   (error 'not-implemented))
 
-(defdfun toggle-fullscreen (window)
-  "Switch display resolution to WINDOW dimensions and make WINDOW fullscreen."
+(defdfun set-fullscreen (window &optional (state (not (window-fullscreen win))))
+  "Attempt to set WINDOW to fullscreen state STATE using the video mode closest to current geometry."
   (declare (ignore window))
   (error 'not-implemented))
 

@@ -336,7 +336,7 @@
   (border-width :int) (depth :int) (win-class x-window-class) (visual :pointer)
   (value-mask x-window-attributes-flags) (attributes set-window-attributes))
 
-(defun set-fullscreen (window dpy be-fullscreen)
+(defun %set-fullscreen (window dpy be-fullscreen)
   (let ((wm-state (x-intern-atom dpy "_NET_WM_STATE" nil))
         (fullscreen (x-intern-atom dpy "_NET_WM_STATE_FULLSCREEN" nil)))
     (with-foreign-object (msg 'x-event)

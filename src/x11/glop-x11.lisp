@@ -134,13 +134,13 @@
             (glop-xlib:set-mode display screen
                                 (glop-xlib:closest-mode display screen
                                                         win-width win-height 0) 0)
-            (glop-xlib:set-fullscreen id display t)
+            (glop-xlib:%set-fullscreen id display t)
             (setf fullscreen t))
           (progn
             (with-accessors ((height video-mode-height)
                              (width video-mode-width))
                 previous-video-mode
-              (glop-xlib:set-fullscreen id display nil)
+              (glop-xlib:%set-fullscreen id display nil)
               (glop-xlib:set-mode display screen
                                   (glop-xlib:closest-mode display screen
                                                                           width height 0) 0))
