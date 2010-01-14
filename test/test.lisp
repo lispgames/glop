@@ -9,9 +9,7 @@
 (in-package #:glop-test)
 
 (defmethod glop:on-key (window pressed keycode keysym string)
-  (if pressed
-      (format t "Key pressed: ~D (~S ~S)~%" keycode keysym string)
-      (format t "Key released: ~D (~S ~S) ~%" keycode keysym string))
+  (format t "Key ~:[released~;pressed~]: ~D (~S ~S)~%" pressed keycode keysym string)
   (when (eq keysym :escape)
     (glop:push-close-event window))
   (when (and pressed (eq keysym :f))
@@ -19,9 +17,7 @@
 
 (defmethod glop:on-button (window pressed button)
   (declare (ignore window))
-  (if pressed
-      (format t "Button pressed: ~S~%" button)
-      (format t "Button released: ~S~%" button)))
+  (format t "Button ~:[released~;pressed~]: ~S~%" pressed button))
 
 (defmethod glop:on-mouse-motion (window x y dx dy)
   (declare (ignore window x y dx dy))
