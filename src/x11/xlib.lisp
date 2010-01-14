@@ -313,7 +313,7 @@
 (defcfun ("XOpenDisplay" %x-open-display) :pointer
   (display-name :string))
 
-(defcfun("XCloseDisplay" x-close-display) :pointer
+(defcfun ("XCloseDisplay" x-close-display) :pointer
   (display-ptr :pointer))
 
 (defcfun ("XDefaultRootWindow" x-default-root-window) window
@@ -352,7 +352,7 @@
           (setf (mem-aref l :long 2) 0))))  
       (x-send-event dpy (x-default-root-window dpy) nil (foreign-bitfield-value 'x-event-mask-flags '(:structure-notify-mask)) msg))))
 
-(defun x-open-display (display-name)
+(defun x-open-display (&optional (display-name (null-pointer)))
   (let ((display (%x-open-display display-name)))
     (when (null-pointer-p display)
       (error "Unable to open display"))
@@ -363,7 +363,7 @@
     (with-foreign-slots ((visual-id visual depth) visual-infos visual-info)
       (let ((colormap (x-create-color-map dpy root-win visual :alloc-none)))
         (with-foreign-object (win-attrs 'set-window-attributes)
-          (with-foreign-slots ((cmap event-mask) win-attrs set-window-attributes)
+          (with-foreign-slots ((cmap event-mask border-pixel) win-attrs set-window-attributes)
             (setf cmap colormap
                   event-mask (foreign-bitfield-value 'x-event-mask-flags
                                 '(:exposure-mask
@@ -371,7 +371,8 @@
                                   :button-press-mask :button-release-mask
                                   :structure-notify-mask
                                   :visibility-change-mask
-                                  :pointer-motion-mask)))
+                                  :pointer-motion-mask))
+                  border-pixel 0)
             (%x-create-window dpy parent 0 0 width height 0
                               depth :input-output visual
                               '(:cw-colormap :cw-event-mask)
