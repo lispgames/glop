@@ -47,11 +47,11 @@
   (screen-info :pointer)
   (count (:pointer :int)))
 
-(defun get-current-display-mode (dpy screen)
+(defun current-mode (dpy screen)
   (values (display-width dpy screen) (display-height dpy screen) 
 	  (default-depth dpy screen)))
 
-(defun set-video-mode (dpy screen mode rate)
+(defun set-mode (dpy screen mode rate)
   (declare (ignore rate))
   (let* ((root (root-window dpy screen))
 	 (sc (xrr-get-screen-info dpy root)))
@@ -59,7 +59,7 @@
 			   (foreign-enum-value 'rr-rotation :rotate-0) 0)
     (xrr-free-screen-config-info sc)))
 
-(defun get-closest-video-mode (dpy screen desired-width desired-height rate)
+(defun closest-mode (dpy screen desired-width desired-height rate)
   (declare (ignore rate))
   (let ((sc (xrr-get-screen-info dpy (root-window dpy screen)))
 	(size-list (null-pointer))
@@ -86,7 +86,7 @@
 	  (values best-size width height))
 	(values 0 (display-width dpy screen) (display-height dpy screen)))))
 
-(defun get-available-display-modes (dpy screen)
+(defun supported-modes (dpy screen)
   (with-foreign-objects ((count :int) (gl :int) (rgba :int) (dummy 'visual-info))
     (let ((rtn-list (get-visual-info dpy 0 dummy count))
 	  (sc (xrr-get-screen-info dpy (root-window dpy screen)))

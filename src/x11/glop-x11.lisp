@@ -129,11 +129,11 @@
           (progn
             (setf previous-video-mode
                   (multiple-value-bind (width height depth)
-                      (glop-xlib:get-current-display-mode display screen)
+                      (glop-xlib:current-mode display screen)
                     (make-video-mode width height depth)))
-            (glop-xlib:set-video-mode display screen
-                                      (glop-xlib:get-closest-video-mode display screen
-                                                                        win-width win-height 0) 0)
+            (glop-xlib:set-mode display screen
+                                (glop-xlib:closest-mode display screen
+                                                        win-width win-height 0) 0)
             (glop-xlib:set-fullscreen id display t)
             (setf fullscreen t))
           (progn
@@ -141,8 +141,8 @@
                              (width video-mode-width))
                 previous-video-mode
               (glop-xlib:set-fullscreen id display nil)
-              (glop-xlib:set-video-mode display screen
-                                        (glop-xlib:get-closest-video-mode display screen
+              (glop-xlib:set-mode display screen
+                                  (glop-xlib:closest-mode display screen
                                                                           width height 0) 0))
             (setf fullscreen nil))))))
 
