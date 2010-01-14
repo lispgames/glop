@@ -171,7 +171,7 @@
       (error "Unable to create context"))
     ctx))
 
-(defmethod glx-create-specific-context (dpy fbc context-attribs)
+(defun glx-create-specific-context (dpy fbc context-attribs)
   (with-foreign-object ( atts :int (1+ (length context-attribs)))
     (loop
       for i below (length context-attribs)
@@ -229,8 +229,9 @@
          (values (parse-integer string :start (1+ dot) :junk-allowed t))
          0))))
 
-(defun correct-context? (major minor)
-  (multiple-value-bind (maj min)
+(defun correct-context? (major-desired minor-desired)
+  (multiple-value-bind (major minor)
       (parse-gl-version-string-values (foreign-string-to-lisp (get-string (foreign-enum-value 'gl-enum :version))))
-    (unless (and (>= maj major) (>= min minor))
+    (when (or (< major major-desired)
+              (and (= major major-desired) (< minor minor-desired)))
       (error "unable to create requested context"))))
