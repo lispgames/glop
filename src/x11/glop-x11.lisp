@@ -62,7 +62,7 @@
                       (accum-blue-size 0)
                       stencil-buffer (stencil-size 0))
   (without-fp-traps
-    (let ((win (make-x11-window :display (glop-xlib::x-open-display "")
+    (let ((win (make-x11-window :display (glop-xlib::x-open-display)
                                 :screen 0)))
       ;;GLX attributes
       (with-accessors ((display x11-window-display)
@@ -158,12 +158,11 @@
 
 (defun destroy-window (win)
   (with-accessors ((display x11-window-display)
-                   (screen x11-window-screen)
                    (id x11-window-id)
-                   (previous-video-mode window-previous-video-mode)
-                   (fullscreen window-fullscreen))
+                   (context window-gl-context))
       win
     (set-fullscreen win nil)
+    (destroy-gl-context context)
     (glop-xlib:x-destroy-window display id)
     (glop-xlib:x-close-display display)))
 
