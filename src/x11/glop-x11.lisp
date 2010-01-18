@@ -51,11 +51,11 @@
 (defun create-window (title width height &key major minor fullscreen
                       (double-buffer t)
                       stereo
-                      (red-size 0)
-                      (green-size 0)
-                      (blue-size 0)
-                      (alpha-size 0)
-                      (depth-size 0)
+                      (red-size 4)
+                      (green-size 4)
+                      (blue-size 4)
+                      (alpha-size 4)
+                      (depth-size 16)
                       accum-buffer
                       (accum-red-size 0)
                       (accum-green-size 0)
