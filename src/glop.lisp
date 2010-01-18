@@ -224,10 +224,10 @@ Returns NIL on :CLOSE event, T otherwise."
                   `(progn ,@idle-forms)
                   t))))
 
-(defmacro with-window ((win-sym title width height &key major minor fullscreen) &body body)
+(defmacro with-window ((win-sym title width height &rest attribs) &body body)
   "Creates a window and binds it to WIN-SYM.  The window is detroyed when body exits."
-  `(let ((,win-sym (create-window ,title ,width ,height
-                                  :major ,major :minor ,minor :fullscreen ,fullscreen)))
+  `(let ((,win-sym (apply #'create-window ,title ,width ,height
+                          (list ,@attribs))))
      (when ,win-sym
        (unwind-protect (progn ,@body)
          (destroy-window ,win-sym)))))
