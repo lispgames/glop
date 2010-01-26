@@ -219,7 +219,7 @@
   (declare (ignore window event))
   (format t "Mouse motion~%"))
 
-(defmethod glop:on-event (window (event glop:configure-event))
+(defmethod glop:on-event (window (event glop:resize-event))
   (declare (ignore window))
    (gl:viewport 0 0 (glop:width event) (glop:height event))
    (format t "Resize: ~Sx~S~%" (glop:width event) (glop:height event)))

@@ -128,10 +128,10 @@
    (height :initarg :height :reader height))
   (:documentation "Window expose."))
 
-(defclass configure-event (event)
+(defclass resize-event (event)
   ((width :initarg :width :reader width)
    (height :initarg :height :reader height))
-  (:documentation "Window reconfiguration."))
+  (:documentation "Window resized."))
 
 (defclass map-event (event)
   ((mapped :initarg :mapped :reader mapped))
@@ -189,7 +189,7 @@ Returns NIL on :CLOSE event, T otherwise."
                  (button-release-event (on-button ,window nil (button ,evt)))
                  (mouse-motion-event (on-mouse-motion ,window (x ,evt) (y ,evt)
                                                       (dx ,evt) (dy ,evt)))
-                 (configure-event (on-resize ,window (width ,evt) (height ,evt)))
+                 (resize-event (on-resize ,window (width ,evt) (height ,evt)))
                  (expose-event (on-draw ,window))
                  (close-event (on-close ,window)
                               (return-from dispatch-events nil))

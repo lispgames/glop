@@ -435,7 +435,7 @@
             (declare (ignore x y))
             (setf %event% (glop::make-instance (if from-configure
                                                    (progn (setf from-configure nil)
-                                                          'glop:configure-event)
+                                                          'glop:resize-event)
                                                       'glop:expose-event)
                                                 :width width :height height))))
          (:wm-lbutton-down

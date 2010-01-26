@@ -467,7 +467,7 @@
                             :width width :height height))))
         (:configure-notify
          (with-foreign-slots ((width height) evt x-configure-event)
-           (make-instance 'glop:configure-event
+           (make-instance 'glop:resize-event
                           :width width :height height)))
         (:map-notify
          (make-instance 'glop:map-in-event))
