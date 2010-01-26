@@ -8,8 +8,8 @@
 
 (in-package #:glop-test)
 
-(defmethod glop:on-key (window pressed keycode keysym string)
-  (format t "Key ~:[released~;pressed~]: ~D (~S ~S)~%" pressed keycode keysym string)
+(defmethod glop:on-key (window pressed keycode keysym text)
+  (format t "Key ~:[released~;pressed~]: ~D (~S ~S)~%" pressed keycode keysym text)
   (when (eq keysym :escape)
     (glop:push-close-event window))
   (when (and pressed (eq keysym :f))
@@ -89,7 +89,7 @@
          if evt
          do (typecase evt
               (glop:key-press-event
-               (when (eq (glop:event-keysym evt) :escape)
+               (when (eq (glop:keysym evt) :escape)
                  (glop:push-close-event win)))
               (glop:close-event (setf running nil))
               (t (format t "Unhandled event: ~A~%" evt)))
@@ -204,16 +204,16 @@
 
 ;; on-event based dispatching test
 (defmethod glop:on-event (window (event glop:key-event))
-  (format t "Key ~:[released~;pressed~]: ~A~%" (glop:event-pressed event) (glop:event-keysym event))
-  (when (eq (glop:event-keysym event) :escape)
+  (format t "Key ~:[released~;pressed~]: ~A~%" (glop:pressed event) (glop:keysym event))
+  (when (eq (glop:keysym event) :escape)
       (glop:push-close-event window))
-  (when (and (glop:event-pressed event) (eq (glop:event-keysym event) :f))
+  (when (and (glop:pressed event) (eq (glop:keysym event) :f))
     (glop:set-fullscreen window)))
 
 (defmethod glop:on-event (window (event glop:button-event))
   (declare (ignore window))
-  (format t "Button ~:[released~;pressed~]: ~S~%" (glop:event-pressed event)
-                                                  (glop:event-button event)))
+  (format t "Button ~:[released~;pressed~]: ~S~%" (glop:pressed event)
+                                                  (glop:button event)))
 
 (defmethod glop:on-event (window (event glop:mouse-motion-event))
   (declare (ignore window event))
@@ -221,8 +221,8 @@
 
 (defmethod glop:on-event (window (event glop:configure-event))
   (declare (ignore window))
-   (gl:viewport 0 0 (glop:event-width event) (glop:event-height event))
-   (format t "Resize: ~Sx~S~%" (glop:event-width event) (glop:event-height event)))
+   (gl:viewport 0 0 (glop:width event) (glop:height event))
+   (format t "Resize: ~Sx~S~%" (glop:width event) (glop:height event)))
 
 (defmethod glop:on-event (window (event glop:expose-event))
   (declare (ignore window event))

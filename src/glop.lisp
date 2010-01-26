@@ -88,15 +88,15 @@
   (:documentation "Common ancestor for all events."))
 
 (defclass key-event (event)
-  ((keycode :initarg :keycode :reader event-keycode)
-   (keysym :initarg :keysym :reader event-keysym)
-   (string :initarg :string :reader event-string)
-   (pressed :initarg :pressed :reader event-pressed))
+  ((keycode :initarg :keycode :reader keycode)
+   (keysym :initarg :keysym :reader keysym)
+   (text :initarg :text :reader text)
+   (pressed :initarg :pressed :reader pressed))
   (:documentation "Keyboard key press or release."))
 
 (defclass key-press-event (key-event)
   ((pressed :initform t)
-   (repeat :initarg :repeat :reader event-repeat :initform nil))
+   (repeat :initarg :repeat :reader repeat :initform nil))
   (:documentation "Keyboard key press."))
 
 (defclass key-release-event (key-event)
@@ -104,8 +104,8 @@
   (:documentation "Keyboard key release."))
 
 (defclass button-event (event)
-  ((button :initarg :button :reader event-button)
-   (pressed :initarg :pressed :reader event-pressed))
+  ((button :initarg :button :reader button)
+   (pressed :initarg :pressed :reader pressed))
   (:documentation "Mouse button press or release."))
 
 (defclass button-press-event (button-event)
@@ -117,24 +117,24 @@
   (:documentation "Mouse button release."))
 
 (defclass mouse-motion-event (event)
-  ((x :initarg :x :reader event-x)
-   (y :initarg :y :reader event-y)
-   (dx :initarg :dx :reader event-dx)
-   (dy :initarg :dy :reader event-dy))
+  ((x :initarg :x :reader x)
+   (y :initarg :y :reader y)
+   (dx :initarg :dx :reader dx)
+   (dy :initarg :dy :reader dy))
   (:documentation "Mouse motion."))
 
 (defclass expose-event (event)
-  ((width :initarg :width :reader event-width)
-   (height :initarg :height :reader event-height))
+  ((width :initarg :width :reader width)
+   (height :initarg :height :reader height))
   (:documentation "Window expose."))
 
 (defclass configure-event (event)
-  ((width :initarg :width :reader event-width)
-   (height :initarg :height :reader event-height))
+  ((width :initarg :width :reader width)
+   (height :initarg :height :reader height))
   (:documentation "Window reconfiguration."))
 
 (defclass map-event (event)
-  ((mapped :initarg :mapped :reader event-mapped))
+  ((mapped :initarg :mapped :reader mapped))
   (:documentation "Window mapped or unmapped."))
 
 (defclass map-in-event (map-event)
@@ -183,13 +183,13 @@ Returns NIL on :CLOSE event, T otherwise."
       while ,evt
       do ,(if on-foo
               `(typecase ,evt
-                 (key-press-event (on-key ,window t (event-keycode ,evt) (event-keysym ,evt) (event-string ,evt)))
-                 (key-release-event (on-key ,window nil (event-keycode ,evt) (event-keysym ,evt) (event-string ,evt)))
-                 (button-press-event (on-button ,window t (event-button ,evt)))
-                 (button-release-event (on-button ,window nil (event-button ,evt)))
-                 (mouse-motion-event (on-mouse-motion ,window (event-x ,evt) (event-y ,evt)
-                                                      (event-dx ,evt) (event-dy ,evt)))
-                 (configure-event (on-resize ,window (event-width ,evt) (event-height ,evt)))
+                 (key-press-event (on-key ,window t (keycode ,evt) (keysym ,evt) (text ,evt)))
+                 (key-release-event (on-key ,window nil (keycode ,evt) (keysym ,evt) (text ,evt)))
+                 (button-press-event (on-button ,window t (button ,evt)))
+                 (button-release-event (on-button ,window nil (button ,evt)))
+                 (mouse-motion-event (on-mouse-motion ,window (x ,evt) (y ,evt)
+                                                      (dx ,evt) (dy ,evt)))
+                 (configure-event (on-resize ,window (width ,evt) (height ,evt)))
                  (expose-event (on-draw ,window))
                  (close-event (on-close ,window)
                               (return-from dispatch-events nil))
@@ -208,7 +208,7 @@ Returns NIL on :CLOSE event, T otherwise."
   (format t "Unhandled event: ~S~%" event))
 
 ;; implemented those when calling dispatch-events with :on-foo T
-(defgeneric on-key (window pressed keycode keysym string))
+(defgeneric on-key (window pressed keycode keysym text))
 (defgeneric on-button (window pressed button))
 (defgeneric on-mouse-motion (window x y dx dy))
 (defgeneric on-resize (window w h))

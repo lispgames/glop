@@ -16,10 +16,8 @@
    #:button-event #:button-press-event #:button-release-event
    #:mouse-motion-event #:expose-event #:configure-event
    #:map-event #:map-in-event #:map-out-event #:close-event
-   #:event-pressed #:event-mapped #:event-width #:event-height
-   #:event-keycode #:event-keysym #:event-string #:event-button
-   #:event-repeat
-   #:event-x #:event-y #:event-dx #:event-dy
+   #:pressed #:mapped #:width #:height #:keycode #:keysym #:text #:button
+   #:repeat #:x #:y #:dx #:dy
    ;; events methods
    #:dispatch-events
    #:on-key #:on-button #:on-mouse-motion #:on-resize #:on-draw #:on-close

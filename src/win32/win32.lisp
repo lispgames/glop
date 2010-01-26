@@ -469,18 +469,18 @@
                                              :button 2))
           (return-from window-proc 0))
          (:wm-key-up
-          (multiple-value-bind (keysym string) (win32-lookup-key w-param l-param)
+          (multiple-value-bind (keysym text) (win32-lookup-key w-param l-param)
             (setf %event% (glop::make-instance 'glop:key-release-event
                                                :keycode  w-param
                                                :keysym keysym
-                                               :string string)))
+                                               :text text)))
           (return-from window-proc 0))
          (:wm-key-down
-          (multiple-value-bind (keysym string) (win32-lookup-key w-param l-param)
+          (multiple-value-bind (keysym text) (win32-lookup-key w-param l-param)
             (setf %event% (glop::make-instance 'glop:key-press-event
                                                :keycode  w-param
                                                :keysym keysym
-                                               :string string)))
+                                               :text text)))
           (return-from window-proc 0))
          (:wm-mouse-wheel
           (setf %event% (glop::make-instance 'glop:button-press-event

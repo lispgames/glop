@@ -427,21 +427,21 @@
            (let ((repeat (and in-key-press (= in-key-press keycode))))
              (when (or (not in-key-press) (/= in-key-press keycode))
                (setf in-key-press keycode))
-             (multiple-value-bind (string keysym) (x-lookup-string evt)
+             (multiple-value-bind (text keysym) (x-lookup-string evt)
                (make-instance 'glop:key-press-event
                               :keycode keycode
                               :keysym keysym
                               :repeat repeat
-                              :string string)))))
+                              :text text)))))
         (:key-release
          (with-foreign-slots ((keycode) evt x-key-event)
            (when (and in-key-press (= in-key-press keycode))
              (setf in-key-press nil))
-           (multiple-value-bind (string keysym) (x-lookup-string evt)
+           (multiple-value-bind (text keysym) (x-lookup-string evt)
              (make-instance 'glop:key-release-event
                             :keycode keycode
                             :keysym keysym
-                            :string string))))
+                            :text text))))
         (:button-press
          (with-foreign-slots ((button) evt x-button-pressed-event)
            (make-instance 'glop:button-press-event
