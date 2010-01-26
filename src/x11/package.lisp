@@ -5,4 +5,5 @@
            #:x-store-name #:x-flush #:x-map-raised #:x-unmap-window
            #:x-destroy-window #:x-close-display #:x-next-event
            #:x-free #:%set-fullscreen #:closest-mode
-           #:current-mode #:set-mode #:supported-modes))
+           #:current-mode #:set-mode #:supported-modes
+           #:xkb-set-detectable-auto-repeat))

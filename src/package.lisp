@@ -18,6 +18,7 @@
    #:map-event #:map-in-event #:map-out-event #:close-event
    #:event-pressed #:event-mapped #:event-width #:event-height
    #:event-keycode #:event-keysym #:event-string #:event-button
+   #:event-repeat
    #:event-x #:event-y #:event-dx #:event-dy
    ;; events methods
    #:dispatch-events

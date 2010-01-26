@@ -113,6 +113,9 @@
         (show-window win)
         (glop-xlib:x-flush display)
         (set-fullscreen win fullscreen)
+
+        (glop-xlib:xkb-set-detectable-auto-repeat display t (cffi:null-pointer))
+        
         win))))
 
 (defun set-fullscreen (win &optional (state (not (window-fullscreen win))))

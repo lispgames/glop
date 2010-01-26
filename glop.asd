@@ -17,6 +17,7 @@
                             :components ((:file "package")
                                          (:file "keysymdef")
                                          (:file "xlib")
+                                         (:file "xkb")
                                          (:file "glx")
                                          (:file "display-ctrl")
                                          (:file "glop-x11")))

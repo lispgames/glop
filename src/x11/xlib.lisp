@@ -416,25 +416,32 @@
                  (process-event evt))))))
 
 (let ((last-x 0)
-      (last-y 0))
+      (last-y 0)
+      (in-key-press nil))
   (defun process-event (evt)
     "Process an X11 event into a GLOP event."
     (with-foreign-slots ((type) evt x-event)
       (case type
         (:key-press
          (with-foreign-slots ((keycode) evt x-key-event)
-           (multiple-value-bind (string keysym) (x-lookup-string evt)
-            (make-instance 'glop:key-press-event
-                           :keycode keycode
-                           :keysym keysym
-                           :string string))))
+           (let ((repeat (and in-key-press (= in-key-press keycode))))
+             (when (or (not in-key-press) (/= in-key-press keycode))
+               (setf in-key-press keycode))
+             (multiple-value-bind (string keysym) (x-lookup-string evt)
+               (make-instance 'glop:key-press-event
+                              :keycode keycode
+                              :keysym keysym
+                              :repeat repeat
+                              :string string)))))
         (:key-release
          (with-foreign-slots ((keycode) evt x-key-event)
+           (when (and in-key-press (= in-key-press keycode))
+             (setf in-key-press nil))
            (multiple-value-bind (string keysym) (x-lookup-string evt)
-            (make-instance 'glop:key-release-event
-                           :keycode keycode
-                           :keysym keysym
-                           :string string))))
+             (make-instance 'glop:key-release-event
+                            :keycode keycode
+                            :keysym keysym
+                            :string string))))
         (:button-press
          (with-foreign-slots ((button) evt x-button-pressed-event)
            (make-instance 'glop:button-press-event
