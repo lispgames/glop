@@ -247,6 +247,15 @@
   (window window)
   (state visibility-state))
 
+(defcstruct x-focus-change-event
+  (type :int)
+  (serial :unsigned-long)
+  (send-event :boolean)
+  (display-ptr :pointer)
+  (window window)
+  (mode :int)
+  (detail :int))
+
 (defcunion x-event
   (type x-event-name)
   (pad :long :count 24))
@@ -499,6 +508,10 @@
               (make-instance 'glop:visibility-unobscured-event :visible :partial))
              (:fully-obscured
               (make-instance 'glop:visibility-obscured-event)))))
+        (:focus-in
+         (make-instance 'glop:focus-in-event))
+        (:focus-out
+         (make-instance 'glop:focus-out-event))
         (t (format t "Unhandled X11 event: ~S~%" type))))))
 
 (defcfun ("XLookupString" %x-lookup-string) :int
