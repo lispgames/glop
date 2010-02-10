@@ -95,12 +95,13 @@
   (:documentation "Keyboard key press or release."))
 
 (defclass key-press-event (key-event)
-  ((pressed :initform t)
-   (repeat :initarg :repeat :reader repeat :initform nil))
+  ((repeat :initarg :repeat :reader repeat :initform nil))
+  (:default-initargs :pressed t)
   (:documentation "Keyboard key press."))
 
 (defclass key-release-event (key-event)
-  ((pressed :initform nil))
+  ()
+  (:default-initargs :pressed nil)
   (:documentation "Keyboard key release."))
 
 (defclass button-event (event)
@@ -109,11 +110,13 @@
   (:documentation "Mouse button press or release."))
 
 (defclass button-press-event (button-event)
-  ((pressed :initform t))
+  ()
+  (:default-initargs :pressed t)
   (:documentation "Mouse button press."))
 
 (defclass button-release-event (button-event)
-  ((pressed :initform nil))
+  ()
+  (:default-initargs :pressed nil)
   (:documentation "Mouse button release."))
 
 (defclass mouse-motion-event (event)
@@ -138,11 +141,13 @@
   (:documentation "Window mapped or unmapped."))
 
 (defclass map-in-event (map-event)
-  ((mapped :initform t))
+  ()
+  (:default-initargs :mapped t)
   (:documentation "Window mapped in."))
 
 (defclass map-out-event (map-event)
-  ((mapped :initform nil))
+  ()
+  (:default-initargs :mapped nil)
   (:documentation "Window unmapped."))
 
 (defclass close-event (event) ()
@@ -153,11 +158,13 @@
   (:documentation "Window visibility changed."))
 
 (defclass visibility-obscured-event (visibility-event)
-  ((visible :initform nil))
+  ()
+  (:default-initargs :visible nil)
   (:documentation "Window was fully obscured."))
 
 (defclass visibility-unobscured-event (visibility-event)
-  ((visible :initform t))
+  ()
+  (:default-initargs :visible t)
   (:documentation "Window was unobscured."))
 
 (defun push-event (window evt)
