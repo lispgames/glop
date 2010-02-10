@@ -436,7 +436,7 @@
         (:key-press
          (with-foreign-slots ((keycode) evt x-key-event)
            (let ((repeat (and in-key-press (= in-key-press keycode))))
-             (when (or (not in-key-press) (/= in-key-press keycode))
+             (when (not repeat)
                (setf in-key-press keycode))
              (multiple-value-bind (text keysym) (x-lookup-string evt)
                (make-instance 'glop:key-press-event
