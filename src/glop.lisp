@@ -167,6 +167,20 @@
   (:default-initargs :visible t)
   (:documentation "Window was unobscured."))
 
+(defclass focus-event (event)
+  ((focused :initarg :focused :reader focused))
+  (:documentation "Window focus state changed."))
+
+(defclass focus-in-event (focus-event)
+  ()
+  (:default-initargs :focused t)
+  (:documentation "Window received focus."))
+
+(defclass focus-out-event (focus-event)
+  ()
+  (:default-initargs :focused nil)
+  (:documentation "Window lost focus."))
+
 (defun push-event (window evt)
   "Push an artificial event into the event processing system.
 Note that this has no effect on the underlying window system."
