@@ -493,8 +493,10 @@
         (:visibility-notify
          (with-foreign-slots ((state) evt x-visibility-event)
            (case state
-             ((:unobscured :partially-obscured)
+             (:unobscured
               (make-instance 'glop:visibility-unobscured-event))
+             (:partially-obscured
+              (make-instance 'glop:visibility-unobscured-event :visible :partial))
              (:fully-obscured
               (make-instance 'glop:visibility-obscured-event)))))
         (t (format t "Unhandled X11 event: ~S~%" type))))))
