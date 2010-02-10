@@ -11,8 +11,6 @@
 (defctype cursor xid)
 (defctype gcontext xid)
 
-(defctype bool :int)
-
 (defcstruct _xdisplay)
 (defctype display _xdisplay)
 
@@ -29,8 +27,8 @@
   (border-pixmap pixmap) (border-pixel :unsigned-long)
   (bit-gravity :int) (win-gravity :int) (backing-store :int)
   (backing-planes :unsigned-long) (backing-pixel :unsigned-long)
-  (save-under bool) (event-mask :long) (do-not-propagate-mask :long)
-  (override-redirect bool) (cmap colormap) (curs cursor))
+  (save-under :boolean) (event-mask :long) (do-not-propagate-mask :long)
+  (override-redirect :boolean) (cmap colormap) (curs cursor))
 
 (defcenum (x-alloc :int)
   (:alloc-none)
@@ -128,7 +126,7 @@
 (defcstruct x-key-event
   (type :int)
   (serial :unsigned-long)
-  (send-event bool)
+  (send-event :boolean)
   (display-ptr :pointer)
   (win window)
   (root window)
@@ -138,7 +136,7 @@
   (x-root :int) (y-root :int)
   (state :unsigned-int)
   (keycode :unsigned-int)
-  (same-screen bool))
+  (same-screen :boolean))
 
 (defctype x-key-pressed-event x-key-event)
 (defctype x-key-released-event x-key-event)
@@ -146,7 +144,7 @@
 (defcstruct x-button-event
   (type :int)
   (serial :unsigned-long)
-  (send-event bool)
+  (send-event :boolean)
   (display-ptr :pointer)
   (win window)
   (root window)
@@ -156,7 +154,7 @@
   (x-root :int) (y-root :int)
   (state :unsigned-int)
   (button :unsigned-int)
-  (same-screen bool))
+  (same-screen :boolean))
 
 (defctype x-button-pressed-event x-button-event)
 (defctype x-button-released-event x-button-event)
@@ -164,7 +162,7 @@
 (defcstruct x-motion-event
   (type :int)
   (serial :unsigned-long)
-  (send-event bool)
+  (send-event :boolean)
   (display-ptr :pointer)
   (win window)
   (root window)
@@ -174,7 +172,7 @@
   (x-root :int) (y-root :int)
   (state :unsigned-int)
   (is-hint :char)
-  (same-screen bool))
+  (same-screen :boolean))
 
 (defctype x-pointer-moved-event x-motion-event)
 
@@ -188,7 +186,7 @@
 (defcstruct x-client-message-event
   (type :int)
   (serial :unsigned-long)
-  (send-event bool)
+  (send-event :boolean)
   (display-ptr :pointer)
   (win window)
   (message-type x-atom)
@@ -198,7 +196,7 @@
 (defcstruct x-expose-event
   (type :int)
   (serial :unsigned-long)
-  (send-event bool)
+  (send-event :boolean)
   (display-ptr :pointer)
   (win window)
   (x :int) (y :int)
@@ -208,7 +206,7 @@
 (defcstruct x-configure-event
   (type :int)
   (serial :unsigned-long)
-  (send-event bool)
+  (send-event :boolean)
   (display-ptr :pointer)
   (event window)
   (win window)
@@ -216,25 +214,25 @@
   (width :int) (height :int)
   (border-width :int)
   (above window)
-  (override-reirect bool))
+  (override-reirect :boolean))
 
 (defcstruct x-map-event
   (type :int)
   (serial :unsigned-long)
-  (send-event bool)
+  (send-event :boolean)
   (display-ptr :pointer)
   (event window)
   (win window)
-  (override-redirect bool))
+  (override-redirect :boolean))
 
 (defcstruct x-unmap-event
   (type :int)
   (serial :unsigned-long)
-  (send-event bool)
+  (send-event :boolean)
   (display-ptr :pointer)
   (event window)
   (win window)
-  (from-configure bool))
+  (from-configure :boolean))
 
 (defcenum visibility-state
   (:unobscured 0)
@@ -244,7 +242,7 @@
 (defcstruct x-visibility-event
   (type :int)
   (serial :unsigned-long)
-  (send-event bool)
+  (send-event :boolean)
   (display-ptr :pointer)
   (window window)
   (state visibility-state))
@@ -407,7 +405,7 @@
   (display-ptr :pointer) (win window) (name :string))
 
 (defcfun ("XSync" x-sync) :int
-  (display-ptr :pointer) (discard bool))
+  (display-ptr :pointer) (discard :boolean))
 
 (defcfun ("XNextEvent" %x-next-event) :int
   (display-ptr :pointer) (evt x-event))
