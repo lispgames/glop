@@ -148,6 +148,18 @@
 (defclass close-event (event) ()
   (:documentation "Window closed."))
 
+(defclass visibility-event (event)
+  ((visible :initarg :visible :reader visible))
+  (:documentation "Window visibility changed."))
+
+(defclass visibility-obscured-event (visibility-event)
+  ((visible :initform nil))
+  (:documentation "Window was fully obscured."))
+
+(defclass visibility-unobscured-event (visibility-event)
+  ((visible :initform t))
+  (:documentation "Window was unobscured."))
+
 (defun push-event (window evt)
   "Push an artificial event into the event processing system.
 Note that this has no effect on the underlying window system."

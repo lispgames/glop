@@ -16,6 +16,7 @@
    #:button-event #:button-press-event #:button-release-event
    #:mouse-motion-event #:expose-event #:resize-event
    #:map-event #:map-in-event #:map-out-event #:close-event
+   #:visibility-event #:visibility-obscured-event #:visibility-unobscured-event
    #:pressed #:mapped #:width #:height #:keycode #:keysym #:text #:button
    #:repeat #:x #:y #:dx #:dy
    ;; events methods

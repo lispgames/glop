@@ -236,6 +236,19 @@
   (win window)
   (from-configure bool))
 
+(defcenum visibility-state
+  (:unobscured 0)
+  (:partially-obscured 1)
+  (:fully-obscured 2))
+
+(defcstruct x-visibility-event
+  (type :int)
+  (serial :unsigned-long)
+  (send-event bool)
+  (display-ptr :pointer)
+  (window window)
+  (state visibility-state))
+
 (defcunion x-event
   (type x-event-name)
   (pad :long :count 24))
@@ -479,6 +492,13 @@
              (let ((atom-name (x-get-atom-name display-ptr (mem-ref l :long))))
                (when (string= atom-name "WM_DELETE_WINDOW")
                  (make-instance 'glop:close-event))))))
+        (:visibility-notify
+         (with-foreign-slots ((state) evt x-visibility-event)
+           (case state
+             ((:unobscured :partially-obscured)
+              (make-instance 'glop:visibility-unobscured-event))
+             (:fully-obscured
+              (make-instance 'glop:visibility-obscured-event)))))
         (t (format t "Unhandled X11 event: ~S~%" type))))))
 
 (defcfun ("XLookupString" %x-lookup-string) :int
