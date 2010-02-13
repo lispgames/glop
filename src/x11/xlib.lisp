@@ -426,7 +426,7 @@
   (not (zerop (%x-pending display-ptr))))
 
 (defun x-next-event (dpy &optional blocking)
-  (x-sync dpy 0)
+  (x-sync dpy nil)
   (with-foreign-object (evt 'x-event)
     (if blocking
         (progn (%x-next-event dpy evt)
