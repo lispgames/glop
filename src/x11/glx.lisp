@@ -163,7 +163,7 @@
 
 (defcfun ("glXCreateContext" %glx-create-context) glx-context
   (display-ptr :pointer) (visual-infos :pointer) (share-list glx-context)
-  (redirect bool))
+  (redirect :boolean))
 
 (defun glx-create-context (dpy visual)
   (let ((ctx (%glx-create-context dpy visual (null-pointer) 1)))
@@ -198,14 +198,14 @@
 (defcfun ("glXDestroyContext" glx-destroy-context) :void
   (display-ptr :pointer) (context glx-context))
 
-(defcfun ("glXMakeCurrent" glx-make-current) bool
+(defcfun ("glXMakeCurrent" glx-make-current) :boolean
   (display-ptr :pointer) (drawable drawable) (context glx-context))
 
 (defun glx-release-context (dpy)
   (glx-make-current dpy 0
                     (null-pointer)))
 
-(defcfun ("glXQueryVersion" %glx-query-version) bool
+(defcfun ("glXQueryVersion" %glx-query-version) :boolean
   (display-ptr :pointer) (major :pointer) (minor :pointer))
 
 (defun glx-get-version (dpy)
