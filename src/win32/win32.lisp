@@ -18,7 +18,7 @@
 
 (defctype dword  :int32)
 
-(defctype bool :int)
+(defctype bool :int) ;; XXX: Win32 BOOL isn't used as a boolean (e.g.: see GetMessage)
 
 (defctype handle :pointer)
 (defctype hwnd handle)

@@ -59,8 +59,8 @@ Now you can just do:
 The `glop:dispatch-events` macro will take care of processing glop events and call corresponding
 methods. Generic functions for these methods are:
 
- - `(on-key window state key)`
- - `(on-button window state button)`
+ - `(on-key window pressed keycode keysym string)`
+ - `(on-button window pressed button)`
  - `(on-mouse-motion window x y dx dy)`
  - `(on-resize window new-width new-height)`
  - `(on-draw window)`

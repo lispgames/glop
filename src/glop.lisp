@@ -241,7 +241,7 @@ Returns NIL on :CLOSE event, T otherwise."
   (format t "Unhandled event: ~S~%" event))
 
 ;; implemented those when calling dispatch-events with :on-foo T
-(defgeneric on-key (window pressed keycode keysym text))
+(defgeneric on-key (window pressed keycode keysym string))
 (defgeneric on-button (window pressed button))
 (defgeneric on-mouse-motion (window x y dx dy))
 (defgeneric on-resize (window w h))
