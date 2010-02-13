@@ -500,8 +500,8 @@
          (:wm-show-window
           (multiple-value-bind (x y width height) (get-geometry wnd)
             (setf %event% (glop::make-instance (if (zerop w-param)
-                                                   'glop:map-in-event
-                                                   'glop:map-out-event)))))
+                                                   'glop:visibility-unobscured-event
+                                                   'glop:visibility-obscured-event)))))
          (:wm-set-focus
           (return-from window-proc 0)))
        ;; (:wm-sys-command

@@ -136,20 +136,6 @@
    (height :initarg :height :reader height))
   (:documentation "Window resized."))
 
-(defclass map-event (event)
-  ((mapped :initarg :mapped :reader mapped))
-  (:documentation "Window mapped or unmapped."))
-
-(defclass map-in-event (map-event)
-  ()
-  (:default-initargs :mapped t)
-  (:documentation "Window mapped in."))
-
-(defclass map-out-event (map-event)
-  ()
-  (:default-initargs :mapped nil)
-  (:documentation "Window unmapped."))
-
 (defclass close-event (event) ()
   (:documentation "Window closed."))
 

@@ -490,9 +490,9 @@
            (make-instance 'glop:resize-event
                           :width width :height height)))
         (:map-notify
-         (make-instance 'glop:map-in-event))
+         (make-instance 'glop:visibility-unobscured-event))
         (:unmap-notify
-         (make-instance 'glop:map-out-event))
+         (make-instance 'glop:visibility-obscured-event))
         (:client-message
          (with-foreign-slots ((display-ptr message-type data) evt x-client-message-event)
            (with-foreign-slots ((l) data x-client-message-event-data)
