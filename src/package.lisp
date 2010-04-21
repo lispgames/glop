@@ -3,6 +3,7 @@
 (defpackage :glop
   (:use #:cl)
   (:export
+   #:load-libraries
    ;; GL
    #:create-gl-context #:destroy-gl-context #:attach-gl-context #:detach-gl-context
    #:gl-get-proc-address

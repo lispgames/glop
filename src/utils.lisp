@@ -52,3 +52,26 @@
 
 (define-condition not-implemented (glop-error)
   () (:documentation "Unimplemented."))
+
+;; misc.
+(defun load-libraries ()
+  #+unix(progn (cffi:define-foreign-library xlib
+                   (t (:default "libX11")))
+               (cffi:use-foreign-library xlib)
+               (cffi:define-foreign-library opengl
+                   (t (:default "libGL")))
+               (cffi:use-foreign-library opengl))
+  #+win32(progn (cffi:define-foreign-library user32
+                    (t (:default "user32")))
+                (cffi:use-foreign-library user32)
+                (cffi:define-foreign-library kernel32
+                    (t (:default "kernel32")))
+                (cffi:use-foreign-library kernel32)
+                (cffi:define-foreign-library opengl
+                    (t (:default "opengl32")))
+                (cffi:use-foreign-library opengl)
+                (cffi:define-foreign-library gdi32
+                    (t (:default "gdi32")))
+                (cffi:use-foreign-library gdi32)))
+
+
