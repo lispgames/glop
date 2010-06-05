@@ -1,5 +1,5 @@
-Glop README
-===========
+Glop
+====
 
 The goal is to provide simple OpenGL window and context manipulation code as well as system
 input handling (i.e. mouse & keyboard).
@@ -11,15 +11,16 @@ Dependencies
 ------------
  - CFFI
 
-Supported CL implementations/platforms
+Tested CL implementations/platforms
 --------------------------------------
  - CLISP/X11
- - CLISP/Win32
+ - CLISP/Win32 (Windows XP)
  - SBCL/X11
+ - CCL/X11
  
 Running the tests
 -----------------
-Make sure `glop.asd` and `glop-test.asf`  are in a location known to asdf and run:
+Make sure `glop.asd` and `glop-test.asd`  are in a location known to asdf and run:
 
     (asdf:operate 'asdf:load-op :glop-test)
     
@@ -77,3 +78,10 @@ see `glop-test:test-manual-events` for an example of how to do this.
 
 See `test.lisp` for more details.
 
+Notes
+-----
+The win32 implementation is not as complete as the X11 one, missing features are:
+ - no fullscreen
+ - no OpenGL 3.x
+ 
+And maybe some other minor things (see `TODO`).

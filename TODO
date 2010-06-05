@@ -1,4 +1,5 @@
-- fullscreen mode for win32
 - key repeat
-- sdl:with-events like helper macro
+- fullscreen mode (win32)
+- OpenGL 3.x (win32)
 - OSX (X11 version should work)
+- allow window class inheritance (invert current class hierarchy)

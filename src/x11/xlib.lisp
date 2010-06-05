@@ -521,6 +521,7 @@
 (defun x-lookup-string (key-event)
   "Returns the input string corresponding to a keypress."
   (with-foreign-objects ((buffer :char 32) (keysym 'keysym))
+    #+ccl(loop for i below 32 do (setf (mem-aref buffer :char i) 0)) ;; buffer is not zeroed in cll
     (%x-lookup-string key-event buffer 32 keysym (null-pointer))
     (let ((string (foreign-string-to-lisp buffer)))
       (values (if (zerop (length string)) nil string)
