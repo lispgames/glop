@@ -422,6 +422,9 @@
 (defcfun ("XPending" %x-pending) :int
   (display-ptr :pointer))
 
+(defcfun ("XSetWMProtocols" x-set-wm-protocols) :int
+  (display-ptr :pointer) (win window) (atoms :pointer) (count :int))
+
 (defun x-pending-p (display-ptr)
   (not (zerop (%x-pending display-ptr))))
 

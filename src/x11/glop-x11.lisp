@@ -102,6 +102,14 @@
         (setf id (glop-xlib:x-create-window display
                                             (glop-xlib:x-default-root-window display)
                                             width height visual-infos))
+
+        (cffi:with-foreign-object (array :unsigned-long)
+          (setf (cffi:mem-aref array :unsigned-long)
+                (glop-xlib:x-intern-atom display "WM_DELETE_WINDOW" nil))
+          (print "Atom created!")
+          (glop-xlib:x-set-wm-protocols display id array 1)
+          (print "XSetWMProtocols success."))
+
         (setf win-width width)
         (setf win-height height)
         ;; set title
