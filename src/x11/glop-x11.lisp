@@ -106,16 +106,14 @@
         (cffi:with-foreign-object (array :unsigned-long)
           (setf (cffi:mem-aref array :unsigned-long)
                 (glop-xlib:x-intern-atom display "WM_DELETE_WINDOW" nil))
-          (print "Atom created!")
-          (glop-xlib:x-set-wm-protocols display id array 1)
-          (print "XSetWMProtocols success."))
+          (glop-xlib:x-set-wm-protocols display id array 1))
 
         (setf win-width width)
         (setf win-height height)
         ;; set title
         (glop-xlib:x-store-name display id title)
         (setf win-title title)
-        
+
         (setf gl-ctx (create-gl-context win :major major :minor minor
                                         :make-current t))
         (show-window win)
