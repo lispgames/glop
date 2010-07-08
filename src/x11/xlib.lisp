@@ -257,7 +257,7 @@
   (detail :int))
 
 (defcunion x-event
-  (type x-event-name)
+  (type :int)
   (pad :long :count 24))
 
 (defcstruct x-compose-status
@@ -444,7 +444,7 @@
   (defun process-event (evt)
     "Process an X11 event into a GLOP event."
     (with-foreign-slots ((type) evt x-event)
-      (case type
+      (case (foreign-enum-keyword 'x-event-name type :errorp nil)
         (:key-press
          (with-foreign-slots ((keycode) evt x-key-event)
            (let ((repeat (and in-key-press (= in-key-press keycode))))
