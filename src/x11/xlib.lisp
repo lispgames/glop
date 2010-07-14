@@ -465,7 +465,7 @@
            ;; if a key is repeated we now get the same behavior as win32
            ;; i.e. multiple :key-press events without corresponding key release
            ;; the following is translated from glfw:x11_window.c:612
-           (when (%x-events-queued dpy 1) ;; 1 is QueuedAfterReading
+           (when (and (x-pending-p dpy) (%x-events-queued dpy 1)) ;; 1 is QueuedAfterReading
              (with-foreign-object (next-evt 'x-event)
                (%x-peek-event dpy next-evt)
                (when (and (eq :key-press
