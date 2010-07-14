@@ -11,6 +11,8 @@
    #:create-window #:destroy-window #:show-window #:hide-window #:set-window-title
    #:swap-buffers
    #:window-width #:window-height #:window-gl-context #:set-fullscreen
+   ;; state
+   #:key-pressed #:*ignore-auto-repeat*
    ;; events
    #:on-event #:next-event #:push-event #:push-close-event
    #:event #:key-event #:key-press-event #:key-release-event

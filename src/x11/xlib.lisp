@@ -454,6 +454,9 @@
       (case (foreign-enum-keyword 'x-event-name type :errorp nil)
         (:key-press
          (with-foreign-slots ((keycode) evt x-key-event)
+           (when (and glop:*ignore-auto-repeat* (glop:key-pressed keycode))
+             (return-from process-event))
+           (setf (glop:key-pressed keycode) t)
            (multiple-value-bind (text keysym) (x-lookup-string evt)
              (make-instance 'glop:key-press-event
                             :keycode keycode
@@ -474,6 +477,7 @@
                           (eq win (foreign-slot-value next-evt 'x-key-event 'win))
                           (eq time (foreign-slot-value next-evt 'x-key-event 'time)))
                  (return-from process-event))))
+           (setf (glop:key-pressed keycode) nil)
            (multiple-value-bind (text keysym) (x-lookup-string evt)
              (make-instance 'glop:key-release-event
                             :keycode keycode

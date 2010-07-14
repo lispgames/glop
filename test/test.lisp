@@ -10,6 +10,7 @@
 
 (defmethod glop:on-key (window pressed keycode keysym text)
   (format t "Key ~:[released~;pressed~]: ~D (~S ~S)~%" pressed keycode keysym text)
+  (format t "Key pressed: ~S~%" (glop:key-pressed keycode))
   (when (eq keysym :escape)
     (glop:push-close-event window))
   (when (and pressed (eq keysym :f))

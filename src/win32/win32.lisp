@@ -470,6 +470,7 @@
           (return-from window-proc 0))
          (:wm-key-up
           (multiple-value-bind (keysym text) (win32-lookup-key w-param l-param)
+            (setf (glop:key-pressed w-param) nil)
             (setf %event% (glop::make-instance 'glop:key-release-event
                                                :keycode  w-param
                                                :keysym keysym
@@ -477,6 +478,9 @@
           (return-from window-proc 0))
          (:wm-key-down
           (multiple-value-bind (keysym text) (win32-lookup-key w-param l-param)
+            (when (and glop:*ignore-auto-repeat* (glop:key-pressed w-param))
+              (return-from window-proc 0))
+            (setf (glop:key-pressed w-param) t)
             (setf %event% (glop::make-instance 'glop:key-press-event
                                                :keycode  w-param
                                                :keysym keysym

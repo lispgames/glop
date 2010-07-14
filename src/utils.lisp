@@ -17,6 +17,21 @@
   (fullscreen nil)
   (previous-video-mode nil))
 
+;;; Keyboard stuff
+(defvar *ignore-auto-repeat* nil
+  "When set to NIL, holding a key press will generate a sequence of key-press events.
+Otherwise, only one key-press event will be triggered.")
+
+(defvar %key-states% (make-array #xffff :initial-element nil))
+
+(defun key-pressed (keycode)
+  (aref %key-states% keycode))
+
+(defun %set-key-pressed (keycode value)
+  (setf (aref %key-states% keycode) value))
+
+(defsetf key-pressed %set-key-pressed)
+
 ;; Helper macros from bordeaux-threads
 ;; http://common-lisp.net/project/bordeaux-threads/
 (defmacro defdfun (name args doc &body body)
