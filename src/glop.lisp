@@ -176,7 +176,7 @@ Note that this has no effect on the underlying window system."
   "Push an artificial :close event into the event processing system."
   (push-event window (make-instance 'close-event)))
 
-(defdfun next-event (window &key blocking)
+(defun next-event (window &key blocking)
   "Returns next available event for manual processing.
 If :blocking is true, wait for an event."
   (let ((pushed-evt (window-pushed-event window)))
@@ -209,7 +209,10 @@ Returns NIL on :CLOSE event, T otherwise."
                  (mouse-motion-event (on-mouse-motion ,window (x ,evt) (y ,evt)
                                                       (dx ,evt) (dy ,evt)))
                  (resize-event (on-resize ,window (width ,evt) (height ,evt)))
-                 (expose-event (on-draw ,window))
+                 (expose-event (on-resize ,window (width ,evt) (height ,evt))
+                               (on-draw ,window))
+                 (visibility-event (on-visibility ,window (visible ,evt)))
+                 (focus-event (on-focus ,window (focused ,evt)))
                  (close-event (on-close ,window)
                               (return-from dispatch-events nil))
                  (t (format t "Unhandled event type: ~S~%" (type-of ,evt))))
@@ -226,13 +229,24 @@ Returns NIL on :CLOSE event, T otherwise."
   (declare (ignore window))
   (format t "Unhandled event: ~S~%" event))
 
-;; implemented those when calling dispatch-events with :on-foo T
+;; implement those when calling dispatch-events with :on-foo T
 (defgeneric on-key (window pressed keycode keysym string))
 (defgeneric on-button (window pressed button))
 (defgeneric on-mouse-motion (window x y dx dy))
 (defgeneric on-resize (window w h))
 (defgeneric on-draw (window))
 (defgeneric on-close (window))
+
+;; these are here for completeness but default methods are provided
+(defgeneric on-visibility (window visible))
+(defgeneric on-focus (window focused))
+
+(defmethod on-visibility (window visible)
+  (declare (ignore window visible)))
+(defmethod on-focus (window focused-p)
+  (declare (ignore window focused)))
+
+
 
 ;; main loop anyone?
 (defmacro with-idle-forms (window &body idle-forms)
