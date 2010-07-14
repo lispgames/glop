@@ -95,7 +95,7 @@
   (:documentation "Keyboard key press or release."))
 
 (defclass key-press-event (key-event)
-  ((repeat :initarg :repeat :reader repeat :initform nil))
+  ()
   (:default-initargs :pressed t)
   (:documentation "Keyboard key press."))
 

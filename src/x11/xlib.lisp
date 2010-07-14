@@ -291,6 +291,8 @@
 
 (defctype x-status :int)
 
+(defctype x-queued-mode :int)
+
 ;; X11 bindings
 (define-foreign-library xlib
   (t (:default "libX11")))
@@ -419,6 +421,12 @@
 (defcfun ("XNextEvent" %x-next-event) :int
   (display-ptr :pointer) (evt x-event))
 
+(defcfun ("XEventsQueued" %x-events-queued) :int
+  (display-ptr :pointer) (mode x-queued-mode))
+
+(defcfun ("XPeekEvent" %x-peek-event) :int
+  (display-ptr :pointer) (evt x-event))
+
 (defcfun ("XPending" %x-pending) :int
   (display-ptr :pointer))
 
@@ -433,33 +441,39 @@
   (with-foreign-object (evt 'x-event)
     (if blocking
         (progn (%x-next-event dpy evt)
-               (process-event evt))
+               (process-event dpy evt))
         (progn (when (x-pending-p dpy)
                  (%x-next-event dpy evt)
-                 (process-event evt))))))
+                 (process-event dpy evt))))))
 
 (let ((last-x 0)
-      (last-y 0)
-      (in-key-press nil))
-  (defun process-event (evt)
+      (last-y 0))
+  (defun process-event (dpy evt)
     "Process an X11 event into a GLOP event."
     (with-foreign-slots ((type) evt x-event)
       (case (foreign-enum-keyword 'x-event-name type :errorp nil)
         (:key-press
          (with-foreign-slots ((keycode) evt x-key-event)
-           (let ((repeat (and in-key-press (= in-key-press keycode))))
-             (when (not repeat)
-               (setf in-key-press keycode))
-             (multiple-value-bind (text keysym) (x-lookup-string evt)
-               (make-instance 'glop:key-press-event
-                              :keycode keycode
-                              :keysym keysym
-                              :repeat repeat
-                              :text text)))))
+           (multiple-value-bind (text keysym) (x-lookup-string evt)
+             (make-instance 'glop:key-press-event
+                            :keycode keycode
+                            :keysym keysym
+                            :text text))))
         (:key-release
-         (with-foreign-slots ((keycode) evt x-key-event)
-           (when (and in-key-press (= in-key-press keycode))
-             (setf in-key-press nil))
+         (with-foreign-slots ((keycode win time) evt x-key-event)
+           ;; ignore key release for key repeats
+           ;; if a key is repeated we now get the same behavior as win32
+           ;; i.e. multiple :key-press events without corresponding key release
+           ;; the following is translated from glfw:x11_window.c:612
+           (when (%x-events-queued dpy 1) ;; 1 is QueuedAfterReading
+             (with-foreign-object (next-evt 'x-event)
+               (%x-peek-event dpy next-evt)
+               (when (and (eq :key-press
+                              (foreign-enum-keyword 'x-event-name
+                                   (foreign-slot-value next-evt 'x-key-event 'type)))
+                          (eq win (foreign-slot-value next-evt 'x-key-event 'win))
+                          (eq time (foreign-slot-value next-evt 'x-key-event 'time)))
+                 (return-from process-event))))
            (multiple-value-bind (text keysym) (x-lookup-string evt)
              (make-instance 'glop:key-release-event
                             :keycode keycode
