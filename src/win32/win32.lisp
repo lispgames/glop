@@ -540,7 +540,7 @@
     (when (zerop (%register-class class))
       (format t "Error registering class ~S: ~S~%" name (get-last-error)))))
 
-(defcfun ("SetWindowText" set-window-text) bool
+(defcfun ("SetWindowTextA" set-window-text) bool
   (wnd hwnd) (title :string))
 
 (defcfun ("CreateWindowExA" create-window-ex) hwnd
