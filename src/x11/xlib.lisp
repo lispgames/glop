@@ -362,7 +362,7 @@
   (let ((wm-state (x-intern-atom dpy "_NET_WM_STATE" nil))
         (fullscreen (x-intern-atom dpy "_NET_WM_STATE_FULLSCREEN" nil)))
     (with-foreign-object (msg 'x-event)
-      (with-foreign-slots ((type) msg x-event) 
+      (with-foreign-slots ((type) msg x-event)
         (setf type (foreign-enum-value 'x-event-name :client-message))
         (with-foreign-slots ((win message-type format data) msg x-client-message-event) 
         (setf win window)
@@ -371,7 +371,7 @@
         (with-foreign-slots ((l) data x-client-message-event-data)
           (setf (mem-aref l :long 0) (if be-fullscreen 1 0))
           (setf (mem-aref l :long 1) fullscreen)
-          (setf (mem-aref l :long 2) 0))))  
+          (setf (mem-aref l :long 2) 0))))
       (x-send-event dpy (x-default-root-window dpy) nil (foreign-bitfield-value 'x-event-mask-flags '(:structure-notify-mask)) msg))))
 
 (defun x-open-display (&optional (display-name (null-pointer)))
@@ -473,7 +473,8 @@
                (%x-peek-event dpy next-evt)
                (when (and (eq :key-press
                               (foreign-enum-keyword 'x-event-name
-                                   (foreign-slot-value next-evt 'x-key-event 'type)))
+                                   (foreign-slot-value next-evt 'x-key-event 'type)
+                                   :errorp nil))
                           (eq win (foreign-slot-value next-evt 'x-key-event 'win))
                           (eq time (foreign-slot-value next-evt 'x-key-event 'time)))
                  (return-from process-event))))
