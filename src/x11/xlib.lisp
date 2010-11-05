@@ -534,7 +534,8 @@
          (make-instance 'glop:focus-in-event))
         (:focus-out
          (make-instance 'glop:focus-out-event))
-        (t (format t "Unhandled X11 event: ~S~%" type))))))
+        ;; unhandled event
+        (t nil)))))
 
 (defcfun ("XLookupString" %x-lookup-string) :int
   (evt x-key-event) (buffer-return :pointer) (bytes-buffer :int)
