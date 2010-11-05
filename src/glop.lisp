@@ -244,7 +244,7 @@ Returns NIL on :CLOSE event, T otherwise."
 (defmethod on-visibility (window visible)
   (declare (ignore window visible)))
 (defmethod on-focus (window focused-p)
-  (declare (ignore window focused)))
+  (declare (ignore window focused-p)))
 
 
 
