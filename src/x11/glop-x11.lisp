@@ -70,6 +70,8 @@
                        (id x11-window-id)
                        (visual-infos x11-window-visual-infos)
                        (fb-config x11-window-fb-config)
+                       (win-x window-x)
+                       (win-y window-y)
                        (win-width window-width)
                        (win-height window-height)
                        (win-title window-title)
@@ -108,8 +110,10 @@
                 (glop-xlib:x-intern-atom display "WM_DELETE_WINDOW" nil))
           (glop-xlib:x-set-wm-protocols display id array 1))
 
-        (setf win-width width)
-        (setf win-height height)
+        (setf win-x 0
+              win-y 0
+              win-width width
+              win-height height)
         ;; set title
         (glop-xlib:x-store-name display id title)
         (setf win-title title)
@@ -121,7 +125,7 @@
         (set-fullscreen win fullscreen)
 
         (glop-xlib:xkb-set-detectable-auto-repeat display t (cffi:null-pointer))
-        
+
         win))))
 
 (defun set-fullscreen (win &optional (state (not (window-fullscreen win))))
@@ -180,5 +184,5 @@
   (glop-glx:glx-swap-buffers (x11-window-display win) (x11-window-id win)))
 
 (defun %next-event (win &key blocking)
-  (glop-xlib:x-next-event (x11-window-display win) blocking))
+  (glop-xlib:x-next-event win (x11-window-display win) blocking))
 

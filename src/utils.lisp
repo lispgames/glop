@@ -1,7 +1,7 @@
 (in-package #:glop)
 
 (defstruct (video-mode
-	     (:constructor make-video-mode (width height depth)))
+             (:constructor make-video-mode (width height depth)))
   (width 0 :type integer)
   (height 0 :type integer)
   (depth 0 :type integer))
@@ -9,6 +9,7 @@
 ;; base window structure
 ;; all implementations should inherit from it
 (defstruct window
+  x y
   width
   height
   title

@@ -436,19 +436,19 @@
 (defun x-pending-p (display-ptr)
   (not (zerop (%x-pending display-ptr))))
 
-(defun x-next-event (dpy &optional blocking)
+(defun x-next-event (win dpy &optional blocking)
   (x-sync dpy nil)
   (with-foreign-object (evt 'x-event)
     (if blocking
         (progn (%x-next-event dpy evt)
-               (process-event dpy evt))
+               (process-event win dpy evt))
         (progn (when (x-pending-p dpy)
                  (%x-next-event dpy evt)
-                 (process-event dpy evt))))))
+                 (process-event win dpy evt))))))
 
 (let ((last-x 0)
       (last-y 0))
-  (defun process-event (dpy evt)
+  (defun process-event (win dpy evt)
     "Process an X11 event into a GLOP event."
     (with-foreign-slots ((type) evt x-event)
       (case (foreign-enum-keyword 'x-event-name type :errorp nil)
@@ -508,7 +508,11 @@
              (make-instance 'glop:expose-event
                             :width width :height height))))
         (:configure-notify
-         (with-foreign-slots ((width height) evt x-configure-event)
+         (with-foreign-slots ((x y width height) evt x-configure-event)
+           (setf (glop:window-x win) x
+                 (glop:window-y win) y
+                 (glop:window-width win) width
+                 (glop:window-height win) height)
            (make-instance 'glop:resize-event
                           :width width :height height)))
         (:map-notify

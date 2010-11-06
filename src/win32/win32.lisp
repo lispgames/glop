@@ -377,16 +377,20 @@
 
 (defvar %event% nil)
 
-(defun next-event (wnd &optional blocking)
-  (with-foreign-object (msg 'msg)
-    (if blocking
-        (when (> (%get-message msg wnd 0 0) 0)
-          (%translate-message msg)
-          (%dispatch-message msg))
-        (when (%peek-message msg wnd 0 0 :pm-remove)
-          (%translate-message msg)
-          (%dispatch-message msg))))
-  %event%)
+;; XXX: similar hack here
+(defvar %window% nil)
+
+(defun next-event (win wnd &optional blocking)
+  (let ((%window% win))
+    (with-foreign-object (msg 'msg)
+      (if blocking
+          (when (> (%get-message msg wnd 0 0) 0)
+            (%translate-message msg)
+            (%dispatch-message msg))
+          (when (%peek-message msg wnd 0 0 :pm-remove)
+            (%translate-message msg)
+            (%dispatch-message msg))))
+    %event%))
 
 ;; XXX: we probably have problems with negative numbers here...
 (defun low-word (value)
@@ -432,7 +436,10 @@
          (:wm-paint
           ;; XXX: this is an ugly hack but WM_SIZE acts strangely...
           (multiple-value-bind (x y width height) (get-geometry wnd)
-            (declare (ignore x y))
+            (setf (glop:window-x %window%) x
+                  (glop:window-y %window%) y
+                  (glop:window-width %window%) width
+                  (glop:window-height %window%) height)
             (setf %event% (glop::make-instance (if from-configure
                                                    (progn (setf from-configure nil)
                                                           'glop:resize-event)

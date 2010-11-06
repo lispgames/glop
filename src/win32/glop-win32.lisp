@@ -114,6 +114,6 @@
   (glop-win32:swap-buffers (win32-window-dc win)))
 
 (defun %next-event (win &key blocking)
-  (let ((evt (glop-win32:next-event (win32-window-id win) blocking)))
+  (let ((evt (glop-win32:next-event win (win32-window-id win) blocking)))
     (setf glop-win32:%event% nil)
     evt))
