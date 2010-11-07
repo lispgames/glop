@@ -1,15 +1,6 @@
 ;;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; Base: 10; indent-tabs-mode: nil -*-
 
 ;; Win32  bindings
-(defpackage :glop-win32
-  (:use #:cl #:cffi)
-  (:export #:handle #:hdc #:bool
-           #:get-last-error #:get-module-handle #:create-and-register-class
-           #:create-window-ex #:get-dc #:choose-pixel-format #:set-foreground-window
-           #:set-focus #:update-window #:show-window #:set-window-text
-           #:destroy-window #:unregister-class #:swap-buffers #:next-event
-           #:%event%))
-
 (in-package #:glop-win32)
 
 ;; only on windows 32 bit
