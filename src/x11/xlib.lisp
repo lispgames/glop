@@ -380,7 +380,7 @@
       (error "Unable to open display"))
     display))
 
-(defun x-create-window (dpy parent width height visual-infos)
+(defun x-create-window (dpy parent x y width height visual-infos)
   (let ((root-win (x-default-root-window dpy)))
     (with-foreign-slots ((visual-id visual depth) visual-infos visual-info)
       (let ((colormap (x-create-color-map dpy root-win visual :alloc-none)))
@@ -395,7 +395,7 @@
                                   :visibility-change-mask
                                   :pointer-motion-mask))
                   border-pixel 0)
-            (%x-create-window dpy parent 0 0 width height 0
+            (%x-create-window dpy parent x y  width height 0
                               depth :input-output visual
                               '(:cw-colormap :cw-event-mask)
                               win-attrs)))))))
@@ -509,10 +509,7 @@
                             :width width :height height))))
         (:configure-notify
          (with-foreign-slots ((x y width height) evt x-configure-event)
-           (setf (glop:window-x win) x
-                 (glop:window-y win) y
-                 (glop:window-width win) width
-                 (glop:window-height win) height)
+           (glop::%update-geometry win x y width height)
            (make-instance 'glop:resize-event
                           :width width :height height)))
         (:map-notify
@@ -568,3 +565,33 @@
     (values (mem-ref root 'window) (mem-ref x :int) (mem-ref y :int)
             (mem-ref width :unsigned-int) (mem-ref height :unsigned-int)
             (mem-ref border-width :unsigned-int) (mem-ref depth :unsigned-int))))
+
+(defbitfield x-window-configure-flags
+  :cw-x
+  :cw-y
+  :cw-width
+  :cw-height
+  :cw-border-width
+  :cw-sibling
+  :cw-stack-mode)
+
+(defcstruct x-window-changes
+  (x :int) (y :int)
+  (width :int) (height :int)
+  (border-width :int)
+  (sibling window)
+  (stack-mode :int))
+
+(defcfun ("XConfigureWindow" %x-configure-window) :int
+  (display-ptr :pointer) (win window) (value-mask x-window-configure-flags)
+  (values x-window-changes))
+
+(defun x-set-geometry (dpy win x y width height)
+  (with-foreign-object (changes 'x-window-changes)
+    (setf (foreign-slot-value changes 'x-window-changes 'x) x
+          (foreign-slot-value changes 'x-window-changes 'y) y
+          (foreign-slot-value changes 'x-window-changes 'width) width
+          (foreign-slot-value changes 'x-window-changes 'height) height)
+    (%x-configure-window dpy win (foreign-bitfield-value 'x-window-configure-flags
+                                                         '(:cw-x :cw-y :cw-width :cw-height))
+                         changes)))

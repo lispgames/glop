@@ -11,6 +11,7 @@
    #:create-window #:destroy-window #:show-window #:hide-window #:set-window-title
    #:swap-buffers
    #:window-x #:window-y #:window-width #:window-height #:window-gl-context #:set-fullscreen
+   #:set-geometry #:set-aspect-ratio
    ;; state
    #:key-pressed #:*ignore-auto-repeat*
    ;; events

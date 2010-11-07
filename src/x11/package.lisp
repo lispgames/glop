@@ -1,3 +1,5 @@
+;;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; Base: 10; indent-tabs-mode: nil -*-
+
 (defpackage :glop-xlib
   (:use #:cl #:cffi)
   (:export #:visual-info #:bool #:drawable
@@ -6,5 +8,6 @@
            #:x-destroy-window #:x-close-display #:x-next-event
            #:x-free #:x-intern-atom #:x-set-wm-protocols
            #:%set-fullscreen #:closest-mode
+           #:x-set-geometry
            #:current-mode #:set-mode #:supported-modes
            #:xkb-set-detectable-auto-repeat))

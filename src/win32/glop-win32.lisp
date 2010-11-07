@@ -36,7 +36,7 @@
 (defun detach-gl-context (ctx)
   (glop-wgl::wgl-make-current (cffi:null-pointer) (cffi:null-pointer)))
 
-(defun create-window (title width height &key major minor fullscreen
+(defun create-window (title width height &key (x 0) (y 0) major minor fullscreen
                                               (double-buffer t)
                                               stereo
                                               (red-size 4)
@@ -60,13 +60,12 @@
                                   "OpenGL"
                                   title
                                   '(:ws-overlapped-window :ws-clip-siblings :ws-clip-children)
-                                  0 0 width height (cffi:null-pointer) (cffi:null-pointer)
+                                  x y width height (cffi:null-pointer) (cffi:null-pointer)
                                   (win32-window-module-handle win) (cffi:null-pointer))))
       (unless wnd
         (error "Can't create window (error ~S)~%" (glop-win32:get-last-error)))
       (setf (win32-window-id win) wnd))
-    (setf (win32-window-width win) width)
-    (setf (win32-window-height win) height)
+    (%update-geometry win x y width height)
     (setf (win32-window-dc win) (glop-win32:get-dc (win32-window-id win)))
     ;; choose pixel format
     ;; XXX: kwargs passing is ugly here and we need something else...
@@ -93,6 +92,10 @@
     (show-window win)
     ;; return created window
     win))
+
+(defun set-geometry (win x y width height)
+  (glop-win32:set-geometry (win32-window-id win) x y width height)
+  (%update-geometry win x y width height))
 
 (defun show-window (win)
   (glop-win32:show-window (win32-window-id win) :sw-show)

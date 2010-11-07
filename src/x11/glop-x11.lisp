@@ -48,7 +48,7 @@
 (defun detach-gl-context (ctx)
   (glop-glx:glx-release-context (glx-context-display ctx)))
 
-(defun create-window (title width height &key major minor fullscreen
+(defun create-window (title width height &key (x 0) (y 0) major minor fullscreen
                       (double-buffer t)
                       stereo
                       (red-size 4)
@@ -70,10 +70,6 @@
                        (id x11-window-id)
                        (visual-infos x11-window-visual-infos)
                        (fb-config x11-window-fb-config)
-                       (win-x window-x)
-                       (win-y window-y)
-                       (win-width window-width)
-                       (win-height window-height)
                        (win-title window-title)
                        (gl-ctx window-gl-context))
           win
@@ -103,17 +99,13 @@
               (setf visual-infos (glop-glx:glx-choose-visual display screen attribs))))
         (setf id (glop-xlib:x-create-window display
                                             (glop-xlib:x-default-root-window display)
-                                            width height visual-infos))
+                                            x y width height visual-infos))
 
         (cffi:with-foreign-object (array :unsigned-long)
           (setf (cffi:mem-aref array :unsigned-long)
                 (glop-xlib:x-intern-atom display "WM_DELETE_WINDOW" nil))
           (glop-xlib:x-set-wm-protocols display id array 1))
-
-        (setf win-x 0
-              win-y 0
-              win-width width
-              win-height height)
+        (%update-geometry win x y width height)
         ;; set title
         (glop-xlib:x-store-name display id title)
         (setf win-title title)
@@ -158,6 +150,10 @@
                                   (glop-xlib:closest-mode display screen
                                                                           width height 0) 0))
             (setf fullscreen nil))))))
+
+(defun set-geometry (win x y width height)
+  (glop-xlib:x-set-geometry (x11-window-display win) (x11-window-id win) x y width height)
+  (%update-geometry win x y width height))
 
 (defun show-window (win)
   (glop-xlib:x-map-raised (x11-window-display win) (x11-window-id win)))

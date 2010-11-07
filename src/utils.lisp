@@ -18,6 +18,12 @@
   (fullscreen nil)
   (previous-video-mode nil))
 
+(defun %update-geometry (win x y width height)
+  (setf (slot-value win 'x) x
+        (slot-value win 'y) y
+        (slot-value win 'width) width
+        (slot-value win 'height) height))
+
 ;;; Keyboard stuff
 (defvar *ignore-auto-repeat* nil
   "When set to NIL, holding a key press will generate a sequence of key-press events.

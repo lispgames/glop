@@ -87,7 +87,9 @@
   (small-icon hicon))
 
 (defcenum msg-type
+  (:wm-create 1)
   (:wm-destroy 2)
+  (:wm-move 3)
   (:wm-close 16)
   (:wm-mouse-move 512)
   (:wm-paint 15)
@@ -314,16 +316,39 @@
     (t (:default "user32")))
 (use-foreign-library user32)
 
-(defcfun ("GetClientRect" get-client-rect) bool
+(defcfun ("GetClientRect" %get-client-rect) bool
   (wnd hwnd) (rect-out :pointer))
 
-(defun get-geometry (wnd)
+(defun get-client-rect (wnd)
   (with-foreign-object (rct 'rect)
-    (get-client-rect wnd rct)
+    (%get-client-rect wnd rct)
     (with-foreign-slots ((left top right bottom) rct rect)
-      (values left bottom
+      (values left top
               (- right left)
               (- bottom top)))))
+
+(defcfun ("GetWindowRect" %get-window-rect) bool
+  (wnd hwnd) (rect-out :pointer))
+
+(defun get-window-rect (wnd)
+  (with-foreign-object (rct 'rect)
+    (%get-window-rect wnd rct)
+    (with-foreign-slots ((left top right bottom) rct rect)
+      (values left top
+              (- right left)
+              (- bottom top)))))
+
+(defun get-client-area-offset (wnd)
+  (multiple-value-bind (wx wy ww wh) (get-window-rect wnd)
+    (multiple-value-bind (cx cy cw ch) (get-client-rect wnd)
+      (values (- cx wx) (- cy wy)))))
+
+(defcfun ("MoveWindow" move-window) bool
+  (wnd hwnd) (x :int) (y :int) (width :int) (height :int)
+  (repaint bool))
+
+(defun set-geometry (wnd x y width height)
+  (move-window wnd x y width height 1))
 
 (defcfun ("SetCapture" set-capture) hwnd
   (wnd hwnd))
@@ -426,16 +451,12 @@
             (return-from window-proc 0)))
          (:wm-paint
           ;; XXX: this is an ugly hack but WM_SIZE acts strangely...
-          (multiple-value-bind (x y width height) (get-geometry wnd)
-            (setf (glop:window-x %window%) x
-                  (glop:window-y %window%) y
-                  (glop:window-width %window%) width
-                  (glop:window-height %window%) height)
+          (multiple-value-bind (x y width height) (get-client-rect wnd)
             (setf %event% (glop::make-instance (if from-configure
                                                    (progn (setf from-configure nil)
                                                           'glop:resize-event)
-                                                      'glop:expose-event)
-                                                :width width :height height))))
+                                                   'glop:expose-event)
+                                               :width width :height height))))
          (:wm-lbutton-down
           (set-capture wnd)
           (setf %event% (glop::make-instance 'glop:button-press-event
@@ -498,12 +519,21 @@
           ;; With this hack it seems that WM_PAINT is handled directly thus overwriting
           ;; our glop :configure event with a :expose event...weird
           (setf from-configure t)
+          (when %window% ;; XXX: WM_SIZE is called on window creation when %window% is nil ...
+            (glop::%update-geometry %window% (glop:window-x %window%) (glop:window-y %window%)
+                                    (low-word l-param) (high-word l-param)))
           (return-from window-proc 0))
+         (:wm-move
+          (when %window% ;; XXX: WM_MOVE is called on window creation when %window% is nil ...
+            (multiple-value-bind (x y w h) (get-window-rect wnd)
+              (glop::%update-geometry %window% x y ;;(low-word l-param) (high-word l-param)
+                                      (glop:window-width %window%) (glop:window-height %window%)))
+            (return-from window-proc 0)))
          (:wm-show-window
-          (multiple-value-bind (x y width height) (get-geometry wnd)
-            (setf %event% (glop::make-instance (if (zerop w-param)
-                                                   'glop:visibility-unobscured-event
-                                                   'glop:visibility-obscured-event)))))
+          (setf %event% (glop::make-instance (if (zerop w-param)
+                                                 'glop:visibility-unobscured-event
+                                                 'glop:visibility-obscured-event)))
+          (return-from window-proc 0))
          (:wm-set-focus
           (return-from window-proc 0)))
        ;; (:wm-sys-command

@@ -13,6 +13,15 @@
   (format t "Key pressed: ~S~%" (glop:key-pressed keycode))
   (when (eq keysym :escape)
     (glop:push-close-event window))
+  (case keysym
+    (:left (decf (glop:window-x window)))
+    (:right (incf (glop:window-x window)))
+    (:up (decf (glop:window-y window)))
+    (:down (incf (glop:window-y window)))
+    (:page-up (progn (incf (glop:window-width window) 10)
+                     (incf (glop:window-height window) 10)))
+    (:page-down (progn (decf (glop:window-width window) 10)
+                       (decf (glop:window-height window) 10))))
   (when (and pressed (eq keysym :f))
     (glop:set-fullscreen window)))
 
@@ -201,7 +210,6 @@
                (progn
                  (setf windows (remove win windows))
                  (glop:destroy-window win))))))))
-
 
 ;; on-event based dispatching test
 (defmethod glop:on-event (window (event glop:key-event))

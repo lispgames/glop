@@ -30,7 +30,7 @@
   (declare (ignore ctx))
   (error 'not-implemented))
 
-(defdfun create-window (title width height &key major minor
+(defdfun create-window (title width height &key x y major minor
                                                 double-buffer
                                                 stereo
                                                 red-size
@@ -48,7 +48,7 @@
    Major and minor arguments specify the context version to use, when NIL
    (default value) old style gl context is created, otherwise framebuffer config
     based context creation is used."
-  (declare (ignore title width height major minor double-buffer stereo red-size
+  (declare (ignore title width height x y major minor double-buffer stereo red-size
                    green-size blue-size alpha-size depth-size accum-buffer accum-red-size
                    accum-green-size accum-blue-size stencil-buffer stencil-size))
   (error 'not-implemented))
@@ -60,8 +60,33 @@
 
 (defdfun set-fullscreen (window &optional (state (not (window-fullscreen win))))
   "Attempt to set WINDOW to fullscreen state STATE using the video mode closest to current geometry."
-  (declare (ignore window))
+  (declare (ignore window state))
   (error 'not-implemented))
+
+(defdfun set-geometry (window x y width height)
+  "Configure window geometry."
+  (declare (ignore window x y width height))
+  (error 'not-implemented))
+
+(defun set-window-x (window x)
+  (set-geometry window x (window-y window) (window-width window) (window-height window)))
+
+(defsetf window-x set-window-x)
+
+(defun set-window-y (window y)
+  (set-geometry window (window-x window) y (window-width window) (window-height window)))
+
+(defsetf window-y set-window-y)
+
+(defun set-window-width (window width)
+  (set-geometry window (window-x window) (window-y window) width (window-height window)))
+
+(defsetf window-width set-window-width)
+
+(defun set-window-height (window height)
+  (set-geometry window (window-x window) (window-y window) (window-width window) height))
+
+(defsetf window-height set-window-height)
 
 (defdfun show-window (window)
   "Make WINDOW visible."
