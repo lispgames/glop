@@ -651,15 +651,10 @@
           (unwind-protect
                (progn
                  (x-get-event-data display-ptr event)
-                 (%generic-event-dispatch (name ext) evtype data display-ptr)
-)
+                 (%generic-event-dispatch (name ext) evtype data display-ptr))
             (unless (null-pointer-p data)
-              (x-free-event-data display-ptr event))
-)
-          (format t "Unhandled X11 generic-event: ~S, opcode ~s, display ~s~%" evtype extension display-ptr)))
-
-)
-)
+              (x-free-event-data display-ptr event)))
+          (format t "Unhandled X11 generic-event: ~S, opcode ~s, display ~s~%" evtype extension display-ptr)))))
 
 (defcfun ("XLookupString" %x-lookup-string) :int
   (evt x-key-event) (buffer-return :pointer) (bytes-buffer :int)
