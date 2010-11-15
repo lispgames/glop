@@ -749,3 +749,40 @@
     (format t "xinput2 motion event ~,3f,~,3f ~,3f,~,3fs~%" x y x-root y-root)
     (format t "device ~s/~s valuators:~s~%" source-id device-id (parse-valuator-state valuators))))
 
+
+(defmethod %generic-event-dispatch ((extension-name (eql :x-input-2))
+                                    (event (eql +xi-device-changed+)) data
+                                    display-ptr)
+ (format t "device change event~%"))
+
+(defmacro with-continue-restart (&body body)
+  `(restart-case
+       (progn ,@body)
+     (continue () :report "Continue"  )))
+
+(defmethod %generic-event-dispatch ((extension-name (eql :x-input-2))
+                                    (event (eql +xi-hierarchy-changed+)) data
+                                    display-ptr)
+ (with-foreign-slots ((flags num-info info) data xi-hierarchy-event)
+   (format t "xinput2 hierarchy event flags=~s~% info=~s~%"
+           flags
+           (loop for i below num-info
+              for p = (mem-aref info 'xi-hierarchy-info i)
+              when (with-foreign-slots ((device-id attachment use enabled flags) p xi-hierarchy-info)
+                     (when flags
+                       (list i
+                             :device-id device-id
+                             :attachment attachment
+                             :use use
+                             :enabled enabled
+                             :flags flags)))
+              collect it))
+   (loop for i below num-info
+      for p = (mem-aref info 'xi-hierarchy-info i)
+      do (with-foreign-slots ((device-id flags) p xi-hierarchy-info)
+           (when (and flags (or (member :xi-slave-added flags)
+                                (member :xi-master-added flags)))
+             (format t "added device :~% ")
+             (with-continue-restart
+               (xi-query-device display-ptr device-id)))))))
+
