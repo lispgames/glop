@@ -435,7 +435,7 @@
     (with-foreign-objects ((event-mask 'xi-event-mask)
                            (mask-octets :unsigned-char octets))
       (loop for i below octets
-         do (setf (mem-aref mask-octets :unsigned-char)
+         do (setf (mem-aref mask-octets :unsigned-char i)
                   ;; fixme: verify byte-order here
                   (ldb (byte 8 (* i 8)) mask-val)))
       (setf (foreign-slot-value event-mask 'xi-event-mask 'device-id)
