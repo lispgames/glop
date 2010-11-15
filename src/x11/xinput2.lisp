@@ -544,13 +544,17 @@
 ;; (or possibly add that as a separate function which should be checked
 ;;  by calling code before trying to use xi2 stuff?)
 (defun xi-query-version (display major minor)
-  (with-foreign-objects ((&major :int) (&minor :int))
-    (setf (mem-ref &major :int) major
-          (mem-ref &minor :int) minor)
-    ;; possibly should return error code as well?
-    (if (= (%xi-query-version display &major &minor) +status-success+)
-        (values t (mem-ref &major :int) (mem-ref &minor :int))
-        (values nil (mem-ref &major :int) (mem-ref &minor :int)))))
+  (if (cffi:foreign-symbol-pointer "XIQueryVersion")
+      (with-foreign-objects ((&major :int) (&minor :int))
+        (setf (mem-ref &major :int) major
+              (mem-ref &minor :int) minor)
+        ;; possibly should return error code as well?
+        (if (= (%xi-query-version display &major &minor) +status-success+)
+            (values t (mem-ref &major :int) (mem-ref &minor :int))
+            (values nil (mem-ref &major :int) (mem-ref &minor :int))))
+      ;; fixme: add a fallback to XGetExtensionVersion if we ever add
+      ;; support for xinput1
+      (values nil nil nil)))
 
 (defcfun ("XIQueryDevice" %xi-query-device) (:pointer %xi-device-info)
   (display-ptr :pointer)
