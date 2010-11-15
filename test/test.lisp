@@ -377,6 +377,10 @@
    (gl:viewport 0 0 (glop:width event) (glop:height event))
    (format t "Resize: ~Sx~S~%" (glop:width event) (glop:height event)))
 
+(defmacro with-continue-restart (&body body)
+  `(restart-case
+       (progn ,@body)
+     (continue () :report "Continue"  )))
 
 (defun test-xinput-2 ()
   (let ((win (glop:create-window "Glop test window" 800 600
@@ -390,21 +394,33 @@
             (multiple-value-list
              (glop-xlib::xi-query-version (glop::x11-window-display win)
                                           2 0)))
-    (format t "select events = ~s~%"
-            (glop-xlib::xi-select-events (glop::x11-window-display win)
-                                         (glop::x11-window-id win)
-                                         :all-devices
-                                         :xi-button-press
-                                         :xi-motion
-                                         :xi-key-press))
+    (when (glop-xlib::xi-query-version (glop::x11-window-display win)
+                                       2 0)
+      (format t "select events = ~s~%"
+              (glop-xlib::xi-select-events (glop::x11-window-display win)
+                                           (glop::x11-window-id win)
+                                           :all-devices
+                                           :xi-button-press
+                                           :xi-motion
+                                           :xi-key-press
+                                           :xi-hierarchy-changed)))
+    (with-continue-restart
+     (glop-xlib::xi-query-device (glop::x11-window-display win)
+                                 glop-xlib::+xi-all-devices+))
 
     (gl:clear-color 0.3 0.3 1.0 0)
-    (loop while (glop:dispatch-events win :blocking nil) do
-         (sleep 0.005)
-         (gl:clear :color-buffer)
-         (gl:flush)
-         (glop:swap-buffers win))
-    (glop:destroy-window win)))
+    (loop while (glop:dispatch-events win :blocking nil)
+       do
+         (with-continue-restart
+           (sleep 0.005)
+           (gl:clear :color-buffer)
+           (gl:flush)
+           (glop:swap-buffers win)))
+    (format t "destroy window~%")
+    (glop:destroy-window win)
+    (format t "done~%")))
 
 #++
 (test-xinput-2)
+
+
