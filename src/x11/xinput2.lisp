@@ -725,6 +725,11 @@
                                (mem-aref values :double index))
                  and do (incf index)))))
 
+(defmethod %init-extension-rename-hook (x-name (name (eql :x-input)) display)
+  (if (xi-query-version display 2 0)
+      :x-input-2
+      nil))
+
 
 ;; event IDs as constants so they are easier to use for GF dispatch
 (defconstant +xi-device-changed+                 1)

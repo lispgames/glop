@@ -396,17 +396,27 @@
    (event-base :initarg event-base :reader event-base)
    (error-base :initarg error-base :reader error-base)))
 
-(defun init-xinput2 (display)
+;; hack to allow xinput2 code to override name, or pretend extension
+;; isn't there if it only supports xi1
+(defgeneric %init-extension-rename-hook (x-name name display)
+  (:method (xn n d) n))
+
+(defun init-extension (x-name name display)
   (multiple-value-bind (has-xi op ev err)
-      (glop-xlib::x-query-extension display "XInputExtension")
-    (when (and has-xi
-               (glop-xlib::xi-query-version display 2 0))
-      (setf (get-display-extension-data display op)
-            (make-instance 'extension-data
-                           'name :x-input-2
-                           'opcode op
-                           'event-base ev
-                           'error-base err)))))
+      (x-query-extension display x-name)
+    (when has-xi
+      ;; we only support xinput2 for now, so give the extension code a chance
+      ;; to check the version
+      (when (setf name (%init-extension-rename-hook x-name name display))
+        (setf (get-display-extension-data display op)
+              (make-instance 'extension-data
+                             'name name
+                             'opcode op
+                             'event-base ev
+                             'error-base err))))))
+
+
+
 (defcstruct x-error-event
   (type :int)
   (display-ptr :pointer)
@@ -453,7 +463,7 @@
       (warn "duplicate display in x-open-display? need to add reference couting..."))
     (setf (gethash (pointer-address display) *display-extensions*)
           (make-hash-table :test 'eql))
-    (init-xinput2 display)
+    (init-extension "XInputExtension" :x-input display)
     display))
 
 (defun x-close-display (display)
