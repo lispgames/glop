@@ -196,24 +196,35 @@
   (mask-len :int)
   (mask :pointer))
 
-(defcstruct xi-any-class-info
-  (type :int)
+(defcstruct %xi-any-class-info
+  (type #++ :int xi-device-classes)
   (source-id :int))
 
-(defcstruct xi-button-class-info
+(defclass xi-any-class-info ()
+  ((type :initarg :type :reader class-type)
+   (source-id :initarg :source-id :reader source-id)))
+
+(defcstruct %xi-button-class-info
   (type :int)
   (source-id :int)
   (num-buttons :int)
   (labels (:pointer x-atom))
   (state xi-button-state))
 
-(defcstruct xi-key-class-info
+(defclass xi-button-class-info (xi-any-class-info)
+  ((labels :initarg :labels :reader button-labels)
+   (state :initarg :state :reader state)))
+
+(defcstruct %xi-key-class-info
   (type :int)
   (source-id :int)
   (num-keycodes :int)
   (keycodes (:pointer :int)))
 
-(defcstruct xi-valuator-class-info
+(defclass xi-key-class-info (xi-any-class-info)
+  ((keycodes :initarg :keycodes :reader keycodes)))
+
+(defcstruct %xi-valuator-class-info
   (type :int)
   (source-id :int)
   (number :int)
@@ -224,14 +235,82 @@
   (resolution :int)
   (mode :int))
 
-(defcstruct xi-device-info
+(defclass xi-valuator-class-info (xi-any-class-info)
+  ((number :initarg :number :reader valuator-number)
+   (label :initarg :label :reader valuator-label)
+   (min :initarg :min :reader valuator-min)
+   (max :initarg :max :reader valuator-max)
+   (value :initarg :value :reader valuator-value)
+   (resolution :initarg :resolution :reader valuator-resolution)
+   (mode :initarg :mode :reader valuator-mode)))
+
+(defun make-class-info (pointer display)
+  (with-foreign-slots ((type source-id) pointer %xi-any-class-info)
+    (ecase type
+      (:xi-button-class
+       (with-foreign-slots ((num-buttons labels state)
+                            pointer %xi-button-class-info)
+         (list 'xi-button-class-info
+                        :type type
+                        :source-id source-id
+                        :labels (loop
+                                   for i below num-buttons
+                                   for atom = (mem-aref labels 'x-atom i)
+                                   when (zerop atom)
+                                   collect "<None>"
+                                   else
+                                   collect (x-get-atom-name display atom))
+                        :state state)))
+      (:xi-key-class
+       (with-foreign-slots ((num-keycodes keycodes state)
+                            pointer %xi-key-class-info)
+         (list 'xi-key-class-info
+                        :type type
+                        :source-id source-id
+                        :labels (loop for i below num-keycodes
+                                   collect (mem-aref keycodes :int i)))))
+      (:xi-valuator-class
+       (with-foreign-slots ((number label min max value resolution mode)
+                            pointer %xi-valuator-class-info)
+         (list 'xi-valuator-class-info
+                        :type type
+                        :source-id source-id
+                        :number number
+                        :label (if (zerop label) "<none>"
+                                   (x-get-atom-name display label))
+                        :min min
+                        :max max
+                        :value value
+                        :resolution resolution
+                        :mode mode))))))
+
+(defcstruct %xi-device-info
   (device-id :int)
   (name :string)
-  (use :int)
+  ;;(use :int)
+  (use xi-device-types)
   (attachment :int)
   (enabled :boolean)
   (num-classes :int)
-  (classes (:pointer (:pointer xi-any-class-info))))
+  (classes (:pointer (:pointer %xi-any-class-info))))
+
+(defclass xi-device-info ()
+  ((device-id :initarg :device-id :reader device-id)
+   (name :initarg :name :reader name)
+   (use :initarg :use :reader use)
+   (attachment :initarg :attachment :reader attachment)
+   (enabled :initarg :enabled :reader enabled)
+   (classes :initarg :classes :reader classes)))
+
+(defun make-xi-device-info (pointer display)
+  (with-foreign-slots ((device-id name use attachment enabled num-classes
+                                  classes) pointer %xi-device-info)
+    (list :device-id device-id :name name :use use :attachment attachment
+          :enabled enabled
+          :classes (loop for i below num-classes
+                      for class = (mem-aref classes :pointer i)
+                      collect (make-class-info class display)))))
+
 
 (defcstruct xi-grab-modifiers
   (modifiers :int)
@@ -251,7 +330,7 @@
   (attachment :int)
   (use :int)
   (enabled :boolean)
-  (flags :int))
+  (flags #++ :int xi-hierarchy-flag))
 
 (defcstruct xi-hierarchy-event
   (type :int)
@@ -261,7 +340,7 @@
   (extension :int)
   (evtype :int)
   (time x-time)
-  (flags :int)
+  (flags #++ :int xi-hierarchy-flag)
   (num-info :int)
   (info (:pointer xi-hierarchy-info)))
 
@@ -277,7 +356,7 @@
   (source-id :int)
   (reason :int)
   (num-classes :int)
-  (classes (:pointer (:pointer xi-any-class-info))))
+  (classes (:pointer (:pointer %xi-any-class-info))))
 
 (defcstruct xi-device-event
   (type :int)
@@ -473,10 +552,22 @@
         (values t (mem-ref &major :int) (mem-ref &minor :int))
         (values nil (mem-ref &major :int) (mem-ref &minor :int)))))
 
-(defcfun ("XIQueryDevice" %xi-query-device) (:pointer xi-device-info)
+(defcfun ("XIQueryDevice" %xi-query-device) (:pointer %xi-device-info)
   (display-ptr :pointer)
   (device-id :int)
   (num-devices-retuen (:pointer :int)))
+
+(defcfun ("XIFreeDeviceInfo" xi-free-device-info) :void
+  (info (:pointer %xi-device-info)))
+
+(defun xi-query-device (display device-id)
+  (with-foreign-object (count :int)
+    (let ((devices (%xi-query-device display device-id count)))
+      (loop for i below (mem-aref count :int)
+         for device =  (mem-aref devices '%xi-device-info i)
+
+         do (format t "device ~a~% =~s~%" i (make-xi-device-info device display)))
+      (xi-free-device-info devices))))
 
 (defcfun ("XISetFocus" xi-set-focus) x-status
   (display-ptr :pointer)
