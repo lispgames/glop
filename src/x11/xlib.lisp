@@ -336,8 +336,13 @@
 (defcfun ("XCreateColormap" x-create-color-map) colormap
   (display-ptr :pointer) (win window) (visual-ptr :pointer) (alloc x-alloc))
 
-(defcfun ("XGetAtomName" x-get-atom-name) :string
+(defcfun ("XGetAtomName" %x-get-atom-name) :pointer
   (display-ptr :pointer) (atm x-atom))
+
+(defun x-get-atom-name (display-ptr atom)
+  (let ((p (%x-get-atom-name display-ptr atom)))
+    (prog1 (foreign-string-to-lisp p)
+      (x-free p))))
 
 (defcfun ("XFree" x-free) :int
   (data :pointer))
