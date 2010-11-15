@@ -629,8 +629,8 @@
 ;; dispatcher for extension events, extensions should eql specialize on
 ;; extension name and opcode, data cffi pointer to event structure, which
 ;; is freed after dispatcher returns
-(defgeneric %generic-event-dispatch (extension-name event data))
-(defmethod %generic-event-dispatch (extension-name event data)
+(defgeneric %generic-event-dispatch (extension-name event data display-ptr))
+(defmethod %generic-event-dispatch (extension-name event data display-ptr)
   (format t "unknown generic-event: extension=~s, event=~s, data=#x~8,'0x~%" extension-name event (pointer-address data)))
 
 (defun process-generic-event (event)
@@ -641,7 +641,7 @@
           (unwind-protect
                (progn
                  (x-get-event-data display-ptr event)
-                 (%generic-event-dispatch (name ext) evtype data)
+                 (%generic-event-dispatch (name ext) evtype data display-ptr)
 )
             (unless (null-pointer-p data)
               (x-free-event-data display-ptr event))

@@ -721,8 +721,30 @@
                                (mem-aref values :double index))
                  and do (incf index)))))
 
+
+;; event IDs as constants so they are easier to use for GF dispatch
+(defconstant +xi-device-changed+                 1)
+(defconstant +xi-key-press+                      2)
+(defconstant +xi-key-release+                    3)
+(defconstant +xi-button-press+                   4)
+(defconstant +xi-button-release+                 5)
+(defconstant +xi-motion+                         6)
+(defconstant +xi-enter+                          7)
+(defconstant +xi-leave+                          8)
+(defconstant +xi-focus-in+                       9)
+(defconstant +xi-focus-out+                      10)
+(defconstant +xi-hierarchy-changed+              11)
+(defconstant +xi-property-event+                 12)
+(defconstant +xi-raw-key-press+                  13)
+(defconstant +xi-raw-key-release+                14)
+(defconstant +xi-raw-button-press+               15)
+(defconstant +xi-raw-button-release+             16)
+(defconstant +xi-raw-motion+                     17)
+
 ;; process xinput 2 events
-(defmethod %generic-event-dispatch ((extension-name (eql :x-input-2)) (event (eql 6)) data)
+(defmethod %generic-event-dispatch ((extension-name (eql :x-input-2))
+                                    (event (eql +xi-motion+)) data
+                                    display-ptr)
   (with-foreign-slots ((device-id source-id x y x-root y-root valuators) data xi-device-event)
     (format t "xinput2 motion event ~,3f,~,3f ~,3f,~,3fs~%" x y x-root y-root)
     (format t "device ~s/~s valuators:~s~%" source-id device-id (parse-valuator-state valuators))))
