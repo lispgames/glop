@@ -407,8 +407,43 @@
                            'opcode op
                            'event-base ev
                            'error-base err)))))
+(defcstruct x-error-event
+  (type :int)
+  (display-ptr :pointer)
+  (resource-id xid)
+  (serial :unsigned-long)
+  (error-code :unsigned-char)
+  (request-code :unsigned-char)
+  (minor-code :unsigned-char))
+
+(defcfun ("XGetErrorText" x-get-error-text) :int
+  (display-ptr :pointer)
+  (code :int)
+  (buffer :pointer)
+  (length :int))
+
+(defcallback x-error-handler :int ((display :pointer)
+                                   (event (:pointer x-error-event)))
+  (declare (ignorable display))
+  (restart-case
+      (with-foreign-slots ((type display-ptr serial error-code
+                                 request-code minor-code resource-id)
+                           event x-error-event)
+        (let ((message (with-foreign-pointer-as-string (m 256)
+                         (x-get-error-text display-ptr error-code m 256))))
+         (format t "x error ~s: ~a, opcode ~s . ~s, resource id ~s, serial ~s"
+                 error-code message request-code minor-code resource-id serial)
+         (error "x error ~s: ~a, opcode ~s . ~s, resource id ~s, serial ~s"
+                error-code message request-code minor-code resource-id serial)))
+    (continue () :report "Continue"))
+  0)
+
+(defcfun ("XSetErrorHandler" x-set-error-handler) :int
+  (handler :pointer))
 
 (defun x-open-display (&optional (display-name (null-pointer)))
+  ;; fixme: only do this once (but at least once per image load, so not at toplevel)
+  (x-set-error-handler (callback x-error-handler))
   (let ((display (%x-open-display display-name)))
     (when (null-pointer-p display)
       (error "Unable to open display"))
