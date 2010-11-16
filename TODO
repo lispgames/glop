@@ -1,4 +1,0 @@
-- fullscreen mode (win32)
-- OpenGL 3.x (win32)
-- OSX (X11 version should work)
-- allow window class inheritance (invert current class hierarchy)

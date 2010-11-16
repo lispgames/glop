@@ -39,12 +39,13 @@ Available tests are:
  - `test-gl-hello-gl3`: same with OpenGL 3.x context
  - `test-multiple-windows`: two hello world windows each one with its own GL context
  - `test-on-event`: hello world using the on-event dispatch code
+ - `test-subclassing`: how to make your own window class and use it
  
 In all tests except `test-manual-events` you can press the ESC key to close the window
 and the 'f' key to toggle fullscreen.
 
-Usage
------
+Quick start
+-----------
 To use glop, make sure `glop.asd`  is in a location known to asdf and run:
 
     (asdf:operate 'asdf:load-op :glop)
@@ -80,8 +81,10 @@ See `test.lisp` for more details.
 
 Notes
 -----
-The win32 implementation is not as complete as the X11 one, missing features are:
+The win32 implementation is not as complete as the X11 one, major missing features are:
  - no fullscreen
  - no OpenGL 3.x
  
-And maybe some other minor things (see `TODO`).
+See also [issues](http://github.com/patzy/glop/issues)) on github.
+
+
