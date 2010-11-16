@@ -31,6 +31,7 @@
   (error 'not-implemented))
 
 (defdfun create-window (title width height &key x y major minor
+                                                win-class
                                                 double-buffer
                                                 stereo
                                                 red-size
@@ -47,7 +48,9 @@
   "Creates a new GL window using the provided visual attributes.
    Major and minor arguments specify the context version to use, when NIL
    (default value) old style gl context is created, otherwise framebuffer config
-    based context creation is used."
+   based context creation is used.
+   The created window will be of the WINDOW class, you can override this by
+   specifying your own class using :WIN-CLASS."
   (declare (ignore title width height x y major minor double-buffer stereo red-size
                    green-size blue-size alpha-size depth-size accum-buffer accum-red-size
                    accum-green-size accum-blue-size stencil-buffer stencil-size))
@@ -59,7 +62,8 @@
   (error 'not-implemented))
 
 (defdfun set-fullscreen (window &optional (state (not (window-fullscreen win))))
-  "Attempt to set WINDOW to fullscreen state STATE using the video mode closest to current geometry."
+  "Attempt to set WINDOW to fullscreen state STATE using the video mode closest
+to current geometry."
   (declare (ignore window state))
   (error 'not-implemented))
 
@@ -270,8 +274,6 @@ Returns NIL on :CLOSE event, T otherwise."
   (declare (ignore window visible)))
 (defmethod on-focus (window focused-p)
   (declare (ignore window focused-p)))
-
-
 
 ;; main loop anyone?
 (defmacro with-idle-forms (window &body idle-forms)

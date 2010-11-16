@@ -6,14 +6,6 @@
 (defun gl-get-proc-address (proc-name)
   (glop-glx:glx-get-proc-address proc-name))
 
-(defstruct (x11-window (:include window))
-  display      ;; X display ptr
-  screen       ;; X screen number
-  id           ;; X window ID
-  visual-infos ;; X visual format of the window
-  fb-config    ;; X framebuffer config
-  )
-
 (defstruct glx-context
   ctx           ;; GL context ptr
   display       ;; X display ptr
@@ -48,7 +40,9 @@
 (defun detach-gl-context (ctx)
   (glop-glx:glx-release-context (glx-context-display ctx)))
 
-(defun create-window (title width height &key (x 0) (y 0) major minor fullscreen
+(defun create-window (title width height &key (x 0) (y 0)
+                      (win-class 'window)
+                      major minor fullscreen
                       (double-buffer t)
                       stereo
                       (red-size 4)
@@ -62,9 +56,8 @@
                       (accum-blue-size 0)
                       stencil-buffer (stencil-size 0))
   (without-fp-traps
-    (let ((win (make-x11-window :display (glop-xlib::x-open-display)
-                                :screen 0)))
-      ;;GLX attributes
+    (let ((win (make-instance win-class :display (glop-xlib::x-open-display)
+                                        :screen 0)))
       (with-accessors ((display x11-window-display)
                        (screen x11-window-screen)
                        (id x11-window-id)
@@ -120,6 +113,16 @@
 
         win))))
 
+(defun destroy-window (win)
+  (with-accessors ((display x11-window-display)
+                   (id x11-window-id)
+                   (context window-gl-context))
+      win
+    (set-fullscreen win nil)
+    (destroy-gl-context context)
+    (glop-xlib:x-destroy-window display id)
+    (glop-xlib:x-close-display display)))
+
 (defun set-fullscreen (win &optional (state (not (window-fullscreen win))))
   (with-accessors ((display x11-window-display)
                    (screen x11-window-screen)
@@ -164,16 +167,6 @@
 (defun set-window-title (win title)
   (setf (slot-value win 'title) title)
   (glop-xlib:x-store-name (x11-window-display win) (x11-window-id win) title))
-
-(defun destroy-window (win)
-  (with-accessors ((display x11-window-display)
-                   (id x11-window-id)
-                   (context window-gl-context))
-      win
-    (set-fullscreen win nil)
-    (destroy-gl-context context)
-    (glop-xlib:x-destroy-window display id)
-    (glop-xlib:x-close-display display)))
 
 (defun swap-buffers (win)
   (glop-glx:glx-wait-gl)

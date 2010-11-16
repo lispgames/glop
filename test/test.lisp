@@ -4,7 +4,7 @@
   (:use #:cl)
   (:export #:test-manual-create #:test-multiple-contexts #:test-with-window #:test-manual-events
            #:test-gl-hello #:test-gl-hello-fullscreen #:test-gl-hello-gl3 #:test-multiple-windows
-           #:test-on-event))
+           #:test-on-event #:test-subclassing))
 
 (in-package #:glop-test)
 
@@ -87,7 +87,7 @@
 
 
 ;; Note that priority is for event handling here and rendering is done when there's no more pending
-;; events. This is done so we can avoid artificial delay in event processing dur to events
+;; events. This is done so we can avoid artificial delay in event processing due to events
 ;; accumulating on the system side (at least on X11) while rendering.
 (defun test-manual-events ()
   (let ((win (glop:create-window "Glop test window" 800 600)))
@@ -243,6 +243,66 @@
 
 (defun test-on-event ()
   (glop:with-window (win "Glop test window" 800 600)
+    (format t "Created window: ~S~%" win)
+    ;; GL init
+    (gl:clear-color 0.3 0.3 1.0 0)
+    ;; setup view
+    (gl:matrix-mode :projection)
+    (gl:load-identity)
+    (gl:ortho 0 1 0 1 -1 1)
+    ;; idle loop, we draw here anyway
+    (loop while (glop:dispatch-events win :blocking nil :on-foo nil) do
+         ;; rendering
+         (gl:clear :color-buffer)
+         (gl:color 1 1 1)
+         (gl:with-primitive :polygon
+           (gl:vertex 0.25 0.25 0)
+           (gl:vertex 0.75 0.25 0)
+           (gl:vertex 0.75 0.75 0)
+           (gl:vertex 0.25 0.75 0))
+         (gl:flush)
+         (glop:swap-buffers win))))
+
+
+;; window subclassing test
+(defclass my-window (glop:window)
+  ((data :initform "This is my own window class !!!" :accessor my-window-data)))
+
+(defmethod glop:on-event ((window my-window) (event glop:key-event))
+  (format t "Window data: ~S~%" (my-window-data window))
+  (format t "Key ~:[released~;pressed~]: ~A~%" (glop:pressed event) (glop:keysym event))
+  (when (eq (glop:keysym event) :escape)
+      (glop:push-close-event window))
+  (when (and (glop:pressed event) (eq (glop:keysym event) :f))
+    (glop:set-fullscreen window)))
+
+(defmethod glop:on-event ((window my-window) (event glop:button-event))
+  (format t "Window data: ~S~%" (my-window-data window))
+  (format t "Button ~:[released~;pressed~]: ~S~%" (glop:pressed event)
+                                                  (glop:button event)))
+
+(defmethod glop:on-event ((window my-window) (event glop:mouse-motion-event))
+  (declare (ignore event))
+  (format t "Window data: ~S~%" (my-window-data window))
+  (format t "Mouse motion~%"))
+
+(defmethod glop:on-event ((window my-window) (event glop:resize-event))
+  (format t "Window data: ~S~%" (my-window-data window))
+  (gl:viewport 0 0 (glop:width event) (glop:height event))
+  (format t "Resize: ~Sx~S~%" (glop:width event) (glop:height event)))
+
+(defmethod glop:on-event ((window my-window) (event glop:expose-event))
+  (declare (ignore event))
+  (format t "Window data: ~S~%" (my-window-data window))
+  (format t "Expose~%"))
+
+(defmethod glop:on-event ((window my-window) (event glop:close-event))
+  (declare (ignore event))
+  (format t "Window data: ~S~%" (my-window-data window))
+  (format t "Close~%"))
+
+(defun test-subclassing ()
+  (glop:with-window (win "Glop test window" 800 600 :win-class 'my-window)
     (format t "Created window: ~S~%" win)
     ;; GL init
     (gl:clear-color 0.3 0.3 1.0 0)

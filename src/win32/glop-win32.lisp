@@ -6,13 +6,6 @@
 (defun gl-get-proc-address (proc-name)
   (glop-wgl:wgl-get-proc-address proc-name))
 
-(defstruct (win32-window (:include window))
-  module-handle
-  class-name
-  pixel-format
-  dc
-  id)
-
 (defstruct wgl-context
   ctx)
 
@@ -36,7 +29,9 @@
 (defun detach-gl-context (ctx)
   (glop-wgl::wgl-make-current (cffi:null-pointer) (cffi:null-pointer)))
 
-(defun create-window (title width height &key (x 0) (y 0) major minor fullscreen
+(defun create-window (title width height &key (x 0) (y 0)
+                                              (win-class 'window)
+                                              major minor fullscreen
                                               (double-buffer t)
                                               stereo
                                               (red-size 4)
@@ -51,7 +46,7 @@
                                               stencil-buffer (stencil-size 0))
   (when (or (and major minor) fullscreen)
       (error 'not-implemented))
-  (let ((win (make-win32-window
+  (let ((win (make-instance win-class
               :module-handle (glop-win32:get-module-handle (cffi:null-pointer)))))
     ;; create window class
     (glop-win32:create-and-register-class (win32-window-module-handle win) "OpenGL")

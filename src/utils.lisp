@@ -6,17 +6,37 @@
   (height 0 :type integer)
   (depth 0 :type integer))
 
+;; platform specific windows
+;; XXX: this may move to platform specific directories
+
+#+win32
+(defclass win32-window ()
+  ((module-handle :initarg :module-handle :accessor win32-window-module-handle)
+   (class-name :accessor win32-window-class-name)
+   (pixel-format :accessor win32-window-pixel-format)
+   (dc :accessor win32-window-dc)
+   (id :accessor win32-window-id)))
+
+#+unix
+(defclass x11-window ()
+  ((display :initarg :display :accessor x11-window-display)
+   (screen :initarg :screen :accessor x11-window-screen)
+   (id :accessor x11-window-id)
+   (visual-infos :accessor x11-window-visual-infos)
+   (fb-config :accessor x11-window-fb-config)))
+
 ;; base window structure
-;; all implementations should inherit from it
-(defstruct window
-  x y
-  width
-  height
-  title
-  gl-context
-  pushed-event
-  (fullscreen nil)
-  (previous-video-mode nil))
+;; you may inherit your own window class from this
+(defclass window (#+unix x11-window #+win32 win32-window)
+  ((x :initform 0 :initarg :x :accessor window-x)
+   (y :initform 0 :initarg :y :accessor window-y)
+   (width :initform 100 :initarg :width :accessor window-width)
+   (height :initform 100 :initarg :height :accessor window-height)
+   (title :initform "glop" :initarg :title :accessor window-title)
+   (gl-context :accessor window-gl-context)
+   (pushed-event :initform nil :accessor window-pushed-event)
+   (fullscreen :initform nil :accessor window-fullscreen)
+   (previous-video-mode :accessor window-previous-video-mode)))
 
 (defun %update-geometry (win x y width height)
   (setf (slot-value win 'x) x
