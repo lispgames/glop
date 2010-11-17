@@ -361,3 +361,50 @@
            (gl:vertex 0.25 0.75 0))
          (gl:flush)
          (glop:swap-buffers win))))
+
+
+;; xinput2 testi
+
+(defclass xi2-window (glop:window)
+  ())
+
+(defmethod glop:on-event ((window xi2-window) (event glop:mouse-motion-event))
+  (declare (ignore window event))
+  )
+
+(defmethod glop:on-event ((window xi2-window) (event glop:resize-event))
+  (declare (ignore window))
+   (gl:viewport 0 0 (glop:width event) (glop:height event))
+   (format t "Resize: ~Sx~S~%" (glop:width event) (glop:height event)))
+
+
+(defun test-xinput-2 ()
+  (let ((win (glop:create-window "Glop test window" 800 600
+                                 :win-class 'xi2-window)))
+    (format t "~&Created window: ~S~%" win)
+    (format t "XInput-p : ~s~%"
+            (multiple-value-list
+             (glop-xlib::x-query-extension (glop::x11-window-display win)
+                                           "XInputExtension")))
+    (format t "XInput version : ~s~%"
+            (multiple-value-list
+             (glop-xlib::xi-query-version (glop::x11-window-display win)
+                                          2 0)))
+    (format t "select events = ~s~%"
+            (glop-xlib::xi-select-events (glop::x11-window-display win)
+                                         (glop::x11-window-id win)
+                                         :all-devices
+                                         :xi-button-press
+                                         :xi-motion
+                                         :xi-key-press))
+
+    (gl:clear-color 0.3 0.3 1.0 0)
+    (loop while (glop:dispatch-events win :blocking nil) do
+         (sleep 0.005)
+         (gl:clear :color-buffer)
+         (gl:flush)
+         (glop:swap-buffers win))
+    (glop:destroy-window win)))
+
+#++
+(test-xinput-2)
