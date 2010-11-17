@@ -538,7 +538,11 @@
   (with-foreign-objects ((buffer :char 32) (keysym 'x-keysym-value))
     #+ccl(loop for i below 32 do (setf (mem-aref buffer :char i) 0)) ;; buffer is not zeroed in cll
     (%x-lookup-string key-event buffer 32 keysym (null-pointer))
-    (let ((string (foreign-string-to-lisp buffer)))
+    ;; fixme: handle decoding error properly (or use babel so we can
+    ;; pass no-error flag?)
+    (let ((string (or (ignore-errors (foreign-string-to-lisp buffer))
+                      (format nil "decoding error?~s"
+                              (foreign-string-to-lisp buffer :encoding :latin1)))))
       (values (if (zerop (length string)) nil string)
               (mem-ref keysym 'x-keysym-value)))))
 
