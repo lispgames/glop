@@ -9,7 +9,7 @@
 ;; platform specific windows
 ;; XXX: this may move to platform specific directories
 
-#+win32
+#+(or win32 windows)
 (defclass win32-window ()
   ((module-handle :initarg :module-handle :accessor win32-window-module-handle)
    (class-name :accessor win32-window-class-name)
@@ -27,7 +27,7 @@
 
 ;; base window structure
 ;; you may inherit your own window class from this
-(defclass window (#+unix x11-window #+win32 win32-window)
+(defclass window (#+unix x11-window #+(or win32 windows) win32-window)
   ((x :initform 0 :initarg :x :accessor window-x)
    (y :initform 0 :initarg :y :accessor window-y)
    (width :initform 100 :initarg :width :accessor window-width)
@@ -103,17 +103,17 @@ Otherwise, only one key-press event will be triggered.")
                (cffi:define-foreign-library opengl
                    (t (:default "libGL")))
                (cffi:use-foreign-library opengl))
-  #+win32(progn (cffi:define-foreign-library user32
-                    (t (:default "user32")))
-                (cffi:use-foreign-library user32)
-                (cffi:define-foreign-library kernel32
-                    (t (:default "kernel32")))
-                (cffi:use-foreign-library kernel32)
-                (cffi:define-foreign-library opengl
-                    (t (:default "opengl32")))
-                (cffi:use-foreign-library opengl)
-                (cffi:define-foreign-library gdi32
-                    (t (:default "gdi32")))
-                (cffi:use-foreign-library gdi32)))
+  #+(or win32 windows)(progn (cffi:define-foreign-library user32
+                               (t (:default "user32")))
+                             (cffi:use-foreign-library user32)
+                             (cffi:define-foreign-library kernel32
+                               (t (:default "kernel32")))
+                             (cffi:use-foreign-library kernel32)
+                             (cffi:define-foreign-library opengl
+                               (t (:default "opengl32")))
+                             (cffi:use-foreign-library opengl)
+                             (cffi:define-foreign-library gdi32
+                               (t (:default "gdi32")))
+                             (cffi:use-foreign-library gdi32)))
 
 

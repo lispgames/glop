@@ -21,11 +21,11 @@
                                          (:file "glx")
                                          (:file "display-ctrl")
                                          (:file "glop-x11")))
-             #+win32(:module "win32"
-                             :serial t
-                             :components ((:file "package")
-                                          (:file "win32")
-                                          (:file "wgl")
-                                          (:file "glop-win32")))
+             #+(or win32 windows)(:module "win32"
+                                          :serial t
+                                          :components ((:file "package")
+                                                       (:file "win32")
+                                                       (:file "wgl")
+                                                       (:file "glop-win32")))
              (:file "glop")))))
 
