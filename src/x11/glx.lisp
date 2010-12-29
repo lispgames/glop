@@ -92,13 +92,14 @@
 
 (defun glx-get-visual-from-fb-config (display-ptr fb-config)
   (let ((vis (%glx-get-visual-from-fb-config display-ptr fb-config)))
-    (when (null-pointer-p vis) 
+    (when (null-pointer-p vis)
       (error "Unable to create visual info"))
     vis))
 
 (defun glx-get-fb-config-attrib (dpy fb-config attrib)
   (with-foreign-object (value :int)
-    (values (%glx-get-fb-config-attrib dpy fb-config (foreign-enum-value 'glx-attributes attrib) value) (mem-aref value :int))))
+    (values (%glx-get-fb-config-attrib dpy fb-config
+                   (foreign-enum-value 'glx-attributes attrib) value) (mem-aref value :int))))
 
 (defun glx-choose-fb-config (dpy screen attribs-list)
   (with-foreign-object (fb-config-count :int)
@@ -145,6 +146,7 @@
                   (t (push value filtered-attribs)
                      (push attr filtered-attribs))))
     (setf attribs filtered-attribs))
+  (push :rgba attribs)
   ;; create the foreign attribs list
   (with-foreign-object (atts :int (1+ (length attribs)))
     (loop for i below (length attribs)
@@ -155,7 +157,7 @@
                   (t attr))))
     (setf (mem-aref atts :int (length attribs)) 0)
     (let ((vis (%glx-choose-visual dpy screen atts)))
-      (when (null-pointer-p vis) 
+      (when (null-pointer-p vis)
         (error "Unable to create visual info"))
       vis)))
 
@@ -167,7 +169,7 @@
 
 (defun glx-create-context (dpy visual)
   (let ((ctx (%glx-create-context dpy visual (null-pointer) 1)))
-    (when (null-pointer-p ctx) 
+    (when (null-pointer-p ctx)
       (error "Unable to create context"))
     ctx))
 

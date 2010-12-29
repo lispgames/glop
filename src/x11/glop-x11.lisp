@@ -66,8 +66,7 @@
                        (win-title window-title)
                        (gl-ctx window-gl-context))
           win
-        (let ((attribs (list :rgba t
-                             :red-size red-size
+        (let ((attribs (list :red-size red-size
                              :green-size green-size
                              :blue-size blue-size
                              :alpha-size alpha-size
