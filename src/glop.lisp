@@ -8,109 +8,130 @@
   (declare (ignore proc-name))
   (error 'not-implemented))
 
-(defdfun create-gl-context (window &key make-current major minor)
-  "Creates a new OpenGL context of the specified version for the provided window
+(defgeneric create-gl-context (window &key make-current major minor)
+  (:documentation
+   "Creates a new OpenGL context of the specified version for the provided window
    and optionally make it current. If major and minor are NIL old style context creation is
-   used."
-  (declare (ignore window make-current major minor))
-  (error 'not-implemented))
+   used."))
 
-(defdfun destroy-gl-context (ctx)
-  "Detach and release the provided OpenGL context."
-  (declare (ignore ctx))
-  (error 'not-implemented))
+(defgeneric destroy-gl-context (ctx)
+  (:documentation
+   "Detach and release the provided OpenGL context."))
 
-(defdfun attach-gl-context (window ctx)
-  "Makes CTX the current OpenGL context and attach it to WINDOW."
-  (declare (ignore window ctx))
-  (error 'not-implemented))
+(defgeneric attach-gl-context (window ctx)
+  (:documentation
+   "Makes CTX the current OpenGL context and attach it to WINDOW."))
 
-(defdfun detach-gl-context (ctx)
-  "Make the provided OpenGL context no longer current."
-  (declare (ignore ctx))
-  (error 'not-implemented))
+(defgeneric detach-gl-context (ctx)
+  (:documentation
+   "Make the provided OpenGL context no longer current."))
 
-(defdfun create-window (title width height &key x y major minor
-                                                win-class
-                                                double-buffer
-                                                stereo
-                                                red-size
-                                                green-size
-                                                blue-size
-                                                alpha-size
-                                                depth-size
-                                                accum-buffer
-                                                accum-red-size
-                                                accum-green-size
-                                                accum-blue-size
-                                                stencil-buffer
-                                                stencil-size)
-  "Creates a new GL window using the provided visual attributes.
+(defgeneric open-window (window title width height &key x y
+                                                   double-buffer
+                                                   stereo
+                                                   red-size
+                                                   green-size
+                                                   blue-size
+                                                   alpha-size
+                                                   depth-size
+                                                   accum-buffer
+                                                   accum-red-size
+                                                   accum-green-size
+                                                   accum-blue-size
+                                                   stencil-buffer
+                                                   stencil-size)
+  (:documentation
+   "Creates a new window *without* any GL context."))
+
+(defgeneric close-window (window)
+  (:documentation
+   "Closes the provided window *without* releasing any attached GL context."))
+
+(defun create-window (title width height &key (x 0) (y 0) major minor fullscreen
+                                              (win-class 'window)
+                                              (double-buffer t)
+                                              stereo
+                                              (red-size 4)
+                                              (green-size 4)
+                                              (blue-size 4)
+                                              (alpha-size 4)
+                                              (depth-size 16)
+                                              accum-buffer
+                                              (accum-red-size 0)
+                                              (accum-green-size 0)
+                                              (accum-blue-size 0)
+                                              stencil-buffer
+                                              (stencil-size 0))
+  "Creates a new window with an attached GL context using the provided visual attributes.
    Major and minor arguments specify the context version to use, when NIL
-   (default value) old style gl context is created, otherwise framebuffer config
-   based context creation is used.
+   (default value) old style gl context creation is used.
    The created window will be of the WINDOW class, you can override this by
    specifying your own class using :WIN-CLASS."
-  (declare (ignore title width height x y major minor double-buffer stereo red-size
-                   green-size blue-size alpha-size depth-size accum-buffer accum-red-size
-                   accum-green-size accum-blue-size stencil-buffer stencil-size))
-  (error 'not-implemented))
+  (let ((win (make-instance win-class)))
+    (open-window win title width height
+                 :x x :y y
+                 :double-buffer double-buffer
+                 :stereo stereo
+                 :red-size red-size
+                 :green-size green-size
+                 :blue-size blue-size
+                 :alpha-size alpha-size
+                 :depth-size depth-size
+                 :accum-buffer accum-buffer
+                 :accum-red-size accum-red-size
+                 :accum-green-size accum-green-size
+                 :accum-blue-size accum-blue-size
+                 :stencil-buffer stencil-buffer
+                 :stencil-size stencil-size)
+    (create-gl-context win :major major :minor minor
+                           :make-current t)
+    (show-window win)
+    (set-fullscreen win fullscreen)
+    win))
 
-(defdfun destroy-window (window)
-  "Destroy the provided GL window."
-  (declare (ignore window))
-  (error 'not-implemented))
+(defun destroy-window (window)
+   "Destroy the provided window and any attached GL context."
+   (set-fullscreen window nil)
+   (when (window-gl-context window)
+     (destroy-gl-context (window-gl-context window)))
+   (close-window window))
 
-(defdfun set-fullscreen (window &optional (state (not (window-fullscreen win))))
-  "Attempt to set WINDOW to fullscreen state STATE using the video mode closest
-to current geometry."
-  (declare (ignore window state))
-  (error 'not-implemented))
+(defgeneric set-fullscreen (window &optional state)
+  (:documentation
+   "Attempt to set WINDOW to fullscreen state STATE using the video mode closest
+   to current geometry."))
 
-(defdfun set-geometry (window x y width height)
-  "Configure window geometry."
-  (declare (ignore window x y width height))
-  (error 'not-implemented))
+(defgeneric set-geometry (window x y width height)
+  (:documentation
+   "Configure window geometry."))
 
-(defun set-window-x (window x)
-  (set-geometry window x (window-y window) (window-width window) (window-height window)))
+(defmethod (setf window-x) (x (win window))
+  (set-geometry win x (window-y win) (window-width win) (window-height win)))
 
-(defsetf window-x set-window-x)
+(defmethod (setf window-y) (y (win window))
+  (set-geometry win (window-x win) y (window-width win) (window-height win)))
 
-(defun set-window-y (window y)
-  (set-geometry window (window-x window) y (window-width window) (window-height window)))
+(defmethod (setf window-width) (width (win window))
+  (set-geometry win (window-x win) (window-y win) width (window-height win)))
 
-(defsetf window-y set-window-y)
+(defmethod (setf window-height) (height (win window))
+  (set-geometry win (window-x win) (window-y win) (window-width win) height))
 
-(defun set-window-width (window width)
-  (set-geometry window (window-x window) (window-y window) width (window-height window)))
+(defgeneric show-window (window)
+  (:documentation
+   "Make WINDOW visible."))
 
-(defsetf window-width set-window-width)
+(defgeneric hide-window (window)
+  (:documentation
+   "Make WINDOW not visible."))
 
-(defun set-window-height (window height)
-  (set-geometry window (window-x window) (window-y window) (window-width window) height))
+(defgeneric set-window-title (window title)
+  (:documentation
+   "Set WINDOW title to TITLE."))
 
-(defsetf window-height set-window-height)
-
-(defdfun show-window (window)
-  "Make WINDOW visible."
-  (declare (ignore window))
-  (error 'not-implemented))
-
-(defdfun hide-window (window)
-  "Make WINDOW not visible."
-  (declare (ignore window))
-  (error 'not-implemented))
-
-(defdfun set-window-title (window title)
-  "Set WINDOW title to TITLE."
-  (declare (ignore window title))
-  (error 'not-implemented))
-
-(defdfun swap-buffers (window)
-  "Swaps GL buffers."
-  (declare (ignore window))
-  (error 'not-implemented))
+(defgeneric swap-buffers (window)
+  (:documentation
+   "Swaps GL buffers."))
 
 ;;; Events handling
 (defclass event () ()
@@ -205,14 +226,17 @@ Note that this has no effect on the underlying window system."
   "Push an artificial :close event into the event processing system."
   (push-event window (make-instance 'close-event)))
 
-(defun next-event (window &key blocking)
-  "Returns next available event for manual processing.
-If :blocking is true, wait for an event."
-  (let ((pushed-evt (window-pushed-event window)))
+(defgeneric next-event (window &key blocking)
+  (:documentation
+   "Returns next available event for manual processing.
+   If :blocking is true, wait for an event."))
+
+(defmethod next-event ((win window) &key blocking)
+  (let ((pushed-evt (window-pushed-event win)))
     (if pushed-evt
-        (progn (setf (window-pushed-event window) nil)
+        (progn (setf (window-pushed-event win) nil)
                pushed-evt)
-        (%next-event window :blocking blocking))))
+        (%next-event win :blocking blocking))))
 
 (defdfun %next-event (window &key blocking)
   "Real next-event implementation."

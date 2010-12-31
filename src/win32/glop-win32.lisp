@@ -9,7 +9,9 @@
 (defstruct wgl-context
   ctx)
 
-(defun create-gl-context (win &key (make-current t) major minor)
+(defmethod create-gl-context ((win win32-window) &key (make-current t) major minor)
+  (when (and major minor)
+      (warn "Specific context version is not implemented, MAJOR and MINOR arguments ignored."))
   (let ((ctx (make-wgl-context)))
     (let ((wgl-ctx (glop-wgl:wgl-create-context (win32-window-dc win))))
       (unless wgl-ctx
@@ -19,51 +21,47 @@
       (attach-gl-context win ctx))
     ctx))
 
-(defun destroy-gl-context (ctx)
+(defmethod destroy-gl-context ((ctx wgl-context))
   (detach-gl-context ctx)
   (glop-wgl:wgl-delete-context (wgl-context-ctx ctx)))
 
-(defun attach-gl-context (win ctx)
+(defmethod attach-gl-context ((win win32-window) (ctx wgl-context))
   (glop-wgl:wgl-make-current (win32-window-dc win) (wgl-context-ctx ctx)))
 
-(defun detach-gl-context (ctx)
+(defmethod detach-gl-context ((ctx wgl-context))
   (glop-wgl::wgl-make-current (cffi:null-pointer) (cffi:null-pointer)))
 
-(defun create-window (title width height &key (x 0) (y 0)
-                                              (win-class 'window)
-                                              major minor fullscreen
-                                              (double-buffer t)
-                                              stereo
-                                              (red-size 4)
-                                              (green-size 4)
-                                              (blue-size 4)
-                                              (alpha-size 4)
-                                              (depth-size 16)
-                                              accum-buffer
-                                              (accum-red-size 0)
-                                              (accum-green-size 0)
-                                              (accum-blue-size 0)
-                                              stencil-buffer (stencil-size 0))
-  (when (or (and major minor) fullscreen)
-      (error 'not-implemented))
-  (let ((win (make-instance win-class
-              :module-handle (glop-win32:get-module-handle (cffi:null-pointer)))))
-    ;; create window class
-    (glop-win32:create-and-register-class (win32-window-module-handle win) "OpenGL")
-    (setf (win32-window-class-name win) "OpenGL")
-    (let ((wnd (glop-win32:create-window-ex '(:ws-ex-app-window :ws-ex-window-edge)
-                                  "OpenGL"
-                                  title
-                                  '(:ws-overlapped-window :ws-clip-siblings :ws-clip-children)
-                                  x y width height (cffi:null-pointer) (cffi:null-pointer)
-                                  (win32-window-module-handle win) (cffi:null-pointer))))
-      (unless wnd
-        (error "Can't create window (error ~S)~%" (glop-win32:get-last-error)))
-      (setf (win32-window-id win) wnd))
+(defmethod open-window ((win win32-window) title width height &key (x 0) (y 0)
+                        (double-buffer t)
+                        stereo
+                        (red-size 4)
+                        (green-size 4)
+                        (blue-size 4)
+                        (alpha-size 4)
+                        (depth-size 16)
+                        accum-buffer
+                        (accum-red-size 0)
+                        (accum-green-size 0)
+                        (accum-blue-size 0)
+                        stencil-buffer
+                        (stencil-size 0))
+  (setf (win32-window-module-handle win)(glop-win32:get-module-handle (cffi:null-pointer)))
+  ;; register window class
+  (glop-win32:create-and-register-class (win32-window-module-handle win) "GLOP-OpenGL")
+  (setf (win32-window-class-name win) "GLOP-OpenGL")
+  (let ((wnd (glop-win32:create-window-ex '(:ws-ex-app-window :ws-ex-window-edge)
+                                       "GLOP-OpenGL"
+                                       title
+                                       '(:ws-overlapped-window :ws-clip-siblings :ws-clip-children)
+                                       x y width height (cffi:null-pointer) (cffi:null-pointer)
+                                       (win32-window-module-handle win) (cffi:null-pointer))))
+    (unless wnd
+      (error "Can't create window (error ~S)~%" (glop-win32:get-last-error)))
+    (setf (win32-window-id win) wnd))
     (%update-geometry win x y width height)
     (setf (win32-window-dc win) (glop-win32:get-dc (win32-window-id win)))
-    ;; choose pixel format
-    ;; XXX: kwargs passing is ugly here and we need something else...
+    ;; FIXME: we need something easier to pass all attributes here
+    ;; FIXME: use pixel format extensions if available
     (setf (win32-window-pixel-format win) (glop-win32:choose-pixel-format
                                            (win32-window-dc win)
                                            :double-buffer double-buffer
@@ -79,36 +77,34 @@
                                            :accum-blue-size accum-blue-size
                                            :stencil-buffer stencil-buffer
                                            :stencil-size stencil-size))
-    ;; create GL context and make it current
-    (setf (window-gl-context win) (create-gl-context win :make-current t))
-    ;; show window
     (glop-win32:set-foreground-window (win32-window-id win))
     (glop-win32:update-window (win32-window-id win))
-    (show-window win)
-    ;; return created window
-    win))
+    win)
 
-(defun set-geometry (win x y width height)
-  (glop-win32:set-geometry (win32-window-id win) x y width height)
-  (%update-geometry win x y width height))
-
-(defun show-window (win)
-  (glop-win32:show-window (win32-window-id win) :sw-show)
-  (glop-win32:set-focus (win32-window-id win)))
-
-(defun hide-window (win)
-  (glop-win32::show-window (win32-window-id win) :sw-hide))
-
-(defun set-window-title (win title)
-  (setf (slot-value win 'title) title)
-  (glop-win32:set-window-text (win32-window-id win) title))
-
-(defun destroy-window (win)
+(defmethod destroy-window ((win win32-window))
   (glop-win32:destroy-window (win32-window-id win))
   (glop-win32:unregister-class (win32-window-class-name win)
                                  (win32-window-module-handle win)))
 
-(defun swap-buffers (win)
+(defmethod set-fullscreen ((win win32-window) &optional (state (not (window-fullscreen win))))
+  (error 'not-implemented))
+
+(defmethod set-geometry ((win win32-window) x y width height)
+  (glop-win32:set-geometry (win32-window-id win) x y width height)
+  (%update-geometry win x y width height))
+
+(defmethod show-window ((win win32-window))
+  (glop-win32:show-window (win32-window-id win) :sw-show)
+  (glop-win32:set-focus (win32-window-id win)))
+
+(defmethod hide-window ((win win32-window))
+  (glop-win32::show-window (win32-window-id win) :sw-hide))
+
+(defmethod set-window-title ((win win32-window) title)
+  (setf (slot-value win 'title) title)
+  (glop-win32:set-window-text (win32-window-id win) title))
+
+(defmethod swap-buffers ((win win32-window))
   (glop-win32:swap-buffers (win32-window-dc win)))
 
 (defun %next-event (win &key blocking)

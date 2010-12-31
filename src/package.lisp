@@ -8,8 +8,9 @@
    #:create-gl-context #:destroy-gl-context #:attach-gl-context #:detach-gl-context
    #:gl-get-proc-address
    ;; window
-   #:window
-   #:create-window #:destroy-window #:show-window #:hide-window #:set-window-title
+   #:window #:open-window #:close-window
+   #:create-window #:destroy-window
+   #:show-window #:hide-window #:set-window-title
    #:swap-buffers
    #:window-x #:window-y #:window-width #:window-height #:window-gl-context #:set-fullscreen
    #:set-geometry #:set-aspect-ratio

@@ -93,7 +93,7 @@
 (defun glx-get-visual-from-fb-config (display-ptr fb-config)
   (let ((vis (%glx-get-visual-from-fb-config display-ptr fb-config)))
     (when (null-pointer-p vis)
-      (error "Unable to create visual info"))
+      (error "Unable to create visual info from FB config"))
     vis))
 
 (defun glx-get-fb-config-attrib (dpy fb-config attrib)
