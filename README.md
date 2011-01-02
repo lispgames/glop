@@ -85,6 +85,6 @@ The win32 implementation is not as complete as the X11 one, major missing featur
  - no fullscreen
  - no OpenGL 3.x
  
-See also [issues](http://github.com/patzy/glop/issues)) on github.
+See also [issues](http://github.com/patzy/glop/issues) on github.
 
 
