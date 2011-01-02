@@ -39,9 +39,11 @@
   (:major-version #x2091)
   (:minor-version #x2092)
   (:flags #x2094)
-  (:core-profile-bit #x00000001)
-  (:compatibility-profile-bit #x00000002)
   (:profile-mask #x9126)
+  (:core-profile-bit #x00000001)
+  (:compatibility-profile-bit #x00000002))
+
+(defbitfield (glx-context-attribute-flags :unsigned-int)
   (:debug-bit #x00000001)
   (:forward-compatible-bit #x00000002))
 
@@ -181,6 +183,7 @@
         (setf (mem-aref atts :int i)
               (typecase attr
                 (keyword (foreign-enum-value 'glx-context-attributes attr))
+                (list (foreign-bitfield-value 'glx-context-attribute-flags attr))
                 (t attr))))
     (setf (mem-aref atts :int (length context-attribs)) 0)
     (let ((ptr (glx-get-proc-address "glXCreateContextAttribsARB")))
@@ -193,7 +196,7 @@
                                                :int 1
                                                (:pointer :int) atts
                                                :pointer)))
-        (when (null-pointer-p ctx) 
+        (when (null-pointer-p ctx)
           (error "Unable to create context"))
         ctx))))
 
@@ -233,7 +236,8 @@
 
 (defun correct-context? (major-desired minor-desired)
   (multiple-value-bind (major minor)
-      (parse-gl-version-string-values (foreign-string-to-lisp (get-string (foreign-enum-value 'gl-enum :version))))
+      (parse-gl-version-string-values
+       (foreign-string-to-lisp (get-string (foreign-enum-value 'gl-enum :version))))
     (when (or (< major major-desired)
               (and (= major major-desired) (< minor minor-desired)))
       (error "unable to create requested context"))))

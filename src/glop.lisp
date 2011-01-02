@@ -8,11 +8,19 @@
   (declare (ignore proc-name))
   (error 'not-implemented))
 
-(defgeneric create-gl-context (window &key make-current major minor)
+(defgeneric create-gl-context (window &key make-current major minor
+                                           forward-compat debug
+                                           profile)
   (:documentation
    "Creates a new OpenGL context of the specified version for the provided window
-   and optionally make it current. If major and minor are NIL old style context creation is
-   used."))
+   and optionally make it current (default). If major and minor are NIL old style context creation
+   is used. Otherwise a context compatible with minimum major.minor version is created.
+   If you request a specific context version, you may use the additional arguments to setup
+   context options.
+   The foward-compat argument specify whether to disallow legacy functionalities (only for
+   GL version >= 3.0). The debug argument specify whether a debug context should be created.
+   You may request a specific context profile by specifiying either
+   :core or :compat as the profile argument value."))
 
 (defgeneric destroy-gl-context (ctx)
   (:documentation

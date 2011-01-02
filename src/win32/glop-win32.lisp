@@ -9,8 +9,11 @@
 (defstruct wgl-context
   ctx)
 
-(defmethod create-gl-context ((win win32-window) &key (make-current t) major minor)
-  (when (and major minor)
+(defmethod create-gl-context ((win win32-window) &key (make-current t) major minor
+                                                      forward-compat debug
+                                                      profile)
+
+  (when (or major minor forward-compat debug profile)
       (warn "Specific context version is not implemented, MAJOR and MINOR arguments ignored."))
   (let ((ctx (make-wgl-context)))
     (let ((wgl-ctx (glop-wgl:wgl-create-context (win32-window-dc win))))
