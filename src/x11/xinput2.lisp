@@ -66,10 +66,21 @@
   (:XI-Grabtype-Focus-In                      3))
 
 ;;; /* Passive grab modifier */
-(defcenum xi-passive-grab-modifier
+(defbitfield (xi-passive-grab-modifier :uint)
   (:XI-Any-Modifier                           #.(ash 1 31))
   (:XI-Any-Button                             0)
-  (:XI-Any-Keycode                            0))
+  (:XI-Any-Keycode                            0)
+  ;; fixme: are these the right ones?
+  (:shift               #.(ash 1 0))
+  (:lock                #.(ash 1 1))
+  (:control             #.(ash 1 2))
+  (:mod1                #.(ash 1 3))
+  (:mod2                #.(ash 1 4))
+  (:mod3                #.(ash 1 5))
+  (:mod4                #.(ash 1 6))
+  (:mod5                #.(ash 1 7))
+
+)
 
 ;;; /* XIAllowEvents event-modes */
 (defcenum xi-allow-event-modes
@@ -313,8 +324,8 @@
 
 
 (defcstruct xi-grab-modifiers
-  (modifiers :int)
-  (status :int))
+  (modifiers xi-passive-grab-modifier)
+  (status grab-status))
 
 (defcstruct xi-event
   (type :int)
@@ -506,28 +517,34 @@
 (defconstant +xi-all-devices+ 0)
 (defconstant +xi-all-master-devices+ 1)
 
+(defmacro with-xi-event-mask ((var device-id events) &body body)
+  (alexandria:with-gensyms (mask-val octets mask-octets i)
+    (alexandria:once-only (device-id events)
+      `(let* ((,mask-val (foreign-bitfield-value 'xi-event-masks ,events))
+             (,octets (1+ (floor (integer-length ,mask-val) 8))))
+        (with-foreign-objects ((,var 'xi-event-mask)
+                               (,mask-octets :unsigned-char ,octets))
+          (loop for ,i below ,octets
+             do (setf (mem-aref ,mask-octets :unsigned-char ,i)
+                      ;; fixme: verify byte-order here
+                      (ldb (byte 8 (* ,i 8)) ,mask-val)))
+          (setf (foreign-slot-value ,var 'xi-event-mask 'device-id)
+                (cond ((numberp ,device-id) ,device-id)
+                      ((eq ,device-id :all-devices) +xi-all-devices+)
+                      ((eq ,device-id :all-master-devices) +xi-all-master-devices+)
+                      (t (error "unknown device id ~s, expected number or :all-devices or :all-master-devices" ,device-id)))
+                (foreign-slot-value ,var 'xi-event-mask 'mask) ,mask-octets
+                (foreign-slot-value ,var 'xi-event-mask 'mask-len) ,octets)
+          ,@body)))))
+
 (defun xi-select-events (display window device-id &rest events)
   ;; fixme: this might need optimized if this gets called much
   ;; (compiler macros to handle constant event list at compile time, etc)
-  (let* ((mask-val (foreign-bitfield-value 'xi-event-masks events))
-         (octets (1+ (floor (integer-length mask-val) 8))))
-    (with-foreign-objects ((event-mask 'xi-event-mask)
-                           (mask-octets :unsigned-char octets))
-      (loop for i below octets
-         do (setf (mem-aref mask-octets :unsigned-char i)
-                  ;; fixme: verify byte-order here
-                  (ldb (byte 8 (* i 8)) mask-val)))
-      (setf (foreign-slot-value event-mask 'xi-event-mask 'device-id)
-            (cond ((numberp device-id) device-id)
-                  ((eq device-id :all-devices) +xi-all-devices+)
-                  ((eq device-id :all-master-devices) +xi-all-master-devices+)
-                  (t (error "unknown device id ~s, expected number or :all-devices or :all-master-devices" device-id)))
-            (foreign-slot-value event-mask 'xi-event-mask 'mask) mask-octets
-            (foreign-slot-value event-mask 'xi-event-mask 'mask-len) octets)
+  (with-xi-event-mask (event-mask device-id events)
       ;; todo: add version for specifying multiple masks/devices at once?
       ;; not sure if we would want 1 mask for multiple devices, or
       ;; separate mask for each device?
-      (%xi-select-events display window event-mask 1))))
+    (%xi-select-events display window event-mask 1)))
 
 (defcfun ("XIGetSelectedEvents" %xi-get-selected-events) (:pointer xi-event-mask)
   (display-ptr :pointer)
@@ -567,11 +584,13 @@
 (defun xi-query-device (display device-id)
   (with-foreign-object (count :int)
     (let ((devices (%xi-query-device display device-id count)))
-      (loop for i below (mem-aref count :int)
-         for device =  (mem-aref devices '%xi-device-info i)
-
-         do (format t "device ~a~% =~s~%" i (make-xi-device-info device display)))
-      (xi-free-device-info devices))))
+      (prog1
+          (loop for i below (mem-aref count :int)
+             for device =  (mem-aref devices '%xi-device-info i)
+             for info = (make-xi-device-info device display)
+             collect info
+             do (format t "device ~a~% =~s~%" i info))
+        (xi-free-device-info devices)))))
 
 (defcfun ("XISetFocus" xi-set-focus) x-status
   (display-ptr :pointer)
@@ -590,8 +609,8 @@
   (grab-window window)
   (time x-time)
   (cursor cursor)
-  (grab-mode :int)
-  (paired-device-mode :int)
+  (grab-mode grab-mode)
+  (paired-device-mode grab-mode)
   (owner-events :boolean)
   (mask (:pointer xi-event-mask)))
 
@@ -631,9 +650,9 @@
   (device-id :int)
   (grab-window window)
   (cursor cursor)
-  (grab-mode :int)
-  (paired-device-mode :int)
-  (owner-events :int) ;; should this be boolean like XIGrabDevice?
+  (grab-mode grab-mode)
+  (paired-device-mode grab-mode)
+  (owner-events :boolean)
   (mask (:pointer xi-event-mask))
   (num-modifiers :int)
   (modifiers-inout (:pointer xi-grab-modifiers)))
@@ -643,9 +662,9 @@
   (display-ptr :pointer)
   (device-id :int)
   (grab-window window)
-  (grab-mode :int)
-  (paired-device-mode :int)
-  (owner-events :int) ;; should this be boolean like XIGrabDevice?
+  (grab-mode grab-mode)
+  (paired-device-mode grab-mode)
+  (owner-events :boolean)
   (mask (:pointer xi-event-mask))
   (num-modifiers :int)
   (modifiers-inout (:pointer xi-grab-modifiers)))
@@ -755,8 +774,13 @@
                                     (event (eql +xi-motion+)) data
                                     display-ptr)
   (with-foreign-slots ((device-id source-id x y x-root y-root valuators) data xi-device-event)
-    (format t "xinput2 motion event ~,3f,~,3f ~,3f,~,3fs~%" x y x-root y-root)
-    (format t "device ~s/~s valuators:~s~%" source-id device-id (parse-valuator-state valuators))))
+    (make-instance 'glop::extended-mouse-motion-event
+                   :x x :y y
+                   :device device-id
+                   ;; fixme: store last-x,last-y per device so we can 
+                   ;; calculate dx,dy
+                   ;;:dx 0 :dy 0
+                   :valuators (parse-valuator-state valuators))))
 
 
 (defmethod %generic-event-dispatch ((extension-name (eql :x-input-2))
@@ -795,3 +819,30 @@
              (with-continue-restart
                (xi-query-device display-ptr device-id)))))))
 
+
+
+
+;;; quick hack for testing, to be replaced with real API at some point
+(defun use-xinput2 (win)
+    (format t "XInput-p : ~s~%"
+            (multiple-value-list
+             (glop-xlib::x-query-extension (glop::x11-window-display win)
+                                           "XInputExtension")))
+    (format t "XInput version : ~s~%"
+            (multiple-value-list
+             (glop-xlib::xi-query-version (glop::x11-window-display win)
+                                          2 0)))
+    (when (glop-xlib::xi-query-version (glop::x11-window-display win)
+                                       2 0)
+      (format t "select events = ~s~%"
+              (glop-xlib::xi-select-events (glop::x11-window-display win)
+                                           (glop::x11-window-id win)
+                                           :all-devices
+                                           :xi-button-press
+                                           :xi-motion
+                                           :xi-key-press
+                                           :xi-hierarchy-changed)))
+    (with-continue-restart
+     (glop-xlib::xi-query-device (glop::x11-window-display win)
+                                 glop-xlib::+xi-all-devices+))
+)

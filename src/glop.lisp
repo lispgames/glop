@@ -307,6 +307,16 @@ set window fullscreen state."
   (:default-initargs :focused nil)
   (:documentation "Window lost focus."))
 
+
+(defclass extended-mouse-motion-event (event)
+  ;; not sure if this should be a subclass of mouse motion event or not?
+  ((x :initarg :x :reader x)
+   (y :initarg :y :reader y)
+   (device :initarg :device :reader device)
+   (valuators :initarg :valuators :reader valuators))
+  (:documentation "(xinput2) pointer motion."))
+
+
 (defun push-event (window evt)
   "Push an artificial event into the event processing system.
 Note that this has no effect on the underlying window system."
