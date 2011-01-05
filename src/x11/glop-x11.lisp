@@ -55,6 +55,7 @@
   (glop-glx:glx-release-context (glx-context-display ctx)))
 
 (defmethod open-window ((win x11-window) title width height &key (x 0) (y 0)
+                        (rgba t)
                         (double-buffer t)
                         stereo
                         (red-size 4)
@@ -69,7 +70,8 @@
                         stencil-buffer
                         (stencil-size 0))
   (without-fp-traps
-      (let ((attribs (list :red-size red-size
+      (let ((attribs (list :rgba rgba
+                           :red-size red-size
                            :green-size green-size
                            :blue-size blue-size
                            :alpha-size alpha-size
@@ -93,27 +95,27 @@
                          (fb-config x11-window-fb-config)
                          (win-title window-title))
             win
-      (setf display (glop-xlib:x-open-display)
-            screen 0)
-      ;; FIXME: something like defglextfun from cl-opengl would be nice for extensions
-      ;; FIXME: all the fb config stuff should be checked as extensions too
-      (if (cffi::null-pointer-p (gl-get-proc-address "glXCreateContextAttribsARB"))
-          (setf visual-infos (glop-glx:glx-choose-visual display screen attribs))
-          (setf fb-config (glop-glx:glx-choose-fb-config display screen attribs)
-                visual-infos (glop-glx:glx-get-visual-from-fb-config display fb-config)))
-      (setf id (glop-xlib:x-create-window display
-                                          (glop-xlib:x-default-root-window display)
-                                          x y width height visual-infos))
-      (cffi:with-foreign-object (array :unsigned-long)
-        (setf (cffi:mem-aref array :unsigned-long)
-              (glop-xlib:x-intern-atom display "WM_DELETE_WINDOW" nil))
-        (glop-xlib:x-set-wm-protocols display id array 1))
-      (%update-geometry win x y width height)
-      (glop-xlib:x-store-name display id title)
-      (setf win-title title)
-      (glop-xlib:xkb-set-detectable-auto-repeat display t (cffi:null-pointer))
-      (glop-xlib:x-flush (x11-window-display win))
-      win))))
+          (setf display (glop-xlib:x-open-display)
+                screen 0)
+          ;; FIXME: something like defglextfun from cl-opengl would be nice for extensions
+          ;; FIXME: all the fb config stuff should be checked as extensions too
+          (if (cffi::null-pointer-p (gl-get-proc-address "glXCreateContextAttribsARB"))
+              (setf visual-infos (glop-glx:glx-choose-visual display screen attribs))
+              (setf fb-config (glop-glx:glx-choose-fb-config display screen attribs)
+                    visual-infos (glop-glx:glx-get-visual-from-fb-config display fb-config)))
+          (setf id (glop-xlib:x-create-window display
+                                              (glop-xlib:x-default-root-window display)
+                                              x y width height visual-infos))
+          (cffi:with-foreign-object (array :unsigned-long)
+            (setf (cffi:mem-aref array :unsigned-long)
+                  (glop-xlib:x-intern-atom display "WM_DELETE_WINDOW" nil))
+            (glop-xlib:x-set-wm-protocols display id array 1))
+          (%update-geometry win x y width height)
+          (glop-xlib:x-store-name display id title)
+          (setf win-title title)
+          (glop-xlib:xkb-set-detectable-auto-repeat display t (cffi:null-pointer))
+          (glop-xlib:x-flush (x11-window-display win))
+          win))))
 
 (defmethod close-window ((win x11-window))
   (with-accessors ((display x11-window-display)

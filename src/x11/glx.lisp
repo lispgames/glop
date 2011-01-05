@@ -29,8 +29,13 @@
   (:accum-green-size)
   (:accum-blue-size)
   (:accum-alpha-size)
+  (:render-type #x8011)
   (:sample-buffers 100000)
   (:samples 100001))
+
+(defbitfield (glx-attribute-flags :int)
+  (:rgba-bit 1)
+  (:color-index-bit 2))
 
 (defcenum (gl-enum :unsigned-int)
   (:version #x1F02))
@@ -104,6 +109,19 @@
                    (foreign-enum-value 'glx-attributes attrib) value) (mem-aref value :int))))
 
 (defun glx-choose-fb-config (dpy screen attribs-list)
+  ;; handle :rgba special case, yeah this is ugly...
+  (let ((filtered-attribs '()))
+    (loop for attr in attribs by #'cddr
+       for value in (cdr attribs) by #'cddr
+       do (if (eq attr :rgba)
+              (progn (if value
+                         (push '(:rgba-bit :color-index-bit) filtered-attribs)
+                         (push '(:color-index-bit) filtered-attribs))
+                     (push :render-type filtered-attribs))
+              (progn (push value filtered-attribs)
+                     (push attr filtered-attribs))))
+    (setf attribs filtered-attribs))
+  ;; foreign attrib list
   (with-foreign-object (fb-config-count :int)
     (with-foreign-object (atts :int (1+ (length attribs-list)))
       (loop
@@ -115,6 +133,7 @@
                   ((eq attr t) 1)
                   (t (typecase attr
                        (keyword (foreign-enum-value 'glx-attributes attr))
+                       (list (foreign-bitfield-value 'glx-attribute-flags attr))
                        (t attr))))))
       (setf (mem-aref atts :int (length attribs-list)) 0)
       (let ((fb-configs (%glx-choose-fb-config dpy screen atts fb-config-count)))
@@ -148,7 +167,6 @@
                   (t (push value filtered-attribs)
                      (push attr filtered-attribs))))
     (setf attribs filtered-attribs))
-  (push :rgba attribs)
   ;; create the foreign attribs list
   (with-foreign-object (atts :int (1+ (length attribs)))
     (loop for i below (length attribs)

@@ -35,6 +35,7 @@
   (glop-wgl::wgl-make-current (cffi:null-pointer) (cffi:null-pointer)))
 
 (defmethod open-window ((win win32-window) title width height &key (x 0) (y 0)
+                        (rgba t)
                         (double-buffer t)
                         stereo
                         (red-size 4)
@@ -60,6 +61,8 @@
                                        (win32-window-module-handle win) (cffi:null-pointer))))
     (unless wnd
       (error "Can't create window (error ~S)~%" (glop-win32:get-last-error)))
+    (unless rgba
+      (warn "Only RGBA mode implemented on win32 platforms."))
     (setf (win32-window-id win) wnd))
     (%update-geometry win x y width height)
     (setf (win32-window-dc win) (glop-win32:get-dc (win32-window-id win)))

@@ -35,6 +35,7 @@
    "Make the provided OpenGL context no longer current."))
 
 (defgeneric open-window (window title width height &key x y
+                                                   rgba
                                                    double-buffer
                                                    stereo
                                                    red-size
