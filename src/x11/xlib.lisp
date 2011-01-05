@@ -625,17 +625,19 @@
   (format t "unknown generic-event: extension=~s, event=~s, data=#x~8,'0x~%" extension-name event (pointer-address data)))
 
 (defun process-generic-event (event)
-  (with-foreign-slots ((display-ptr extension evtype cookie data) event x-generic-event-cookie)
-    (format t "")
-    (let ((ext (get-display-extension-data display-ptr extension)))
-      (if ext
-          (unwind-protect
-               (progn
-                 (x-get-event-data display-ptr event)
-                 (%generic-event-dispatch (name ext) evtype data display-ptr))
-            (unless (null-pointer-p data)
-              (x-free-event-data display-ptr event)))
-          (format t "Unhandled X11 generic-event: ~S, opcode ~s, display ~s~%" evtype extension display-ptr)))))
+  (restart-case
+      (with-foreign-slots ((display-ptr extension evtype cookie data) event x-generic-event-cookie)
+        (format t "")
+        (let ((ext (get-display-extension-data display-ptr extension)))
+          (if ext
+              (unwind-protect
+                   (progn
+                     (x-get-event-data display-ptr event)
+                     (%generic-event-dispatch (name ext) evtype data display-ptr))
+                (unless (null-pointer-p data)
+                  (x-free-event-data display-ptr event)))
+              (format t "Unhandled X11 generic-event: ~S, opcode ~s, display ~s~%" evtype extension display-ptr))))
+    (continue () :report "Skip event")))
 
 (defcfun ("XLookupString" %x-lookup-string) :int
   (evt x-key-event) (buffer-return :pointer) (bytes-buffer :int)
@@ -829,3 +831,17 @@
 (defconstant +status-bad-value+ 2)
 (defconstant +status-bad-window+ 3)
 ;; bad-pixmap bad-atom bad-cursor bad-font bad-match bad-drawable bad-access bad-alloc bad-color bad-gc bad-id-choice bad-name bad-length bad-implementation=17
+
+
+(defcenum (grab-mode :int)
+  (:grab-mode-sync 0)
+  (:grab-mode-async 1)
+  (:sync  0)
+  (:async 1))
+
+(defcenum (grab-status :int)
+  (:grab-success       0)
+  (:already-grabbed    1)
+  (:grab-invalid-time  2)
+  (:grab-not-viewable  3)
+  (:grab-frozen        4))
