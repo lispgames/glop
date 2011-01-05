@@ -29,6 +29,7 @@
   (glop-wgl:wgl-delete-context (wgl-context-ctx ctx)))
 
 (defmethod attach-gl-context ((win win32-window) (ctx wgl-context))
+  (setf (window-gl-context win) ctx)
   (glop-wgl:wgl-make-current (win32-window-dc win) (wgl-context-ctx ctx)))
 
 (defmethod detach-gl-context ((ctx wgl-context))
@@ -87,13 +88,14 @@
     (glop-win32:update-window (win32-window-id win))
     win)
 
-(defmethod destroy-window ((win win32-window))
+(defmethod close-window ((win win32-window))
   (glop-win32:destroy-window (win32-window-id win))
   (glop-win32:unregister-class (win32-window-class-name win)
                                  (win32-window-module-handle win)))
 
 (defmethod set-fullscreen ((win win32-window) &optional (state (not (window-fullscreen win))))
-  (error 'not-implemented))
+  (when state
+    (warn "Fullscreen not implemented.")))
 
 (defmethod set-geometry ((win win32-window) x y width height)
   (glop-win32:set-geometry (win32-window-id win) x y width height)

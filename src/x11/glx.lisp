@@ -225,8 +225,7 @@
   (display-ptr :pointer) (drawable drawable) (context glx-context))
 
 (defun glx-release-context (dpy)
-  (glx-make-current dpy 0
-                    (null-pointer)))
+  (glx-make-current dpy 0 (null-pointer)))
 
 (defcfun ("glXQueryVersion" %glx-query-version) :boolean
   (display-ptr :pointer) (major :pointer) (minor :pointer))
