@@ -88,7 +88,8 @@
 (defcfun ("SetPixelFormat" %set-pixel-format) bool
   (dc hdc) (pixel-format :int) (pfd :pointer))
 
-(defun choose-pixel-format (dc &key (double-buffer t)
+(defun choose-pixel-format (dc &key (rgba t)
+                                    (double-buffer t)
                                     stereo
                                     (red-size 0)
                                     (green-size 0)
@@ -119,7 +120,8 @@
                              ;;     :pfd-stereo
                              ;;     :pfd-stereo-dont-care)
                              ))
-            pixel-type (foreign-enum-value 'pfd-pixel-type :pfd-type-rgba)
+            pixel-type (foreign-enum-value 'pfd-pixel-type
+                                           (if rgba :pfd-type-rgba :pfd-type-color-index))
             color-bits 32 ;; we want proper RGBA but not sure to understand this struct field
             red-bits red-size
             green-bits green-size

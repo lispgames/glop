@@ -62,8 +62,6 @@
                                        (win32-window-module-handle win) (cffi:null-pointer))))
     (unless wnd
       (error "Can't create window (error ~S)~%" (glop-win32:get-last-error)))
-    (unless rgba
-      (warn "Only RGBA mode implemented on win32 platforms."))
     (setf (win32-window-id win) wnd))
     (%update-geometry win x y width height)
     (setf (win32-window-dc win) (glop-win32:get-dc (win32-window-id win)))
@@ -71,6 +69,7 @@
     ;; FIXME: use pixel format extensions if available
     (setf (win32-window-pixel-format win) (glop-win32:choose-pixel-format
                                            (win32-window-dc win)
+                                           :rgba rgba
                                            :double-buffer double-buffer
                                            :stereo stereo
                                            :red-size red-size
