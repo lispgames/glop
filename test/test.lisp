@@ -409,7 +409,7 @@
                                  glop-xlib::+xi-all-devices+))
 
     (gl:clear-color 0.3 0.3 1.0 0)
-    (loop while (glop:dispatch-events win :blocking nil)
+    (loop while (glop:dispatch-events win :blocking nil :on-foo nil)
        do
          (with-continue-restart
            (sleep 0.005)
