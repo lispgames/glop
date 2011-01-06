@@ -308,13 +308,28 @@ set window fullscreen state."
   (:documentation "Window lost focus."))
 
 
-(defclass extended-mouse-motion-event (event)
-  ;; not sure if this should be a subclass of mouse motion event or not?
+(defclass extended-mouse-event (event)
+  ;; info provided by xinput2 button/key/motion events
   ((x :initarg :x :reader x)
    (y :initarg :y :reader y)
    (device :initarg :device :reader device)
-   (valuators :initarg :valuators :reader valuators))
+   ;;todo: (buttons :initarg :buttons :reader buttons)
+   ;;todo: (modifiers :initarg :modifiers :reader modifiers)
+   ;;todo: (group :initarg :group :reader group)
+   (valuators :initarg :valuators :reader valuators)))
+
+(defclass extended-mouse-motion-event (extended-mouse-event)
+  ;; not sure if this should be a subclass of mouse motion event or not?
+  ()
   (:documentation "(xinput2) pointer motion."))
+
+(defclass extended-mouse-button-event (extended-mouse-event)
+  ((button :initarg :button :reader button)))
+
+(defclass extended-mouse-press-event (extended-mouse-button-event)
+  ())
+(defclass extended-mouse-release-event (extended-mouse-button-event)
+  ())
 
 
 (defun push-event (window evt)

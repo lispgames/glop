@@ -769,6 +769,7 @@
 (defconstant +xi-raw-button-release+             16)
 (defconstant +xi-raw-motion+                     17)
 
+
 ;; process xinput 2 events
 (defmethod %generic-event-dispatch ((extension-name (eql :x-input-2))
                                     (event (eql +xi-motion+)) data
@@ -781,6 +782,79 @@
                    ;; calculate dx,dy
                    ;;:dx 0 :dy 0
                    :valuators (parse-valuator-state valuators))))
+
+(defmethod %generic-event-dispatch ((extension-name (eql :x-input-2))
+                                    (event (eql +xi-button-press+)) data
+                                    display-ptr)
+  (with-foreign-slots ((device-id source-id x y detail valuators)
+                       data xi-device-event)
+    (make-instance 'glop::extended-mouse-press-event
+                   :x x :y y
+                   :device device-id
+                   :valuators (parse-valuator-state valuators)
+                   :button detail)))
+
+(defmethod %generic-event-dispatch ((extension-name (eql :x-input-2))
+                                    (event (eql +xi-button-release+)) data
+                                    display-ptr)
+  (with-foreign-slots ((device-id source-id x y detail valuators)
+                       data xi-device-event)
+    (make-instance 'glop::extended-mouse-release-event
+                   :x x :y y
+                   :device device-id
+                   :valuators (parse-valuator-state valuators)
+                   :button detail)))
+
+
+
+(defmethod %generic-event-dispatch ((extension-name (eql :x-input-2))
+                                    (event (eql +xi-key-press+)) data
+                                    display-ptr)
+  (with-foreign-slots ((device-id source-id x y detail) data xi-device-event)
+    (format t "~&key press event on device ~s/~s, key ~s (at ~s,~s)~%"
+            device-id source-id detail x y)))
+
+
+
+(defmethod %generic-event-dispatch ((extension-name (eql :x-input-2))
+                                    (event (eql +xi-enter+)) data
+                                    display-ptr)
+  (declare (ignorable data display-ptr))
+  #++
+  (with-foreign-slots ((device-id source-id event-x event-y detail focus node)
+                       data xi-enter-event)
+    (format t "~&enter event on device ~s/~s, at ~s,~s, detail ~s, focus ~s, node ~s~%"
+            device-id source-id event-x event-y detail focus node)))
+
+(defmethod %generic-event-dispatch ((extension-name (eql :x-input-2))
+                                    (event (eql +xi-leave+)) data
+                                    display-ptr)
+  (declare (ignorable data display-ptr))
+  #++
+  (with-foreign-slots ((device-id source-id event-x event-y detail focus node)
+                       data xi-enter-event)
+    (format t "~&leave event on device ~s/~s, at ~s,~s, detail ~s, focus ~s, node ~s~%"
+            device-id source-id event-x event-y detail focus node)))
+
+(defmethod %generic-event-dispatch ((extension-name (eql :x-input-2))
+                                    (event (eql +xi-focus-in+)) data
+                                    display-ptr)
+  (declare (ignorable data display-ptr))
+  #++
+  (with-foreign-slots ((device-id source-id event-x event-y detail focus node)
+                       data xi-enter-event)
+    (format t "~&focus event on device ~s/~s, at ~s,~s, detail ~s, focus ~s, node ~s~%"
+            device-id source-id event-x event-y detail focus node)))
+
+(defmethod %generic-event-dispatch ((extension-name (eql :x-input-2))
+                                    (event (eql +xi-focus-out+)) data
+                                    display-ptr)
+  (declare (ignorable data display-ptr))
+  #++
+  (with-foreign-slots ((device-id source-id event-x event-y detail focus node)
+                       data xi-enter-event)
+    (format t "~&blur event on device ~s/~s, at ~s,~s, detail ~s, focus ~s, node ~s~%"
+            device-id source-id event-x event-y detail focus node)))
 
 
 (defmethod %generic-event-dispatch ((extension-name (eql :x-input-2))
@@ -839,10 +913,16 @@
                                            (glop::x11-window-id win)
                                            :all-devices
                                            :xi-button-press
+                                           :xi-button-release
                                            :xi-motion
-                                           :xi-key-press
+                                           #++ :xi-key-press
+                                           #++ :xi-key-release
+                                           :xi-motion
+                                           #++ :xi-enter
+                                           #++ :xi-leave
+                                           #++ :xi-focus-in
+                                           #++ :xi-focus-out
                                            :xi-hierarchy-changed)))
     (with-continue-restart
      (glop-xlib::xi-query-device (glop::x11-window-display win)
-                                 glop-xlib::+xi-all-devices+))
-)
+                                 glop-xlib::+xi-all-devices+)))
