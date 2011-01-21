@@ -93,8 +93,30 @@
                                  (win32-window-module-handle win)))
 
 (defmethod set-fullscreen ((win win32-window) &optional (state (not (window-fullscreen win))))
-  (when state
-    (warn "Fullscreen not implemented.")))
+  (with-accessors ((id win32-window-id)
+                   (previous-video-mode window-previous-video-mode)
+                   (win-width window-width)
+                   (win-height window-height)
+                   (fullscreen window-fullscreen))
+      win
+    (unless (eq state fullscreen)
+      (if state
+          (let* ((previous (glop-win32::current-video-mode))
+                 (all-modes (glop-win32::list-video-modes))
+                 (closest (glop-win32::closest-video-mode previous all-modes
+                                                          win-width win-height)))
+            (if closest
+                (progn (setf previous-video-mode previous)
+                       (glop-win32:set-video-mode closest)
+                       (glop-win32::%set-fullscreen (win32-window-id win) t)
+                       (setf fullscreen t))
+                (warn "No valid video mode available.")))
+          (progn (glop-win32::%set-fullscreen (win32-window-id win) nil)
+                 (glop-win32::default-video-mode)
+                 (setf fullscreen nil)))))
+  (glop-win32:update-window (win32-window-id win))
+  (show-window win))
+
 
 (defmethod set-geometry ((win win32-window) x y width height)
   (glop-win32:set-geometry (win32-window-id win) x y width height)

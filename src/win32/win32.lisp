@@ -7,6 +7,7 @@
 (defctype wparam :int32)
 (defctype lparam :int32)
 
+(defctype word :int16)
 (defctype dword  :int32)
 
 (defctype bool :int) ;; XXX: Win32 BOOL isn't used as a boolean (e.g.: see GetMessage)
@@ -34,13 +35,21 @@
   (pt point))
 
 (defbitfield wex-style
+  (:ws-ex-topmost #x0000008)
   (:ws-ex-app-window #x40000)
   (:ws-ex-window-edge 256))
 
 (defbitfield wstyle
+  (:ws-popup #x8000000)
+  (:ws-visible #x1000000)
+  (:ws-sys-menu #x0080000)
   (:ws-clip-children #x2000000)
   (:ws-clip-siblings #x4000000)
   (:ws-overlapped-window #xcf0000))
+
+(defcenum gwl-index
+  (:gwl-ex-style -20)
+  (:gwl-style -16))
 
 (defbitfield class-style-flags
   (:cs-byte-align-client 4096)
@@ -312,9 +321,156 @@
   (right :long)
   (bottom :long))
 
+(defcenum display-settings-mode
+  (:cds-update-registry 1)
+  (:cds-test 2)
+  (:cds-fullscreen 4)
+  (:cds-global 8)
+  (:cds-set-primary 16)
+  (:cds-reset #x40000000)
+  (:cds-setrect #x20000000)
+  (:cds-no-reset #x10000000))
+
+(defbitfield device-mode-fields
+  (:dm-bits-per-pixel #x00040000)
+  (:dm-pels-width #x00080000)
+  (:dm-pels-height #x00100000)
+  (:dm-display-frequency #x00400000))
+
+(defcstruct devmode
+  (device-name :char :count 32) ;; CCHDEVICENAME = 32 (winuser.h)
+  (spec-version word)
+  (driver-version word)
+  (size word)
+  (driver-extra word)
+  (fields dword)
+  (union-1 :short :count 8) ;; FIXME: orientation data is here
+  (color :short)
+  (duplex :short)
+  (y-resolution :short)
+  (tt-option :short)
+  (collate :short)
+  (form-name :char :count 32) ;; CCHFORMNAME = 32
+  (log-pixels word)
+  (bits-per-pixel dword)
+  (pels-width dword)
+  (pels-height dword)
+  (display-flags dword) ;; this is also dmNup
+  (display-frequency dword)
+  ;; WINVER >= 0x0400
+  (icm-method dword)
+  (icm-intent dword)
+  (media-type dword)
+  (dither-type dword)
+  (reserved-1 dword)
+  (reserved-2 dword)
+  ;; WINVER >= 0x0500 || _WIN32_WINNT >= 0x0400
+  (panning-width dword)
+  (panning-height dword))
+
 (define-foreign-library user32
     (t (:default "user32")))
 (use-foreign-library user32)
+
+(defcfun ("EnumDisplaySettingsA" enum-display-settings) bool
+  (device-name :string) (mode-num dword) (dev-mode :pointer))
+
+(defcfun ("ChangeDisplaySettingsA" change-display-settings) :long
+  (dmode devmode) (flags dword))
+
+(defcfun ("GetWindowLongA" get-window-long) :long
+  (wnd hwnd) (index gwl-index))
+
+(defcfun ("SetWindowLongA" set-window-long) :long
+  (wnd hwnd) (index gwl-index) (new-long :long))
+
+(defun current-video-mode ()
+  (with-foreign-object (dmode 'devmode)
+    (with-foreign-slots ((size bits-per-pixel pels-width pels-height display-frequency)
+                         dmode devmode)
+      (setf size (foreign-type-size 'devmode))
+      (enum-display-settings (cffi:null-pointer) -1 dmode)
+      (glop::make-video-mode :width pels-width
+                             :height pels-height
+                             :depth bits-per-pixel
+                             :rate display-frequency))))
+
+(defun list-video-modes ()
+  (with-foreign-object (dmode 'devmode)
+    (with-foreign-slots ((size bits-per-pixel pels-width pels-height display-frequency)
+                         dmode devmode)
+      (setf size (foreign-type-size 'devmode))
+      (loop with mode-index = 0
+         for res = (enum-display-settings (cffi:null-pointer) mode-index dmode)
+         do (incf mode-index)
+         until (zerop res)
+         collect (glop::make-video-mode :width pels-width
+                                       :height pels-height
+                                       :depth bits-per-pixel
+                                       :rate display-frequency)))))
+
+;; XXX: stupid distance match is maybe not the best option here...
+;; FIXME: consider video modes with different refresh rate and depth?
+;; FIXME: return current-mode as a default if no match found?
+(defun closest-video-mode (current-mode modes-list dwidth dheight &optional ddepth drate)
+  (unless drate
+    (setf drate (glop::video-mode-rate current-mode)))
+  (unless ddepth
+    (setf ddepth (glop::video-mode-depth current-mode)))
+  (loop with best-match = nil
+        with best-dist = most-positive-fixnum
+        for mode in (remove-if (lambda (it)
+                                 (or (/= (glop::video-mode-rate it) drate)
+                                     (/= (glop::video-mode-depth it) ddepth)))
+                               modes-list)
+        for current-dist = (+ (* (- dwidth (glop::video-mode-width mode))
+                                 (- dwidth (glop::video-mode-width mode)))
+                              (* (- dheight (glop::video-mode-height mode))
+                                 (- dheight (glop::video-mode-height mode))))
+        when (< current-dist best-dist)
+        do (setf best-dist current-dist
+                 best-match mode)
+        finally (return best-match)))
+
+(defun set-video-mode (mode)
+  (let ((width (glop::video-mode-width mode))
+        (height (glop::video-mode-height mode))
+        (depth (glop::video-mode-depth mode))
+        (rate (glop::video-mode-rate mode)))
+    (with-foreign-object (dmode 'devmode)
+      (with-foreign-slots ((size bits-per-pixel pels-width pels-height display-frequency fields)
+                           dmode devmode)
+        (setf size (foreign-type-size 'devmode))
+        (enum-display-settings (cffi:null-pointer) -1 dmode)
+        (setf pels-width width
+              pels-height height
+              display-frequency rate
+              bits-per-pixel depth
+              fields (foreign-bitfield-value 'device-mode-fields '(:dm-pels-width
+                                                                   :dm-pels-height
+                                                                   :dm-bits-per-pixel
+                                                                   :dm-display-frequency)))
+        (change-display-settings dmode
+                                 (foreign-enum-value 'display-settings-mode
+                                                         :cds-fullscreen))))))
+
+(defun default-video-mode ()
+  (change-display-settings (cffi:null-pointer) 0))
+
+(defun %set-fullscreen (wnd state)
+  (if state
+      (progn (set-window-long wnd :gwl-style
+                      (foreign-bitfield-value 'wstyle
+                              '(:ws-popup :ws-clip-siblings :ws-clip-children)))
+             (set-window-long wnd :gwl-ex-style
+                      (foreign-bitfield-value 'wex-style
+                              '(:ws-ex-app-window :ws-ex-topmost))))
+      (progn (set-window-long wnd :gwl-style
+                      (foreign-bitfield-value 'wstyle
+                              '(:ws-overlapped-window :ws-clip-siblings :ws-clip-children)))
+             (set-window-long wnd :gwl-ex-style
+                      (foreign-bitfield-value 'wex-style
+                              '(:ws-ex-app-window :ws-ex-window-edge))))))
 
 (defcfun ("GetClientRect" %get-client-rect) bool
   (wnd hwnd) (rect-out :pointer))

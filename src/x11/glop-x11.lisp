@@ -140,10 +140,10 @@
             (setf previous-video-mode
                   (multiple-value-bind (width height depth)
                       (glop-xlib:current-mode display screen)
-                    (make-video-mode width height depth)))
+                    (make-video-mode :width width :height height :depth depth)))
             (glop-xlib:set-mode display screen
                                 (glop-xlib:closest-mode display screen
-                                                        win-width win-height 0) 0)
+                                                        win-width win-height 0))
             (glop-xlib:%set-fullscreen id display t)
             (setf fullscreen t))
           (progn
@@ -153,7 +153,7 @@
               (glop-xlib:%set-fullscreen id display nil)
               (glop-xlib:set-mode display screen
                                   (glop-xlib:closest-mode display screen
-                                                                          width height 0) 0))
+                                                                          width height 0)))
             (setf fullscreen nil))))))
 
 (defmethod set-geometry ((win x11-window) x y width height)

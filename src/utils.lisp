@@ -1,10 +1,10 @@
 (in-package #:glop)
 
-(defstruct (video-mode
-             (:constructor make-video-mode (width height depth)))
+(defstruct video-mode
   (width 0 :type integer)
   (height 0 :type integer)
-  (depth 0 :type integer))
+  (depth 0 :type integer)
+  (rate 0.0 :type float))
 
 ;; platform specific windows
 ;; XXX: this may move to platform specific directories
