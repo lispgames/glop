@@ -47,43 +47,37 @@
   (screen-info :pointer)
   (count (:pointer :int)))
 
-(defun current-mode (dpy screen)
-  (values (display-width dpy screen) (display-height dpy screen)
-          (default-depth dpy screen)))
+(defcfun ("XRRRates" xrr-rates) :pointer
+  (display-ptr :pointer)
+  (screen :int)
+  (size-index :int)
+  (nrates :pointer))
 
-(defun set-mode (dpy screen mode)
+(defcfun ("XRRConfigCurrentRate" xrr-config-current-rate) :short
+  (config :pointer))
+
+(defcfun ("XRRConfigCurrentConfiguration" xrr-config-current-configuration) :int
+  (config :pointer)
+  (rotation :pointer))
+
+(defun current-mode (dpy screen)
+  (with-foreign-object (rot :int)
+    (let* ((sc (xrr-get-screen-info dpy (root-window dpy screen)))
+           (rate (xrr-config-current-rate sc))
+           (index (xrr-config-current-configuration sc rot)))
+      (xrr-free-screen-config-info sc)
+      (values (display-width dpy screen) (display-height dpy screen)
+              (default-depth dpy screen) rate index))))
+
+(defun set-mode (dpy screen mode-index &optional rate)
   (let* ((root (root-window dpy screen))
          (sc (xrr-get-screen-info dpy root)))
-    (xrr-set-screen-config dpy sc root mode
-                           (foreign-enum-value 'rr-rotation :rotate-0) 0)
+    (if rate
+        (xrr-set-screen-config-and-rate dpy sc root mode-index
+                               (foreign-enum-value 'rr-rotation :rotate-0) rate 0)
+        (xrr-set-screen-config dpy sc root mode-index
+                           (foreign-enum-value 'rr-rotation :rotate-0) 0))
     (xrr-free-screen-config-info sc)))
-
-(defun closest-mode (dpy screen desired-width desired-height rate)
-  (declare (ignore rate))
-  (let ((sc (xrr-get-screen-info dpy (root-window dpy screen)))
-        (size-list (null-pointer))
-        (best-size -1)
-        (best-match most-positive-fixnum))
-    (with-foreign-object (size-count :int)
-      (setf size-list (xrr-config-sizes sc size-count))
-      (xrr-free-screen-config-info sc)
-      (do
-          ((index 0 (1+ index))
-           (size size-list (inc-pointer size (foreign-type-size 'xrr-screen-size))))
-          ((>= index (mem-aref size-count :int)))
-        (with-foreign-slots ((width height) size screen-size)
-          (let ((match (+ (* (- desired-width width) (- desired-width width))
-                          (* (- desired-height height) (- desired-height height)))))
-            (when (< match best-match)
-              (setf best-match match)
-              (setf best-size index))))))
-    (if (>= best-size 0)
-        (with-foreign-slots
-            ((width height) (inc-pointer size-list
-                                         (* best-size (foreign-type-size 'xrr-screen-size)))
-             screen-size)
-          (values best-size width height))
-        (values 0 (display-width dpy screen) (display-height dpy screen)))))
 
 (defun supported-modes (dpy screen)
   (with-foreign-objects ((count :int) (gl :int) (rgba :int) (dummy 'visual-info))
@@ -92,17 +86,17 @@
           (depth-list nil)
           (resolution-list nil))
       (unless (null-pointer-p rtn-list)
+        ;; available depths
         (do
             ((index 0 (1+ index))
              (vi rtn-list (inc-pointer vi (foreign-type-size 'visual-info))))
             ((>= index (mem-aref count :int)))
           (glop-glx::glx-get-config dpy vi
                                     (foreign-enum-value 'glop-glx::glx-attributes :use-gl) gl)
-          (glop-glx::glx-get-config dpy vi
-                                    (foreign-enum-value 'glop-glx::glx-attributes :rgba) rgba)
-          (when (and (= 1 (mem-aref gl :int) (mem-aref rgba :int))
+          (when (and (= 1 (mem-aref gl :int))
                         (not (member (foreign-slot-value vi 'visual-info 'depth) depth-list)))
             (push (foreign-slot-value vi 'visual-info 'depth) depth-list)))
+        ;; available resolutions
         (x-free rtn-list)
         (setf rtn-list (xrr-config-sizes sc count))
         (xrr-free-screen-config-info sc)
@@ -111,5 +105,9 @@
              (sizes rtn-list (inc-pointer sizes (foreign-type-size 'xrr-screen-size))))
             ((>= index (mem-aref count :int)))
           (with-foreign-slots ((width height) sizes screen-size)
-            (push `(,width ,height) resolution-list)))
+            ;; all rates for this mode
+            (with-foreign-object (nrates :short)
+              (let ((rates (xrr-rates dpy screen index nrates)))
+                (loop for n below (mem-ref nrates :short)
+                  do (push (list width height (mem-aref rates :short n) index) resolution-list))))))
         (values depth-list resolution-list)))))

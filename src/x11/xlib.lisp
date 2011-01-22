@@ -380,6 +380,12 @@
       (error "Unable to open display"))
     display))
 
+(defmacro with-current-display (dpy-sym &body body)
+  `(let ((,dpy-sym (x-open-display)))
+     (unwind-protect
+          (progn ,@body)
+       (x-close-display ,dpy-sym))))
+
 (defun x-create-window (dpy parent x y width height visual-infos)
   (let ((root-win (x-default-root-window dpy)))
     (with-foreign-slots ((visual-id visual depth) visual-infos visual-info)

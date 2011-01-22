@@ -2,12 +2,50 @@
 
 (in-package #:glop)
 
-;; Default implementation
 (defdfun gl-get-proc-address (proc-name)
   "Get foreign pointer to the GL extension designed by PROC-NAME."
   (declare (ignore proc-name))
   (error 'not-implemented))
 
+;;; Display management
+(defgeneric list-video-modes ()
+  (:documentation
+   "Returns a list of all available video modes as a list video-mode structs."))
+
+(defgeneric set-video-mode (mode)
+  (:documentation
+   "Attempts to set the provided video mode."))
+
+(defgeneric current-video-mode ()
+  (:documentation
+   "Returns the current video mode."))
+
+;; XXX: stupid distance match is maybe not the best option here...
+;; FIXME: consider video modes with different refresh rate and depth?
+;; FIXME: return current-mode as a default if no match found?
+(defun closest-video-mode (current-mode modes-list dwidth dheight &optional ddepth drate)
+  "Try to find the closest video mode matching desired parameters within modes-list.
+Returns NIL if no match is found."
+  (unless drate
+    (setf drate (video-mode-rate current-mode)))
+  (unless ddepth
+    (setf ddepth (video-mode-depth current-mode)))
+  (loop with best-match = nil
+        with best-dist = most-positive-fixnum
+        for mode in (remove-if (lambda (it)
+                                 (or (/= (video-mode-rate it) drate)
+                                     (/= (video-mode-depth it) ddepth)))
+                               modes-list)
+        for current-dist = (+ (* (- dwidth (video-mode-width mode))
+                                 (- dwidth (video-mode-width mode)))
+                              (* (- dheight (video-mode-height mode))
+                                 (- dheight (video-mode-height mode))))
+        when (< current-dist best-dist)
+        do (setf best-dist current-dist
+                 best-match mode)
+        finally (return best-match)))
+
+;;; Context management
 (defgeneric create-gl-context (window &key make-current major minor
                                            forward-compat debug
                                            profile)
@@ -34,6 +72,7 @@
   (:documentation
    "Make the provided OpenGL context no longer current."))
 
+;;; Window management
 (defgeneric open-window (window title width height &key x y
                                                    rgba
                                                    double-buffer
@@ -107,8 +146,25 @@
 
 (defgeneric set-fullscreen (window &optional state)
   (:documentation
-   "Attempt to set WINDOW to fullscreen state STATE using the video mode closest
-   to current geometry."))
+   "Set window to fullscreen state."))
+
+;; (defmethod set-fullscreen :around (window &optional state)
+;;   (unless (eq state (window-fullscreen window))
+;;     (call-next-method)
+;;     (setf (window-fullscreen window) state)))
+
+(defun toggle-fullscreen (window)
+  "Attempt to change display mode to the mode closest to geometry and
+set window fullscreen state."
+  (if (window-fullscreen window)
+      (progn (set-fullscreen window nil)
+             (set-video-mode (window-previous-video-mode window)))
+      (progn (setf (window-previous-video-mode window) (current-video-mode))
+             (set-video-mode (closest-video-mode (current-video-mode)
+                                                 (list-video-modes)
+                                                 (window-width window)
+                                                 (window-height window)))
+             (set-fullscreen window t))))
 
 (defgeneric set-geometry (window x y width height)
   (:documentation

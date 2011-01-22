@@ -6,6 +6,37 @@
 (defun gl-get-proc-address (proc-name)
   (glop-glx:glx-get-proc-address proc-name))
 
+(defmethod list-video-modes ()
+  (let ((modes '()))
+    (glop-xlib::with-current-display dpy
+      (multiple-value-bind (depth-list res-list)
+          (glop-xlib::supported-modes dpy 0)
+        (loop for res in res-list
+           for width = (first res)
+           for height = (second res)
+           for rate = (third res)
+           for index = (fourth res)
+           do (loop for depth in depth-list
+                 do (push (make-x11-video-mode :width width
+                                               :height height
+                                               :depth depth
+                                               :rate rate
+                                               :index index)
+                          modes)))))
+    modes))
+
+(defmethod set-video-mode ((mode x11-video-mode))
+  (glop-xlib::with-current-display dpy
+    (glop-xlib::set-mode dpy 0 (x11-video-mode-index mode)
+                         (x11-video-mode-rate mode))))
+
+(defmethod current-video-mode ()
+  (glop-xlib::with-current-display dpy
+    (multiple-value-bind (width height depth rate index)
+        (glop-xlib::current-mode dpy 0)
+      (make-x11-video-mode :width width :height height :depth depth
+                       :rate rate :index index))))
+
 (defstruct glx-context
   ctx           ;; GL context ptr
   display       ;; X display ptr
@@ -127,34 +158,15 @@
 
 (defmethod set-fullscreen ((win x11-window) &optional (state (not (window-fullscreen win))))
   (with-accessors ((display x11-window-display)
-                   (screen x11-window-screen)
                    (id x11-window-id)
-                   (previous-video-mode window-previous-video-mode)
-                   (win-width window-width)
-                   (win-height window-height)
                    (fullscreen window-fullscreen))
       win
     (unless (eq state fullscreen)
       (if state
-          (progn
-            (setf previous-video-mode
-                  (multiple-value-bind (width height depth)
-                      (glop-xlib:current-mode display screen)
-                    (make-video-mode :width width :height height :depth depth)))
-            (glop-xlib:set-mode display screen
-                                (glop-xlib:closest-mode display screen
-                                                        win-width win-height 0))
-            (glop-xlib:%set-fullscreen id display t)
-            (setf fullscreen t))
-          (progn
-            (with-accessors ((height video-mode-height)
-                             (width video-mode-width))
-                previous-video-mode
-              (glop-xlib:%set-fullscreen id display nil)
-              (glop-xlib:set-mode display screen
-                                  (glop-xlib:closest-mode display screen
-                                                                          width height 0)))
-            (setf fullscreen nil))))))
+          (progn (glop-xlib:%set-fullscreen id display t)
+                 (setf fullscreen t))
+          (progn (glop-xlib:%set-fullscreen id display nil)
+                 (setf fullscreen nil))))))
 
 (defmethod set-geometry ((win x11-window) x y width height)
   (glop-xlib:x-set-geometry (x11-window-display win) (x11-window-id win) x y width height)

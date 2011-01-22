@@ -17,6 +17,9 @@
    (dc :accessor win32-window-dc)
    (id :accessor win32-window-id)))
 
+#+(or win32 windows)
+(defstruct (win32-video-mode (:include video-mode)))
+
 #+unix
 (defclass x11-window ()
   ((display :initarg :display :accessor x11-window-display)
@@ -24,6 +27,10 @@
    (id :accessor x11-window-id)
    (visual-infos :accessor x11-window-visual-infos)
    (fb-config :accessor x11-window-fb-config)))
+
+#+unix
+(defstruct (x11-video-mode (:include video-mode))
+  (index -1 :type integer))
 
 ;; base window structure
 ;; you may inherit your own window class from this

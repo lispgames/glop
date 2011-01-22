@@ -11,7 +11,7 @@
 (defmethod glop:on-key (window pressed keycode keysym text)
   (format t "Key ~:[released~;pressed~]: ~D (~S ~S)~%" pressed keycode keysym text)
   (format t "Key pressed: ~S~%" (glop:key-pressed keycode))
-  (when (eq keysym :escape)
+  (when (and (not pressed) (eq keysym :escape))
     (glop:push-close-event window))
   (case keysym
     (:left (decf (glop:window-x window)))
@@ -22,7 +22,9 @@
                      (incf (glop:window-height window) 10)))
     (:page-down (progn (decf (glop:window-width window) 10)
                        (decf (glop:window-height window) 10))))
-  (when (and pressed (eq keysym :f))
+  (when (and (not pressed) (eq keysym :f))
+    (glop:toggle-fullscreen window))
+  (when (and (not pressed) (eq keysym :g))
     (glop:set-fullscreen window)))
 
 (defmethod glop:on-button (window pressed button)
@@ -217,7 +219,7 @@
   (when (eq (glop:keysym event) :escape)
       (glop:push-close-event window))
   (when (and (glop:pressed event) (eq (glop:keysym event) :f))
-    (glop:set-fullscreen window)))
+    (glop:toggle-fullscreen window)))
 
 (defmethod glop:on-event (window (event glop:button-event))
   (declare (ignore window))
@@ -274,6 +276,8 @@
   (when (eq (glop:keysym event) :escape)
       (glop:push-close-event window))
   (when (and (glop:pressed event) (eq (glop:keysym event) :f))
+    (glop:toggle-fullscreen window))
+  (when (and (glop:pressed event) (eq (glop:keysym event) :g))
     (glop:set-fullscreen window)))
 
 (defmethod glop:on-event ((window my-window) (event glop:button-event))

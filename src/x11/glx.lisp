@@ -108,7 +108,7 @@
     (values (%glx-get-fb-config-attrib dpy fb-config
                    (foreign-enum-value 'glx-attributes attrib) value) (mem-aref value :int))))
 
-(defun glx-choose-fb-config (dpy screen attribs-list)
+(defun glx-choose-fb-config (dpy screen attribs)
   ;; handle :rgba special case, yeah this is ugly...
   (let ((filtered-attribs '()))
     (loop for attr in attribs by #'cddr
@@ -123,10 +123,10 @@
     (setf attribs filtered-attribs))
   ;; foreign attrib list
   (with-foreign-object (fb-config-count :int)
-    (with-foreign-object (atts :int (1+ (length attribs-list)))
+    (with-foreign-object (atts :int (1+ (length attribs)))
       (loop
-        for i below (length attribs-list)
-        for attr in attribs-list do
+        for i below (length attribs)
+        for attr in attribs do
           (setf (mem-aref atts :int i)
                 (cond
                   ((eq attr nil) 0)
@@ -135,7 +135,7 @@
                        (keyword (foreign-enum-value 'glx-attributes attr))
                        (list (foreign-bitfield-value 'glx-attribute-flags attr))
                        (t attr))))))
-      (setf (mem-aref atts :int (length attribs-list)) 0)
+      (setf (mem-aref atts :int (length attribs)) 0)
       (let ((fb-configs (%glx-choose-fb-config dpy screen atts fb-config-count)))
         (when (= (mem-aref fb-config-count :int) 0)
           (error "Unable to find any suitable frame buffer configs"))

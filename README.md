@@ -41,8 +41,11 @@ Available tests are:
  - `test-on-event`: hello world using the on-event dispatch code
  - `test-subclassing`: how to make your own window class and use it
  
-In all tests except `test-manual-events` you can press the ESC key to close the window
-and the 'f' key to toggle fullscreen.
+In all tests except `test-manual-events` you can press the following keys:
+
+ - ESC: close the window
+ - 'f': toggle fullscreen mode (change display mode)
+ - 'g': set window to fullscreen state (no display mode change)
 
 Quick start
 -----------
@@ -82,7 +85,6 @@ See `test.lisp` for more details.
 Notes
 -----
 The win32 implementation is not as complete as the X11 one, major missing features are:
- - no fullscreen
  - no OpenGL 3.x
  
 See also [issues](http://github.com/patzy/glop/issues) on github.

@@ -390,10 +390,10 @@
                          dmode devmode)
       (setf size (foreign-type-size 'devmode))
       (enum-display-settings (cffi:null-pointer) -1 dmode)
-      (glop::make-video-mode :width pels-width
-                             :height pels-height
-                             :depth bits-per-pixel
-                             :rate display-frequency))))
+      (glop::make-win32-video-mode :width pels-width
+                                   :height pels-height
+                                   :depth bits-per-pixel
+                                   :rate display-frequency))))
 
 (defun list-video-modes ()
   (with-foreign-object (dmode 'devmode)
@@ -404,33 +404,10 @@
          for res = (enum-display-settings (cffi:null-pointer) mode-index dmode)
          do (incf mode-index)
          until (zerop res)
-         collect (glop::make-video-mode :width pels-width
-                                       :height pels-height
-                                       :depth bits-per-pixel
-                                       :rate display-frequency)))))
-
-;; XXX: stupid distance match is maybe not the best option here...
-;; FIXME: consider video modes with different refresh rate and depth?
-;; FIXME: return current-mode as a default if no match found?
-(defun closest-video-mode (current-mode modes-list dwidth dheight &optional ddepth drate)
-  (unless drate
-    (setf drate (glop::video-mode-rate current-mode)))
-  (unless ddepth
-    (setf ddepth (glop::video-mode-depth current-mode)))
-  (loop with best-match = nil
-        with best-dist = most-positive-fixnum
-        for mode in (remove-if (lambda (it)
-                                 (or (/= (glop::video-mode-rate it) drate)
-                                     (/= (glop::video-mode-depth it) ddepth)))
-                               modes-list)
-        for current-dist = (+ (* (- dwidth (glop::video-mode-width mode))
-                                 (- dwidth (glop::video-mode-width mode)))
-                              (* (- dheight (glop::video-mode-height mode))
-                                 (- dheight (glop::video-mode-height mode))))
-        when (< current-dist best-dist)
-        do (setf best-dist current-dist
-                 best-match mode)
-        finally (return best-match)))
+         collect (glop::make-win32-video-mode :width pels-width
+                                              :height pels-height
+                                              :depth bits-per-pixel
+                                              :rate display-frequency)))))
 
 (defun set-video-mode (mode)
   (let ((width (glop::video-mode-width mode))

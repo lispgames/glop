@@ -4,6 +4,8 @@
   (:use #:cl)
   (:export
    #:load-libraries
+   ;; video modes
+   #:list-video-modes #:set-video-mode #:current-video-mode
    ;; GL
    #:create-gl-context #:destroy-gl-context #:attach-gl-context #:detach-gl-context
    #:gl-get-proc-address
@@ -13,7 +15,7 @@
    #:show-window #:hide-window #:set-window-title
    #:swap-buffers
    #:window-x #:window-y #:window-width #:window-height #:window-gl-context #:set-fullscreen
-   #:set-geometry #:set-aspect-ratio
+   #:set-geometry #:set-aspect-ratio #:toggle-fullscreen
    ;; state
    #:key-pressed #:*ignore-auto-repeat*
    ;; events
