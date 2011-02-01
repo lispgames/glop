@@ -331,6 +331,9 @@ set window fullscreen state."
 (defclass extended-mouse-release-event (extended-mouse-button-event)
   ())
 
+(defclass device-hotplug-event (event)
+  ((added :initarg :added :accessor added)
+   (removed :initarg :removed :accessor removed)))
 
 (defun push-event (window evt)
   "Push an artificial event into the event processing system.

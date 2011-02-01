@@ -884,14 +884,30 @@
                              :enabled enabled
                              :flags flags)))
               collect it))
-   (loop for i below num-info
-      for p = (mem-aref info 'xi-hierarchy-info i)
-      do (with-foreign-slots ((device-id flags) p xi-hierarchy-info)
-           (when (and flags (or (member :xi-slave-added flags)
-                                (member :xi-master-added flags)))
-             (format t "added device :~% ")
-             (with-continue-restart
-               (xi-query-device display-ptr device-id)))))))
+   (let ((added nil)
+         (removed nil))
+     (loop for i below num-info
+        for p = (mem-aref info 'xi-hierarchy-info i)
+        do (with-foreign-slots ((device-id flags) p xi-hierarchy-info)
+             (when (and flags (or (member :xi-slave-added flags)
+                                  (member :xi-master-added flags)))
+               (format t "added device :~% ")
+               (with-continue-restart
+                 (xi-query-device display-ptr device-id)))
+             ;; todo: figure out what 'attached/detached' and
+             ;; 'enabled/disabled' mean, and decide if they need
+             ;; handled differently
+             (when (and flags (or (member :xi-slave-added flags)
+                                  (member :xi-master-added flags)
+                                  (member :xi-slave-attached flags)
+                                  (member :xi-device-enabled flags)))
+               (push device-id added))
+             (when (and flags (or (member :xi-slave-removed flags)
+                                  (member :xi-slave-detached flags)
+                                  (member :xi-device-disabled flags)
+                                  (member :xi-master-removed flags)))
+               (push device-id removed))))
+     (make-instance 'glop::device-hotplug-event :added added :removed removed))))
 
 
 
