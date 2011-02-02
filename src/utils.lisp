@@ -4,7 +4,7 @@
   (width 0 :type integer)
   (height 0 :type integer)
   (depth 0 :type integer)
-  (rate 0.0 :type float))
+  (rate 0 :type integer))
 
 ;; platform specific windows
 ;; XXX: this may move to platform specific directories
