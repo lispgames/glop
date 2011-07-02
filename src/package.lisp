@@ -16,6 +16,7 @@
    #:swap-buffers
    #:window-x #:window-y #:window-width #:window-height #:window-gl-context #:set-fullscreen
    #:set-geometry #:set-aspect-ratio #:toggle-fullscreen
+   #:show-cursor #:hide-cursor
    ;; state
    #:key-pressed #:*ignore-auto-repeat*
    ;; events

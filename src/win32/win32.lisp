@@ -372,6 +372,9 @@
     (t (:default "user32")))
 (use-foreign-library user32)
 
+(defcfun ("ShowCursor" show-cursor) :int
+  (show bool))
+
 (defcfun ("EnumDisplaySettingsA" enum-display-settings) bool
   (device-name :string) (mode-num dword) (dev-mode :pointer))
 

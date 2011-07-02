@@ -14,6 +14,8 @@
   (when (and (not pressed) (eq keysym :escape))
     (glop:push-close-event window))
   (case keysym
+    (:h (glop:hide-cursor window))
+    (:j (glop:show-cursor window))
     (:left (decf (glop:window-x window)))
     (:right (incf (glop:window-x window)))
     (:up (decf (glop:window-y window)))

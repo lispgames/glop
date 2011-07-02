@@ -9,5 +9,7 @@
            #:x-free #:x-intern-atom #:x-set-wm-protocols
            #:%set-fullscreen #:closest-mode
            #:x-set-geometry
+           #:x-create-null-cursor #:x-define-cursor #:x-undefine-cursor
+           #:x-free-cursor
            #:current-mode #:set-mode #:supported-modes
            #:xkb-set-detectable-auto-repeat))

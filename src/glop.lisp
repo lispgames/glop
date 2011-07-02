@@ -198,6 +198,14 @@ set window fullscreen state."
   (:documentation
    "Swaps GL buffers."))
 
+(defgeneric show-cursor (window)
+  (:documentation
+   "Enable cursor display for WINDOW"))
+
+(defgeneric hide-cursor (window)
+  (:documentation
+   "Disable cursor display for WINDOW"))
+
 ;;; Events handling
 (defclass event () ()
   (:documentation "Common ancestor for all events."))

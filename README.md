@@ -17,6 +17,7 @@ Tested CL implementations/platforms
  - CLISP/Win32 (Windows XP)
  - SBCL/X11
  - CCL/X11
+ - ECL/X11
  
 Running the tests
 -----------------
@@ -46,6 +47,8 @@ In all tests except `test-manual-events` you can press the following keys:
  - ESC: close the window
  - 'f': toggle fullscreen mode (change display mode)
  - 'g': set window to fullscreen state (no display mode change)
+ - 'h': hide mouse cursor
+ - 'j': show mouse cursor
 
 Quick start
 -----------

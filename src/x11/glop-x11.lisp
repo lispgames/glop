@@ -122,6 +122,7 @@
         (with-accessors ((display x11-window-display)
                          (screen x11-window-screen)
                          (id x11-window-id)
+                         (cursor x11-window-cursor)
                          (visual-infos x11-window-visual-infos)
                          (fb-config x11-window-fb-config)
                          (win-title window-title))
@@ -137,6 +138,7 @@
           (setf id (glop-xlib:x-create-window display
                                               (glop-xlib:x-default-root-window display)
                                               x y width height visual-infos))
+          (setf cursor (glop-xlib:x-create-null-cursor display id))
           (cffi:with-foreign-object (array :unsigned-long)
             (setf (cffi:mem-aref array :unsigned-long)
                   (glop-xlib:x-intern-atom display "WM_DELETE_WINDOW" nil))
@@ -151,8 +153,10 @@
 (defmethod close-window ((win x11-window))
   (with-accessors ((display x11-window-display)
                    (id x11-window-id)
+                   (cursor x11-window-cursor)
                    (context window-gl-context))
       win
+    (glop-xlib:x-free-cursor display cursor)
     (glop-xlib:x-destroy-window display id)
     (glop-xlib:x-close-display display)))
 
@@ -185,6 +189,19 @@
 (defmethod swap-buffers ((win x11-window))
   (glop-glx:glx-wait-gl)
   (glop-glx:glx-swap-buffers (x11-window-display win) (x11-window-id win)))
+
+(defmethod show-cursor ((win x11-window))
+  (with-accessors ((display x11-window-display)
+                   (id x11-window-id))
+      win
+    (glop-xlib:x-undefine-cursor display id)))
+
+(defmethod hide-cursor ((win x11-window))
+  (with-accessors ((display x11-window-display)
+                   (id x11-window-id)
+                   (cursor x11-window-cursor))
+      win
+    (glop-xlib:x-define-cursor display id cursor)))
 
 (defun %next-event (win &key blocking)
   (glop-xlib:x-next-event win (x11-window-display win) blocking))

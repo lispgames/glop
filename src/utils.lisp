@@ -26,7 +26,8 @@
    (screen :initarg :screen :accessor x11-window-screen)
    (id :accessor x11-window-id)
    (visual-infos :accessor x11-window-visual-infos)
-   (fb-config :accessor x11-window-fb-config)))
+   (fb-config :accessor x11-window-fb-config)
+   (cursor :accessor x11-window-cursor)))
 
 #+unix
 (defstruct (x11-video-mode (:include video-mode))

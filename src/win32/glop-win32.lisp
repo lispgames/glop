@@ -133,6 +133,12 @@
 (defmethod swap-buffers ((win win32-window))
   (glop-win32:swap-buffers (win32-window-dc win)))
 
+(defmethod show-cursor ((win win32-window))
+  (glop-win32:show-cursor 1))
+
+(defmethod hide-cursor ((win win32-window))
+  (glop-win32:show-cursor 0))
+
 (defun %next-event (win &key blocking)
   (let ((evt (glop-win32:next-event win (win32-window-id win) blocking)))
     (setf glop-win32:%event% nil)
