@@ -520,8 +520,15 @@
 (defcfun ("GetKeyboardState" get-keyboard-state) bool
   (state-out :pointer))
 
+
+
 (defcfun ("ToAscii" to-ascii) :int
-  (vkey :uint) (scan-code :uint) (kbd-state :pointer) (buffer :pointer) (flags :uint))
+  (vkey :uint)
+  (scan-code :uint) (kbd-state :pointer) (buffer :pointer) (flags :uint))
+
+(defcfun ("ToUnicode" to-unicode) :int
+  (vkey :uint)
+  (scan-code :uint) (kbd-state :pointer) (buffer :pointer) (buffer-size :int) (flags :uint))
 
 ;; XXX: this is an ugly hack and should probably be changed
 ;; We use the %event% var to allow window-proc callback to generate glop:event objects
@@ -555,10 +562,11 @@
   (values (foreign-enum-keyword 'vkey-type w-param :errorp nil)
           (with-foreign-object (kbd-state :char 256)
             (when (get-keyboard-state kbd-state)
-              (with-foreign-object (buffer :int16)
-                (let ((res (to-ascii (ldb (byte 32 0) w-param)
-                                     (ldb (byte 32 0) l-param)
-                                     kbd-state buffer 0)))
+              (with-foreign-object (buffer :int32)
+                (setf (mem-ref buffer :int32) 0)
+                (let ((res (to-unicode (ldb (byte 32 0) w-param)
+                                       (ldb (byte 32 0) l-param)
+                                       kbd-state buffer 4 0)))
                   (case res
                     (0 nil)
                     (t (foreign-string-to-lisp buffer)))))))))
