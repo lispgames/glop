@@ -20,7 +20,7 @@
 #+(or win32 windows)
 (defstruct (win32-video-mode (:include video-mode)))
 
-#+unix
+#+(and unix (not darwin))
 (defclass x11-window ()
   ((display :initarg :display :accessor x11-window-display)
    (screen :initarg :screen :accessor x11-window-screen)
@@ -29,13 +29,17 @@
    (fb-config :accessor x11-window-fb-config)
    (cursor :accessor x11-window-cursor)))
 
-#+unix
+#+(and unix (not darwin))
 (defstruct (x11-video-mode (:include video-mode))
   (index -1 :type integer))
 
+#+darwin
+(defstruct (osx-video-mode (:include video-mode)))
+
 ;; base window structure
 ;; you may inherit your own window class from this
-(defclass window (#+unix x11-window #+(or win32 windows) win32-window)
+(defclass window (#+(and unix (not darwin)) x11-window
+                  #+(or win32 windows) win32-window)
   ((x :initform 0 :initarg :x :accessor window-x)
    (y :initform 0 :initarg :y :accessor window-y)
    (width :initform 100 :initarg :width :accessor window-width)
@@ -105,7 +109,7 @@ Otherwise, only one key-press event will be triggered.")
 
 ;; misc.
 (defun load-libraries ()
-  #+unix(progn (cffi:define-foreign-library xlib
+  #+(and unix (not darwin))(progn (cffi:define-foreign-library xlib
                    (t (:default "libX11")))
                (cffi:use-foreign-library xlib)
                (cffi:define-foreign-library opengl
