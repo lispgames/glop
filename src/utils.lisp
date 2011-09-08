@@ -4,7 +4,7 @@
   (width 0 :type integer)
   (height 0 :type integer)
   (depth 0 :type integer)
-  (rate 0 :type integer))
+  (rate 0 :type double-float))
 
 ;; platform specific windows
 ;; XXX: this may move to platform specific directories
@@ -34,7 +34,8 @@
   (index -1 :type integer))
 
 #+darwin
-(defstruct (osx-video-mode (:include video-mode)))
+(defstruct (osx-video-mode (:include video-mode))
+  mode)
 
 ;; base window structure
 ;; you may inherit your own window class from this
