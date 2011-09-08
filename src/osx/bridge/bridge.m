@@ -9,6 +9,7 @@ typedef struct displayModeInfo {
   int height;
   double refresh;
   int depth;
+  CGDisplayModeRef mode;
 } DisplayModeInfo;
 
 typedef struct iterator {
@@ -39,6 +40,7 @@ void setDisplayInfo (const void *value, void *context)
   info->height = CGDisplayModeGetHeight(mode);
   info->refresh = CGDisplayModeGetRefreshRate(mode);
   info->depth = displayModeGetDepth(mode);
+  info->mode = mode;
   ((Iterator *)context)->pointer += sizeof(DisplayModeInfo);
 }
 
