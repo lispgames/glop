@@ -25,6 +25,9 @@
   (refresh :double)
   (depth :int)
   (mode :pointer))
+(defcfun ("loadDisplayModeInfo" load-display-mode-info) :void
+  (info display-mode-info)
+  (mode :pointer))
 (defcfun ("getDisplayModeInfoArray" get-display-mode-info-array) :pointer
   (size :pointer))
 (defcfun ("makeAutoreleasePool" make-autorelease-pool) :pointer)
@@ -40,19 +43,22 @@
       (unwind-protect (progn ,@body)
         (release-pool ,pool-var)))))
 
+(defun convert-to-video-mode (display-mode-info)
+  (with-foreign-slots ((width height refresh depth mode)
+                       display-mode-info
+                       display-mode-info)
+    (glop::make-osx-video-mode
+      :width width
+      :height height
+      :rate refresh
+      :depth depth
+      :mode mode)))
+
 (defun list-video-modes ()
   (with-foreign-object (array-size :long)
     (let ((modes (get-display-mode-info-array array-size)))
       (unwind-protect
            (loop for i below (mem-ref array-size :long)
-                 collect (with-foreign-slots
-                             ((width height refresh depth mode)
-                              (mem-aref modes 'display-mode-info i)
-                              display-mode-info)
-                           (glop::make-osx-video-mode
-                             :width width
-                             :height height
-                             :rate refresh
-                             :depth depth
-                             :mode mode)))
+                 collect (convert-to-video-mode
+                          (mem-aref modes 'display-mode-info i)))
         (foreign-free modes)))))

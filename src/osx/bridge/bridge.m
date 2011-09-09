@@ -31,16 +31,26 @@ int displayModeGetDepth (CGDisplayModeRef ref)
   return -1;
 }
 
-void setDisplayInfo (const void *value, void *context)
+void loadDisplayModeInfo(DisplayModeInfo *info, CGDisplayModeRef mode)
 {
-  DisplayModeInfo *info
-    = (DisplayModeInfo *)((Iterator *)context)->pointer;
-  CGDisplayModeRef mode = (CGDisplayModeRef)value;
   info->width = CGDisplayModeGetWidth(mode);
   info->height = CGDisplayModeGetHeight(mode);
   info->refresh = CGDisplayModeGetRefreshRate(mode);
   info->depth = displayModeGetDepth(mode);
   info->mode = mode;
+}
+
+DisplayModeInfo getCurrentDisplayMode()
+{
+  DisplayModeInfo info;
+  loadDisplayModeInfo(&info, CGDisplayCopyDisplayMode(CGMainDisplayID()));
+  return info;
+}
+
+void getDisplayModeInfoArraySetter (const void *value, void *context)
+{
+  loadDisplayModeInfo((DisplayModeInfo *)((Iterator *)context)->pointer,
+                      (CGDisplayModeRef)value);
   ((Iterator *)context)->pointer += sizeof(DisplayModeInfo);
 }
 
@@ -52,7 +62,7 @@ DisplayModeInfo *getDisplayModeInfoArray (long *size)
   DisplayModeInfo *array = malloc(sizeof(DisplayModeInfo) * *size);
   context.pointer = array;
   CFArrayApplyFunction(modeArray, (CFRange){0, *size},
-                       setDisplayInfo, &context);
+                       getDisplayModeInfoArraySetter, &context);
   return array;
 }
 
@@ -81,4 +91,5 @@ NSWindow *openWindow (int x, int y, int width, int height)
                      defer:NO] autorelease];
   [window setBackgroundColor:[NSColor blueColor]];
   [window makeKeyAndOrderFront:NSApp];
+  return window;
 }

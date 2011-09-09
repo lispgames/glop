@@ -1,3 +1,5 @@
+CFLAGS=-Wall
+
 all: bridge.dylib
 
 bridge.dylib: bridge.o
