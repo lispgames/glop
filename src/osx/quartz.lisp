@@ -1,4 +1,4 @@
-(in-package #:glop-quartz)
+(in-package #:glop-bridge)
 
 (define-foreign-library application-services
   (t (:framework "ApplicationServices")))
@@ -21,4 +21,4 @@
 (defcfun ("CGDisplayModeCopyPixelEncoding" %mode-pixel-encoding) :pointer
   (mode :pointer))
 (defun mode-pixel-encoding (mode)
-  (string-get-lisp-string (%mode-pixel-encoding mode)))
+  (ns-string-to-lisp-string (%mode-pixel-encoding mode)))
