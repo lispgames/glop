@@ -32,6 +32,10 @@
 (defstruct (x11-video-mode (:include video-mode))
   (index -1 :type integer))
 
+;; #+darwin
+;; (defclass osx-window (window)
+;;   ())
+
 #+darwin
 (defstruct (osx-video-mode (:include video-mode))
   mode)
