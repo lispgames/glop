@@ -26,7 +26,8 @@
              (:module "osx"
                       :serial t
                       :components ((:file "package")
-                                   (:file "core-foundation")
+                                   (:file "bridge")
+                                   (:file "foundation")
                                    (:file "quartz")
                                    (:file "glop-osx")))
              #+(or win32 windows)

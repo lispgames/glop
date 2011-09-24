@@ -1,9 +1,10 @@
 CFLAGS=-Wall
+OBJ=foundation.o appkit.o
 
-all: bridge.dylib
+all: glop-bridge.dylib
 
-bridge.dylib: bridge.o
-	ld -dylib -o bridge.dylib bridge.o -lc -framework AppKit 
+glop-bridge.dylib: ${OBJ}
+	ld -dylib -o glop-bridge.dylib ${OBJ} -lc -framework AppKit 
 
 clean:
-	rm -f bridge*.dylib *.o
+	rm -f *.dylib *.o
