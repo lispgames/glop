@@ -114,23 +114,27 @@ Otherwise, only one key-press event will be triggered.")
 
 ;; misc.
 (defun load-libraries ()
-  #+(and unix (not darwin))(progn (cffi:define-foreign-library xlib
-                   (t (:default "libX11")))
-               (cffi:use-foreign-library xlib)
-               (cffi:define-foreign-library opengl
-                   (t (:default "libGL")))
-               (cffi:use-foreign-library opengl))
-  #+(or win32 windows)(progn (cffi:define-foreign-library user32
-                               (t (:default "user32")))
-                             (cffi:use-foreign-library user32)
-                             (cffi:define-foreign-library kernel32
-                               (t (:default "kernel32")))
-                             (cffi:use-foreign-library kernel32)
-                             (cffi:define-foreign-library opengl
-                               (t (:default "opengl32")))
-                             (cffi:use-foreign-library opengl)
-                             (cffi:define-foreign-library gdi32
-                               (t (:default "gdi32")))
-                             (cffi:use-foreign-library gdi32)))
+  #+(and unix (not darwin))
+  (progn (cffi:define-foreign-library xlib
+           (t (:default "libX11")))
+         (cffi:use-foreign-library xlib)
+         (cffi:define-foreign-library opengl
+           (t (:or (:default "libGL")
+                   "libGL.so.1"
+                   "libGL.so.2")))
+         (cffi:use-foreign-library opengl))
+  #+(or win32 windows)
+  (progn (cffi:define-foreign-library user32
+           (t (:default "user32")))
+         (cffi:use-foreign-library user32)
+         (cffi:define-foreign-library kernel32
+           (t (:default "kernel32")))
+         (cffi:use-foreign-library kernel32)
+         (cffi:define-foreign-library opengl
+           (t (:default "opengl32")))
+         (cffi:use-foreign-library opengl)
+         (cffi:define-foreign-library gdi32
+           (t (:default "gdi32")))
+         (cffi:use-foreign-library gdi32)))
 
 
