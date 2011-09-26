@@ -62,7 +62,9 @@
   (:bad-enum))
 
 (define-foreign-library opengl
-  (t (:default "libGL")))
+  (t (:or (:default "libGL")
+          "libGL.so.1"
+          "libGL.so.2")))
 (use-foreign-library opengl)
 
 (defctype fb-config :pointer)

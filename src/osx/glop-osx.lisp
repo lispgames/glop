@@ -19,3 +19,20 @@
           collect (display-to-video-mode
                     (glop-bridge:ns-array-object-at-index
                        display-modes i)))))
+
+(defmethod open-window (window title width height
+                        &key (x 0) (y 0) (rgba t) (double-buffer t) stereo
+                        (red-size 4) (green-size 4) (blue-size 4) (alpha-size 4)
+                        (depth-size 16) accum-buffer (accum-red-size 0)
+                        (accum-green-size 0) (accum-blue-size 0) stencil-buffer
+                        (stencil-size 0))
+  (declare (ignorable
+            x y rgba double-buffer stereo red-size green-size blue-size
+            alpha-size depth-size accum-buffer accum-red-size
+            accum-green-size accum-blue-size stencil-buffer
+            stencil-size))
+  (glop-bridge:with-ns-autorelease-pool
+    (let ((window (glop-bridge:ns-window-alloc-init x y width height)))
+      (glop-bridge:ns-window-set-background-color
+        window (glop-bridge:ns-blue-color))
+      (glop-bridge:ns-window-make-key-and-order-front window))))

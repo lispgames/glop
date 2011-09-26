@@ -28,6 +28,7 @@
                       :components ((:file "package")
                                    (:file "bridge")
                                    (:file "foundation")
+                                   (:file "appkit")
                                    (:file "quartz")
                                    (:file "glop-osx")))
              #+(or win32 windows)
