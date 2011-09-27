@@ -22,6 +22,13 @@ NSColor *NSColorYellowColor () { return [NSColor yellowColor]; }
 
 
 /******************************************************************************/
+/***                               NSEvent                                  ***/
+/******************************************************************************/
+
+
+
+
+/******************************************************************************/
 /***                            NSApplication                               ***/
 /******************************************************************************/
 
@@ -40,11 +47,11 @@ void NSApplicationSharedApplication ()
 NSWindow *NSWindowAllocInit (int x, int y, int width, int height)
 {
   NSWindow *window =
-    [[[NSWindow alloc]
-        initWithContentRect:NSMakeRect(x, y, width, height)
-                  styleMask:NSClosableWindowMask | NSTitledWindowMask
-                    backing:NSBackingStoreBuffered
-                      defer:NO] autorelease];
+    [[NSWindow alloc]
+       initWithContentRect:NSMakeRect(x, y, width, height)
+                 styleMask:NSClosableWindowMask | NSTitledWindowMask
+                   backing:NSBackingStoreBuffered
+                     defer:NO];
   return window;
 }
 

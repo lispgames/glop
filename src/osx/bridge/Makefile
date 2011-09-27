@@ -1,5 +1,5 @@
 CFLAGS=-Wall
-OBJ=foundation.o appkit.o
+OBJ=foundation.o appkit.o CustomApplication.o
 
 all: glop-bridge.dylib
 
