@@ -30,6 +30,7 @@
                                    (:file "foundation")
                                    (:file "appkit")
                                    (:file "quartz")
+                                   (:file "custom-application")
                                    (:file "glop-osx")))
              #+(or win32 windows)
              (:module "win32"

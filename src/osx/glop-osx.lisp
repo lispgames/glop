@@ -36,3 +36,13 @@
       (glop-bridge:ns-window-set-background-color
         window (glop-bridge:ns-blue-color))
       (glop-bridge:ns-window-make-key-and-order-front window))))
+
+
+(defun run ()
+  (glop-bridge:with-ns-autorelease-pool
+    (let ((app (glop-bridge:custom-app-shared-application))
+          (window (glop-bridge:ns-window-alloc-init 100 100 640 480)))
+      (glop-bridge:ns-window-set-background-color
+        window (glop-bridge:ns-blue-color))
+      (glop-bridge:ns-window-make-key-and-order-front window)
+      (glop-bridge:custom-app-run app))))

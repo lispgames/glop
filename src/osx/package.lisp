@@ -31,4 +31,7 @@
            #:ns-autorelease-pool-release
            #:with-ns-autorelease-pool
            #:ns-string-c-string-using-encoding
-           #:ns-string-to-lisp-string))
+           #:ns-string-to-lisp-string
+           #:custom-app-shared-application
+           #:custom-app-run-iteration
+           #:custom-app-run))
