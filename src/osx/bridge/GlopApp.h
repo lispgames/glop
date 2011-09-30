@@ -1,11 +1,10 @@
 #import <Cocoa/Cocoa.h>
 
-@interface CustomApplication : NSApplication
+@interface GlopApp : NSApplication
 {
   bool shouldKeepRunning;
 }
 
-- (void)runIteration;
 - (void)run;
 - (void)terminate:(id)sender;
 

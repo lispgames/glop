@@ -11,9 +11,9 @@ NSAutoreleasePool *NSAutoreleasePoolAllocInit ()
   return [[NSAutoreleasePool alloc] init];
 }
 
-void NSAutoreleasePoolRelease (NSAutoreleasePool *pool)
+NSObject *NSAutorelease (NSObject *object)
 {
-  [pool release];
+  return [object autorelease];
 }
 
 /******************************************************************************/
@@ -41,4 +41,9 @@ const char *NSStringCStringUsingEncoding (NSString *string,
                                           NSStringEncoding encoding)
 {
   return [string cStringUsingEncoding:encoding];
+}
+
+NSString *NSStringAllocInitWithCString (char *string, NSStringEncoding encoding)
+{
+  return [[NSString alloc] initWithCString:string encoding:encoding];
 }

@@ -17,6 +17,7 @@
 (defcfun ("NSColorMagentaColor" ns-magenta-color) :pointer)
 (defcfun ("NSColorOrangeColor" ns-orange-color) :pointer)
 (defcfun ("NSColorPurpleColor" ns-purple-color) :pointer)
+(defcfun ("NSColorRedColor" ns-red-color) :pointer)
 (defcfun ("NSColorWhiteColor" ns-white-color) :pointer)
 (defcfun ("NSColorYellowColor" ns-yellow-color) :pointer)
 
@@ -48,3 +49,14 @@
 (defcfun ("NSWindowMakeKeyAndOrderFront" ns-window-make-key-and-order-front)
     :void
   (window :pointer))
+
+(defcfun ("NSWindowNextEvent" ns-window-next-event) :pointer
+  (window :pointer))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;                                 NSMenu                                   ;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+(defcfun ("NSMenuAllocInit" ns-menu-alloc-init) :pointer)

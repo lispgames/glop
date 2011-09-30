@@ -15,13 +15,16 @@
 
 
 (defcfun ("NSAutoreleasePoolAllocInit" ns-autorelease-pool-alloc-init) :pointer)
-(defcfun ("NSAutoreleasePoolRelease" ns-autorelease-pool-release) :void
-  (pool :pointer))
+;; release and retain are imported via CFRelease and CFRetain.
+;; See Core Foundation.
+(defcfun ("NSAutorelease" ns-autorelease)
+    :pointer
+  (object :pointer))
 (defmacro with-ns-autorelease-pool (&body body)
   (let ((pool (gensym "AUTORELEASE-POOL-")))
     `(let ((,pool (ns-autorelease-pool-alloc-init)))
        (unwind-protect (progn ,@body)
-         (ns-autorelease-pool-release ,pool)))))
+         (ns-release ,pool)))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -73,6 +76,31 @@
   (ns-string :pointer)
   (encoding ns-string-encoding))
 
+(defcfun ("NSStringAllocInitWithCString" ns-string-alloc-init-with-c-string)
+    :pointer
+  (string :string)
+  (encodign ns-string-encoding))
+
 (defun ns-string-to-lisp-string (ns-string)
   (with-ns-autorelease-pool
     (ns-string-c-string-using-encoding ns-string :iso-latin-1)))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;                             Core Foundation                              ;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+(defcfun ("CFBundleGetBundleWithIdentifier"
+          cf-bundle-get-bundle-with-identifier)
+    :pointer
+  (identifier :pointer))
+(defcfun ("CFBundleGetFunctionPointerForName"
+          cf-bundle-get-function-pointer-for-name)
+    :pointer
+  (bundle :pointer)
+  (name :pointer))
+(defcfun ("CFRetain" ns-retain) :pointer
+  (object :pointer))
+(defcfun ("CFRelease" ns-release) :pointer
+  (object :pointer))
