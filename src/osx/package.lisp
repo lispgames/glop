@@ -1,16 +1,25 @@
 (defpackage #:glop-bridge
   (:use #:cl #:cffi)
-  (:export #:main-display-id
-           #:copy-display-mode
+  (:export #:cf-bundle-get-bundle-with-identifier
+           #:cf-bundle-get-function-pointer-for-name
            #:copy-all-display-modes
-           #:mode-width
+           #:copy-display-mode
+           #:glop-app-next-event
+           #:glop-app-run
+           #:glop-app-run-iteration
+           #:glop-app-send-event
+           #:glop-app-shared-application
+           #:glop-app-update-windows
+           #:main-display-id
            #:mode-height
-           #:mode-rate
            #:mode-pixel-encoding
+           #:mode-rate
+           #:mode-width
+           #:ns-application-shared-application
            #:ns-array-count
            #:ns-array-object-at-index
-           #:ns-string-to-lisp
-           #:ns-application-shared-application
+           #:ns-autorelease
+           #:ns-autorelease-pool-alloc-init
            #:ns-black-color
            #:ns-blue-color
            #:ns-brown-color
@@ -22,16 +31,15 @@
            #:ns-magenta-color
            #:ns-orange-color
            #:ns-purple-color
-           #:ns-white-color
-           #:ns-yellow-color
-           #:ns-window-alloc-init
-           #:ns-window-set-background-color
-           #:ns-window-make-key-and-order-front
-           #:ns-autorelease-pool-alloc-init
-           #:ns-autorelease-pool-release
-           #:with-ns-autorelease-pool
+           #:ns-release
+           #:ns-retain
+           #:ns-string-alloc-init-with-c-string
            #:ns-string-c-string-using-encoding
+           #:ns-string-to-lisp
            #:ns-string-to-lisp-string
-           #:custom-app-shared-application
-           #:custom-app-run-iteration
-           #:custom-app-run))
+           #:ns-white-color
+           #:ns-window-alloc-init
+           #:ns-window-make-key-and-order-front
+           #:ns-window-set-background-color
+           #:ns-yellow-color
+           #:with-ns-autorelease-pool))

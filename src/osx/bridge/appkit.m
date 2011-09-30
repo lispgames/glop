@@ -17,6 +17,7 @@ NSColor *NSColorLightGrayColor () { return [NSColor lightGrayColor]; }
 NSColor *NSColorMagentaColor () { return [NSColor magentaColor]; }
 NSColor *NSColorOrangeColor () { return [NSColor orangeColor]; }
 NSColor *NSColorPurpleColor () { return [NSColor purpleColor]; }
+NSColor *NSColorRedColor () { return [NSColor redColor]; }
 NSColor *NSColorWhiteColor () { return [NSColor whiteColor]; }
 NSColor *NSColorYellowColor () { return [NSColor yellowColor]; }
 
@@ -64,3 +65,32 @@ void NSWindowMakeKeyAndOrderFront (NSWindow *window, id sender)
 {
   [window makeKeyAndOrderFront:sender];
 }
+
+NSEvent *NSWindowNextEvent (NSWindow *window)
+{
+  return [window nextEventMatchingMask:NSAnyEventMask];
+}
+
+
+/******************************************************************************/
+/***                               NSMenu                                   ***/
+/******************************************************************************/
+
+
+NSMenu *NSMenuAllocInit (NSString *title)
+{
+  return [[[NSMenu alloc] initWithTitle:title] autorelease];
+}
+
+void NSMenuAddItem (NSMenu *menu, NSMenuItem *item)
+{
+  [menu addItem:item];
+}
+
+
+/******************************************************************************/
+/***                             NSMenuItem                                 ***/
+/******************************************************************************/
+
+
+//NSMenuItem *NSMenuItemInitWithTitle (NSString *title)
