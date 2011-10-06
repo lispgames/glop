@@ -34,8 +34,15 @@
   (index -1 :type integer))
 
 #+darwin
-(defclass osx-window (window)
-  ())
+(defclass osx-window ()
+  ((ns-window :initform nil
+              :accessor ns-window)
+   (gl-view :initform nil
+            :accessor gl-view)
+   (responder :initform nil
+              :accessor responder)
+   (pixel-format-list :initform '()
+                      :accessor pixel-format-list)))
 
 #+darwin
 (defstruct (osx-video-mode (:include video-mode))
@@ -44,7 +51,8 @@
 ;; base window structure
 ;; you may inherit your own window class from this
 (defclass window (#+(and unix (not darwin)) x11-window
-                  #+(or win32 windows) win32-window)
+                  #+(or win32 windows) win32-window
+                  #+darwin osx-window)
   ((x :initform 0 :initarg :x :accessor window-x)
    (y :initform 0 :initarg :y :accessor window-y)
    (width :initform 100 :initarg :width :accessor window-width)

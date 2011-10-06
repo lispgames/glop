@@ -6,6 +6,11 @@ NSApplication *GlopAppSharedApplication ()
   return [GlopApp sharedApplication];
 }
 
+void GlopAppSetMainMenu (GlopApp *app, NSMenu *menu)
+{
+  [app setMainMenu:menu];
+}
+
 NSEvent *GlopAppNextEvent (GlopApp *app, bool blocking)
 {
   return [app nextEventMatchingMask:NSAnyEventMask
