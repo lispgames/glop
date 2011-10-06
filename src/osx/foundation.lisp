@@ -7,6 +7,21 @@
 
 
 (defctype ns-uinteger #+x86-64 :ulong #-x86-64 :uint)
+(defctype ns-integer #+x86-64 :long #-x86-64 :int)
+(defctype cg-float #+x86-64 :double #-x86-64 :float)
+
+(defcstruct ns-point
+  (x cg-float)
+  (y cg-float))
+
+;; (define-foreign-type ns-point-type ()
+;;   ()
+;;   (:actual-type ns-point-struct)
+;;   (:simple-parser ns-point))
+
+;; (defmethod translate-from-foreign (value (type ns-point-type))
+;;   (with-foreign-slots ((x y) value ns-point-struct)
+;;     (list x y)))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -16,7 +31,7 @@
 
 (defcfun ("NSAutoreleasePoolAllocInit" ns-autorelease-pool-alloc-init) :pointer)
 ;; release and retain are imported via CFRelease and CFRetain.
-;; See Core Foundation.
+;; See Core Foundation below.
 (defcfun ("NSAutorelease" ns-autorelease)
     :pointer
   (object :pointer))
@@ -85,6 +100,14 @@
   (with-ns-autorelease-pool
     (ns-string-c-string-using-encoding ns-string :iso-latin-1)))
 
+(defmacro with-ns-strings ((&rest vars-and-strings) &body body)
+  `(with-ns-autorelease-pool
+     (let ,(loop for (var string) in vars-and-strings
+                 collect `(,var (ns-autorelease
+                                  (ns-string-alloc-init-with-c-string
+                                    ,string :iso-latin-1))))
+       ,@body)))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;                             Core Foundation                              ;;;
@@ -104,3 +127,15 @@
   (object :pointer))
 (defcfun ("CFRelease" ns-release) :pointer
   (object :pointer))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;                            General Functions                             ;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+(defcfun ("NSSelectorFromString" %ns-selector-from-string) :pointer
+  (string :pointer))
+(defun ns-selector-from-string (string)
+  (with-ns-strings ((ns-string string))
+    (%ns-selector-from-string ns-string)))

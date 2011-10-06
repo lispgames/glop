@@ -26,11 +26,14 @@
              (:module "osx"
                       :serial t
                       :components ((:file "package")
+                                   (:file "carbon")
+                                   (:file "quartz")
                                    (:file "bridge")
                                    (:file "foundation")
                                    (:file "appkit")
-                                   (:file "quartz")
                                    (:file "glop-app")
+                                   (:file "glop-window-responder")
+                                   (:file "glop-gl-view")
                                    (:file "glop-osx")))
              #+(or win32 windows)
              (:module "win32"
