@@ -78,4 +78,8 @@
            #:ns-event-location-in-window
            #:ns-event-delta-x
            #:ns-event-delta-y
-           #:ns-event-button-number))
+           #:ns-event-button-number
+           #:ns-opengl-context-flush-buffer
+           #:ns-event-key-code
+           #:ns-event-modifier-flags
+           #:ns-window-discard-remaining-events))

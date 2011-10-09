@@ -64,6 +64,138 @@
 (defun ns-event-type (event)
   (foreign-enum-keyword 'ns-event-type (%ns-event-type event)))
 
+(defcenum ns-key-code
+  :A
+  :S
+  :D
+  :F
+  :H
+  :G
+  :Z
+  :X
+  :C
+  :V
+  (:B 11)
+  :Q
+  :W
+  :E
+  :R
+  :Y
+  :T
+  :1
+  :2
+  :3
+  :4
+  :6
+  :5
+  :|=|
+  :9
+  :7
+  :|-|
+  :8
+  :0
+  :|]|
+  :O
+  :U
+  :|[|
+  :I
+  :P
+  :enter
+  :L
+  :J
+  :|'|
+  :K
+  (:|;| 41)
+  :|\\|
+  :|,|
+  :|/|
+  :N
+  :M
+  :|.|
+  :tab
+  :space
+  :|`|
+  (:backspace 51)
+  :esc
+  (:rsuper 54)
+  :lsuper
+  :lshift
+  :caps-lock
+  :lalt
+  :lctrl
+  :rshift
+  :ralt
+  :rctrl
+  (:f17 64)
+  :kp-decimal
+  (:kp-multiply 67)
+  (:kp-add 69)
+  (:kp-divide 75)
+  :kp-enter
+  (:kp-subtract 78)
+  :f18
+  :f19
+  :kp-equal
+  :kp-0
+  :kp-1
+  :kp-2
+  :kp-3
+  :kp-4
+  :kp-5
+  :kp-6
+  :kp-7
+  :f20
+  :kp-8
+  :kp-9
+  (:f5 96)
+  :f6
+  :f7
+  :f3
+  :f8
+  :f9
+  (:f11 103)
+  (:f13 105)
+  :f16
+  :f14
+  (:f10 109)
+  (:f12 111)
+  (:f15 113)
+  :insert 
+  :home
+  :pageup
+  :del
+  :f4
+  :end
+  :f2
+  :pagedown
+  :f1
+  :left
+  :right
+  :down
+  :up)
+
+(defcfun ("NSEventKeyCode" %ns-event-key-code) :uint16
+  (event :pointer))
+
+(defun ns-event-key-code (event)
+  (let* ((code (%ns-event-key-code event))
+         (key (foreign-enum-keyword 'ns-key-code code :errorp nil)))
+    (if key key :unknown)))
+
+(defbitfield ns-modifier-flags
+  (:caps-lock #x10000)
+  (:shift #x20000)
+  (:control #x40000)
+  (:alt #x80000)
+  (:special #x100000)
+  (:num-lock #x110000)
+  (:help #x120000)
+  (:function #x140000)
+  (:device-independant #xffff0000))
+
+(defcfun ("NSEventModifierFlags" ns-event-modifier-flags) ns-modifier-flags
+  (event :pointer))
+
 (defcfun ("NSEventWindow" ns-event-window) :pointer
   (event :pointer))
 
@@ -155,6 +287,10 @@
     :void
   (window :pointer)
   (accept-events :boolean))
+
+(defcfun ("NSWindowDiscardRemainingEvents" ns-window-discard-remaining-events)
+    :void
+  (window :pointer))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -273,4 +409,7 @@
 
 
 (defcfun ("NSOpenGLContextClearDrawable" ns-opengl-context-clear-drawable) :void
+  (context :pointer))
+
+(defcfun ("NSOpneGLContextFlushBuffer" ns-opengl-context-flush-buffer) :void
   (context :pointer))
