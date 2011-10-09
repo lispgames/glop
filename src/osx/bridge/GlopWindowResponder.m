@@ -58,6 +58,11 @@
   eventCallback(event);
 }
 
+- (void)flagsChanged:(NSEvent *)event
+{
+  eventCallback(event);
+}
+
 /*
 - (void)mouseDragged:(NSEvent *)event
 {

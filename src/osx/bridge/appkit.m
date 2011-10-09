@@ -32,6 +32,16 @@ NSUInteger NSEventGetType (NSEvent *event)
   return [event type];
 }
 
+unsigned short NSEventKeyCode (NSEvent *event)
+{
+  return [event keyCode];
+}
+
+NSUInteger NSEventModifierFlags (NSEvent *event)
+{
+  return [event modifierFlags];
+}
+
 NSWindow *NSEventWindow (NSEvent *event)
 {
   return [event window];
@@ -140,6 +150,12 @@ void NSWindowSetAcceptsMouseMovedEvents (NSWindow *window, BOOL acceptEvents)
   [window setAcceptsMouseMovedEvents:acceptEvents];
 }
 
+void NSWindowDiscardRemainingEvents (NSWindow *window)
+{
+  [window discardEventsMatchingMask:NSAnyEventMask
+          beforeEvent:nil];
+}
+
 /******************************************************************************/
 /***                                NSMenu                                  ***/
 /******************************************************************************/
@@ -197,4 +213,9 @@ NSOpenGLPixelFormat *NSOpenGLPixelFormatInit
 void NSOpenGLContextClearDrawable (NSOpenGLContext *context)
 {
   [context clearDrawable];
+}
+
+void NSOpenGLContextFlushBuffer (NSOpenGLContext *context)
+{
+  [context flushBuffer];
 }

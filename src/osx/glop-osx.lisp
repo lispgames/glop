@@ -3,7 +3,15 @@
 (defparameter *autorelease-pool* nil)
 (defparameter *opengl-bundle* nil)
 (defparameter *main-menu* nil)
-(defparameter *event-stack* '())
+(defparameter *event-stacks* (make-hash-table))
+(defparameter *active-modifiers* '())
+
+(defun event-stack (ns-window)
+  (gethash (cffi:pointer-address ns-window) *event-stacks*))
+
+(defsetf event-stack (ns-window) (value)
+  `(setf (gethash (cffi:pointer-address ,ns-window) *event-stacks*)
+         ,value))
 
 (defun release-global-autorelease-pool ()
   (when *autorelease-pool*
@@ -58,36 +66,48 @@
   (let ((display-modes (glop-bridge:copy-all-display-modes
                         (glop-bridge:main-display-id) (cffi:null-pointer))))
     (loop for i below (glop-bridge:ns-array-count display-modes)
-          collect (display-to-video-modepress-event
+          collect (display-to-video-mode
                     (glop-bridge:ns-array-object-at-index
                        display-modes i)))))
 
 (cffi:defcallback push-event-to-stack :void ((ns-event :pointer))
-  (let ((event
-         (case (glop-bridge:ns-event-type ns-event)
-           (:key-down
-            (make-instance 'key-press-event
-              :pressed t
-              :keysym :foo
-              :keycode 0))
-           (:mouse-moved
-            (destructuring-bind (x y)
-                (glop-bridge:ns-event-location-in-window ns-event)
-              (make-instance 'mouse-motion-event
-                :x x
-                :y y
-                :dx (glop-bridge:ns-event-delta-x ns-event)
-                :dy (glop-bridge:ns-event-delta-y ns-event))))
-           ((:left-mouse-down :right-mouse-down :other-mouse-down)
-            (make-instance 'button-press-event
-              :button (glop-bridge:ns-event-button-number ns-event)
-              :pressed t))
-           ((:left-mouse-up :right-mouse-up :other-mouse-up)
-            (make-instance 'button-release-event
-              :button (glop-bridge:ns-event-button-number ns-event)
-              :pressed nil)))))
+  (let* ((event-type (glop-bridge:ns-event-type ns-event))
+         (event
+          (case event-type
+            ((:key-down :key-up)
+             (let ((pressed (eq event-type :key-down)))
+               (make-instance (if pressed 'key-press-event 'key-release-event)
+                 :pressed pressed
+                 :keysym (glop-bridge:ns-event-key-code ns-event)
+                 :keycode 0)))
+            (:flags-changed
+             (let* ((keysym (glop-bridge:ns-event-key-code ns-event))
+                    (pressed (null (find keysym *active-modifiers*))))
+               (if pressed
+                   (push keysym *active-modifiers*)
+                   (setf *active-modifiers* (delete keysym *active-modifiers*)))
+               (make-instance (if pressed 'key-press-event 'key-release-event)
+                 :pressed pressed
+                 :keysym keysym
+                 :keycode 0)))
+            (:mouse-moved
+             (destructuring-bind (x y)
+                 (glop-bridge:ns-event-location-in-window ns-event)
+               (make-instance 'mouse-motion-event
+                 :x x
+                 :y y
+                 :dx (glop-bridge:ns-event-delta-x ns-event)
+                 :dy (glop-bridge:ns-event-delta-y ns-event))))
+            ((:left-mouse-down :right-mouse-down :other-mouse-down)
+             (make-instance 'button-press-event
+               :button (glop-bridge:ns-event-button-number ns-event)
+               :pressed t))
+            ((:left-mouse-up :right-mouse-up :other-mouse-up)
+             (make-instance 'button-release-event
+               :button (glop-bridge:ns-event-button-number ns-event)
+               :pressed nil)))))
     (when event
-      (push event *event-stack*))))
+      (push event (event-stack (glop-bridge:ns-event-window ns-event))))))
 
 (defmethod open-window ((window osx-window) title width height
                         &key (x 0) (y 0) (rgba t) (double-buffer t) stereo
@@ -117,7 +137,9 @@
       (setf ns-window
             (glop-bridge:ns-window-alloc-init
               x (- (+ (video-mode-height (current-video-mode)) height) y)
-              width height))
+              width height)
+            (event-stack ns-window) '())
+      (glop-bridge:ns-window-discard-remaining-events ns-window)
       (glop-bridge:ns-window-set-delegate ns-window responder)
       (glop-bridge:ns-window-set-accepts-mouse-moved-events ns-window t)
       (glop-bridge:ns-window-set-next-responder ns-window responder)
@@ -134,7 +156,9 @@
   (glop-bridge:ns-window-order-out (ns-window window) glop-bridge:*ns-app*))
 
 (defmethod close-window ((window osx-window))
-  (glop-bridge:ns-window-close (ns-window window)))
+  (with-accessors ((ns-window ns-window)) window
+    (remhash (cffi:pointer-address (ns-window window)) *event-stacks*)
+    (glop-bridge:ns-window-close ns-window)))
 
 (defmethod create-gl-context ((window osx-window)
                               &key make-current major minor forward-compat
@@ -157,19 +181,22 @@
   (glop-bridge:ns-opengl-context-clear-drawable context)
   (glop-bridge:ns-release context))
 
+(defmethod swap-buffers ((window osx-window))
+  (glop-bridge:ns-opengl-context-flush-buffer (gl-context window)))
+
 (defmethod set-fullscreen ((window osx-window) &optional state)
   (declare (ignorable window state)))
 
 (defun %next-event (win &key blocking)
   (loop
+     for ns-window = (ns-window win)
      for event = (glop-bridge:glop-app-next-event glop-bridge:*ns-app* blocking)
-     for found = (cffi:pointer-eq (ns-window win)
-                                  (glop-bridge:ns-event-window event))
+     for found = (cffi:pointer-eq ns-window (glop-bridge:ns-event-window event))
      do (progn (glop-bridge:glop-app-send-event glop-bridge:*ns-app* event)
                (glop-bridge:glop-app-update-windows))
-     while (and blocking (not found))
-     finally (when (and *event-stack* found)
-               (return (pop *event-stack*)))))
+     while (and blocking (or (not found) (null (event-stack ns-window))))
+     finally (when found
+               (return (pop (event-stack ns-window))))))
 
 (defun gl-get-proc-address (proc-name)
   (init-opengl-bundle)
