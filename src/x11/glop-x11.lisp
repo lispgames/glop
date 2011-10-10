@@ -129,12 +129,13 @@
             win
           (setf display (glop-xlib:x-open-display)
                 screen 0)
-          ;; FIXME: something like defglextfun from cl-opengl would be nice for extensions
-          ;; FIXME: all the fb config stuff should be checked as extensions too
-          (if (cffi::null-pointer-p (gl-get-proc-address "glXCreateContextAttribsARB"))
-              (setf visual-infos (glop-glx:glx-choose-visual display screen attribs))
-              (setf fb-config (glop-glx:glx-choose-fb-config display screen attribs)
-                    visual-infos (glop-glx:glx-get-visual-from-fb-config display fb-config)))
+          (multiple-value-bind (glx-major glx-minor)
+              (glop-glx:glx-get-version display)
+            (if (and (>= glx-major 1)
+                     (>= glx-minor 3))
+                (setf fb-config (glop-glx:glx-choose-fb-config display screen attribs)
+                      visual-infos (glop-glx:glx-get-visual-from-fb-config display fb-config))
+                (setf visual-infos (glop-glx:glx-choose-visual display screen attribs))))
           (setf id (glop-xlib:x-create-window display
                                               (glop-xlib:x-default-root-window display)
                                               x y width height visual-infos))
