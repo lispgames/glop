@@ -60,19 +60,14 @@
            #:transform-current-process-type
            #:transform-process-type
            #:with-ns-autorelease-pool
-           #:with-ns-strings
-           #:glop-gl-view-init
+           #:glop-view-init
            #:ns-window-set-content-view
            #:ns-opengl-pixel-format-init
-           #:glop-gl-view-opengl-context
-           #:glop-gl-view-set-opengl-context
-           #:glop-gl-view-clear-gl-context
            #:ns-opengl-context-clear-drawable
            #:ns-event-type
            #:glop-window-responder-init
            #:ns-window-set-delegate
            #:ns-window-set-next-responder
-           #:glop-gl-view-set-next-responder
            #:ns-window-set-accepts-mouse-moved-events
            #:ns-event-window
            #:ns-event-location-in-window
@@ -82,4 +77,9 @@
            #:ns-opengl-context-flush-buffer
            #:ns-event-key-code
            #:ns-event-modifier-flags
-           #:ns-window-discard-remaining-events))
+           #:ns-window-discard-remaining-events
+           #:ns-opengl-context-init
+           #:ns-opengl-context-set-view
+           #:ns-event-key-sym
+           #:ns-event-characters
+           #:keysym))

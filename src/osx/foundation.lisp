@@ -60,11 +60,17 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
+(define-foreign-type ns-string-type ()
+  ((ns-string :initform nil
+              :accessor ns-string))
+  (:actual-type :pointer)
+  (:simple-parser ns-string))
+
 (defcenum ns-string-encoding
   (:ascii 1)
   (:nextstep 2)
   (:japanese-euc 3)
-  (:utf8 4)
+  (:utf-8 4)
   (:iso-latin-1 5)
   (:symbol 6)
   (:non-lossy-ascii 7)
@@ -78,12 +84,12 @@
   (:windows-cp-1250 15)
   (:iso-2022-jp 21)
   (:mac-os-roman 30)
-  (:utf16 10)
-  (:utf16-big-endian #x90000100)
-  (:utf16-little-endian #x94000100)
-  (:utf32 #x8c000100)
-  (:utf32-big-endian #x98000100)
-  (:utf32-little-endian #x9c000100)
+  (:utf-16 10)
+  (:utf-16-big-endian #x90000100)
+  (:utf-16-little-endian #x94000100)
+  (:utf-32 #x8c000100)
+  (:utf-32-big-endian #x98000100)
+  (:utf-32-little-endian #x9c000100)
   (:proprietary 65536))
 
 (defcfun ("NSStringCStringUsingEncoding" ns-string-c-string-using-encoding)
@@ -96,17 +102,21 @@
   (string :string)
   (encodign ns-string-encoding))
 
-(defun ns-string-to-lisp-string (ns-string)
-  (with-ns-autorelease-pool
-    (ns-string-c-string-using-encoding ns-string :iso-latin-1)))
+(defmethod translate-from-foreign (ns-string (type ns-string-type))
+  (ns-string-c-string-using-encoding ns-string :utf-8))
 
-(defmacro with-ns-strings ((&rest vars-and-strings) &body body)
-  `(with-ns-autorelease-pool
-     (let ,(loop for (var string) in vars-and-strings
-                 collect `(,var (ns-autorelease
-                                  (ns-string-alloc-init-with-c-string
-                                    ,string :iso-latin-1))))
-       ,@body)))
+(defmethod translate-to-foreign (lisp-string (type ns-string-type))
+  (let ((buffer-size (1+ (length lisp-string))))
+    (with-foreign-object (buffer :char buffer-size)
+      (setf (ns-string type)
+            (ns-string-alloc-init-with-c-string
+              (lisp-string-to-foreign lisp-string buffer buffer-size
+                                      :encoding :utf-8)
+              :utf-8)))))
+
+(defmethod free-translated-object (pointer (type ns-string-type) param)
+  (declare (ignore param))
+  (ns-release (ns-string type)))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -134,8 +144,5 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
-(defcfun ("NSSelectorFromString" %ns-selector-from-string) :pointer
-  (string :pointer))
-(defun ns-selector-from-string (string)
-  (with-ns-strings ((ns-string string))
-    (%ns-selector-from-string ns-string)))
+(defcfun ("NSSelectorFromString" ns-selector-from-string) :pointer
+  (string ns-string))

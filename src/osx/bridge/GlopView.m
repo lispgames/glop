@@ -1,11 +1,26 @@
-#import "GlopWindowResponder.h"
+#import "GlopView.h"
 
-@implementation GlopWindowResponder
+@implementation GlopView
 
-- (id)initWithEventCallback:(GlopEventCallback)callback
+- (id)initWithEventCallback:(GlopEventCallback)callback;
 {
   eventCallback = callback;
   return [self init];
+}
+
+- (BOOL)acceptsFirstResponder
+{
+  return YES;
+}
+
+- (BOOL)canBecomeKeyView
+{
+  return YES;
+}
+
+- (BOOL)isOpaque
+{
+  return YES;
 }
 
 - (void)keyUp:(NSEvent *)event
@@ -63,40 +78,15 @@
   eventCallback(event);
 }
 
-/*
-- (void)mouseDragged:(NSEvent *)event
-{
-  eventCallback(event);
-}
-
-- (void)rightMouseDragged:(NSEvent *)event
-{
-  eventCallback(event);
-}
-
-- (void)otherMouseDragged:(NSEvent *)event
-{
-  eventCallback(event);
-}
-
-- (void)mouseEntered:(NSEvent *)event
-{
-  eventCallback(event);
-}
-
-- (void)mouseExited:(NSEvent *)event
-{
-  eventCallback(event);
-}
-*/
-
 - (void)windowWillClose:(NSNotification *)notification
 {
 }
 
 @end
 
-GlopWindowResponder *GlopWindowResponderInit (GlopEventCallback callback)
+
+GlopView *GlopViewInit (GlopEventCallback callback)
 {
-  return [[GlopWindowResponder alloc] initWithEventCallback:callback];
+  return [[GlopView alloc] initWithEventCallback:callback];
 }
+

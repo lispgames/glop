@@ -4,7 +4,6 @@
 (defparameter *opengl-bundle* nil)
 (defparameter *main-menu* nil)
 (defparameter *event-stacks* (make-hash-table))
-(defparameter *active-modifiers* '())
 
 (defun event-stack (ns-window)
   (gethash (cffi:pointer-address ns-window) *event-stacks*))
@@ -75,21 +74,25 @@
          (event
           (case event-type
             ((:key-down :key-up)
-             (let ((pressed (eq event-type :key-down)))
-               (make-instance (if pressed 'key-press-event 'key-release-event)
-                 :pressed pressed
-                 :keysym (glop-bridge:ns-event-key-code ns-event)
-                 :keycode 0)))
+             (let ((keycode (glop-bridge:ns-event-key-code ns-event))
+                   (pressed (eq event-type :key-down)))
+               (unless (and *ignore-auto-repeat*
+                            (eq (key-pressed keycode) pressed))
+                 (setf (key-pressed keycode) pressed)
+                 (make-instance (if pressed 'key-press-event 'key-release-event)
+                   :pressed pressed
+                   :keycode keycode
+                   :keysym (glop-bridge:keysym keycode)
+                   :text (glop-bridge:ns-event-characters ns-event)))))
             (:flags-changed
-             (let* ((keysym (glop-bridge:ns-event-key-code ns-event))
-                    (pressed (null (find keysym *active-modifiers*))))
-               (if pressed
-                   (push keysym *active-modifiers*)
-                   (setf *active-modifiers* (delete keysym *active-modifiers*)))
+             (let* ((keycode (glop-bridge:ns-event-key-code ns-event))
+                    (pressed (not (key-pressed keycode))))
+               (setf (key-pressed keycode) pressed)
                (make-instance (if pressed 'key-press-event 'key-release-event)
                  :pressed pressed
-                 :keysym keysym
-                 :keycode 0)))
+                 :keysym (glop-bridge:keysym keycode)
+                 :keycode keycode
+                 :text "")))
             (:mouse-moved
              (destructuring-bind (x y)
                  (glop-bridge:ns-event-location-in-window ns-event)
@@ -131,19 +134,19 @@
     (when double-buffer (push :double-buffer pf-list))
     (when stereo (push :stereo pf-list))
     (setf (pixel-format-list window) pf-list))
-  (with-accessors ((ns-window ns-window)) window
-    (let ((responder (glop-bridge:glop-window-responder-init
-                      (cffi:callback push-event-to-stack))))
-      (setf ns-window
-            (glop-bridge:ns-window-alloc-init
-              x (- (+ (video-mode-height (current-video-mode)) height) y)
-              width height)
-            (event-stack ns-window) '())
-      (glop-bridge:ns-window-discard-remaining-events ns-window)
-      (glop-bridge:ns-window-set-delegate ns-window responder)
-      (glop-bridge:ns-window-set-accepts-mouse-moved-events ns-window t)
-      (glop-bridge:ns-window-set-next-responder ns-window responder)
-      (glop-bridge:ns-window-set-title ns-window title))))
+  (with-accessors ((ns-window ns-window) (gl-view gl-view)) window
+    (setf gl-view
+          (glop-bridge:glop-view-init (cffi:callback push-event-to-stack))
+          ns-window
+          (glop-bridge:ns-window-alloc-init
+            x (- (+ (video-mode-height (current-video-mode)) height) y)
+            width height)
+          (event-stack ns-window) '())
+    (glop-bridge:ns-window-discard-remaining-events ns-window)
+    (glop-bridge:ns-window-set-accepts-mouse-moved-events ns-window t)
+    (glop-bridge:ns-window-set-content-view ns-window gl-view)
+    (glop-bridge:ns-window-set-delegate ns-window gl-view)
+    (glop-bridge:ns-window-set-title ns-window title)))
 
 (defmethod set-window-title ((window osx-window) title)
   (glop-bridge:ns-window-set-title (ns-window window) title))
@@ -172,10 +175,8 @@
       (let ((pixel-format (glop-bridge:ns-autorelease
                             (glop-bridge:ns-opengl-pixel-format-init
                               pixel-format-list))))
-        (setf gl-view (glop-bridge:glop-gl-view-init 0 0 width height
-                                                     pixel-format)
-              gl-context (glop-bridge:glop-gl-view-opengl-context gl-view))))
-    (glop-bridge:ns-window-set-content-view ns-window gl-view)))
+        (setf gl-context (glop-bridge:ns-opengl-context-init pixel-format))))
+    (glop-bridge:ns-opengl-context-set-view gl-context gl-view)))
 
 (defmethod destroy-gl-context (context)
   (glop-bridge:ns-opengl-context-clear-drawable context)

@@ -67,6 +67,11 @@ CGFloat NSEventDeltaY (NSEvent *event)
   return [event deltaY];
 }
 
+NSString *NSEventCharacters (NSEvent *event)
+{
+  return [event characters];
+}
+
 
 /******************************************************************************/
 /***                            NSApplication                               ***/
@@ -209,6 +214,17 @@ NSOpenGLPixelFormat *NSOpenGLPixelFormatInit
 /***                           NSOpenGLContext                              ***/
 /******************************************************************************/
 
+
+NSOpenGLContext *NSOpenGLContextInit (NSOpenGLPixelFormat *format)
+{
+  return [[NSOpenGLContext alloc] initWithFormat:format
+                                    shareContext:nil];
+}
+
+void NSOpenGLContextSetView (NSOpenGLContext *context, NSView *view)
+{
+  [context setView:view];
+}
 
 void NSOpenGLContextClearDrawable (NSOpenGLContext *context)
 {

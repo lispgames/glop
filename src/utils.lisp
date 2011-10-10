@@ -79,10 +79,8 @@ Otherwise, only one key-press event will be triggered.")
 (defun key-pressed (keycode)
   (aref %key-states% keycode))
 
-(defun %set-key-pressed (keycode value)
-  (setf (aref %key-states% keycode) value))
-
-(defsetf key-pressed %set-key-pressed)
+(defsetf key-pressed (keycode) (value)
+  `(setf (aref %key-states% ,keycode) ,value))
 
 ;; Helper macros from bordeaux-threads
 ;; http://common-lisp.net/project/bordeaux-threads/
