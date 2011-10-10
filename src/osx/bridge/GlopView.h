@@ -1,9 +1,9 @@
-#import <Appkit/Appkit.h>
+#import <Cocoa/Cocoa.h>
 
 typedef void(*GlopEventCallback)(NSEvent*);
 
 
-@interface GlopWindowResponder : NSResponder <NSWindowDelegate>
+@interface GlopView : NSView <NSWindowDelegate>
 {
   GlopEventCallback eventCallback;
 }

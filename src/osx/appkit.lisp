@@ -65,23 +65,23 @@
   (foreign-enum-keyword 'ns-event-type (%ns-event-type event)))
 
 (defcenum ns-key-code
-  :A
-  :S
-  :D
-  :F
-  :H
-  :G
-  :Z
-  :X
-  :C
-  :V
-  (:B 11)
-  :Q
-  :W
-  :E
-  :R
-  :Y
-  :T
+  :a
+  :s
+  :d
+  :f
+  :h
+  :g
+  :z
+  :x
+  :c
+  :v
+  (:b 11)
+  :q
+  :w
+  :e
+  :r
+  :y
+  :t
   :1
   :2
   :3
@@ -95,38 +95,39 @@
   :8
   :0
   :|]|
-  :O
-  :U
+  :o
+  :u
   :|[|
-  :I
-  :P
-  :enter
-  :L
-  :J
+  :i
+  :p
+  :return
+  :l
+  :j
   :|'|
-  :K
+  :k
   (:|;| 41)
   :|\\|
   :|,|
   :|/|
-  :N
-  :M
+  :n
+  :m
   :|.|
   :tab
   :space
   :|`|
   (:backspace 51)
-  :esc
-  (:rsuper 54)
-  :lsuper
-  :lshift
+  (:escape 53)
+  :super-r
+  :super-l
+  :shift-l
   :caps-lock
-  :lalt
-  :lctrl
-  :rshift
-  :ralt
-  :rctrl
-  (:f17 64)
+  :alt-l
+  :ctrl-l
+  :shift-r
+  :alt-r
+  :ctrl-r
+  (:function 63)
+  :f17
   :kp-decimal
   (:kp-multiply 67)
   (:kp-add 69)
@@ -162,24 +163,23 @@
   (:f15 113)
   :insert 
   :home
-  :pageup
-  :del
+  :page-up
+  :delete
   :f4
   :end
   :f2
-  :pagedown
+  :page-down
   :f1
   :left
   :right
   :down
   :up)
 
-(defcfun ("NSEventKeyCode" %ns-event-key-code) :uint16
+(defcfun ("NSEventKeyCode" ns-event-key-code) :uint16
   (event :pointer))
 
-(defun ns-event-key-code (event)
-  (let* ((code (%ns-event-key-code event))
-         (key (foreign-enum-keyword 'ns-key-code code :errorp nil)))
+(defun keysym (code)
+  (let* ((key (foreign-enum-keyword 'ns-key-code code :errorp nil)))
     (if key key :unknown)))
 
 (defbitfield ns-modifier-flags
@@ -219,6 +219,8 @@
 (defcfun ("NSEventDeltaY" ns-event-delta-y) cg-float
   (event :pointer))
 
+(defcfun ("NSEventCharacters" ns-event-characters) ns-string
+  (event :pointer))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;                             NSApplication                                ;;;
@@ -240,12 +242,9 @@
   (width :int)
   (height :int))
 
-(defcfun ("NSWindowSetTitle" %ns-window-set-title) :pointer
+(defcfun ("NSWindowSetTitle" ns-window-set-title) :void
   (window :pointer)
-  (title :pointer))
-(defun ns-window-set-title (window title)
-  (with-ns-strings ((ns-title title))
-    (%ns-window-set-title window ns-title)))
+  (title ns-string))
 
 (defcfun ("NSWindowSetBackgroundColor" ns-window-set-background-color) :void
   (window :pointer)
@@ -298,34 +297,23 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
-(defcfun ("NSMenuAllocInit" %ns-menu-alloc-init) :pointer
-  (title :pointer))
-(defun ns-menu-alloc-init (title)
-  (with-ns-strings ((ns-str-title title))
-    (%ns-menu-alloc-init ns-str-title)))
+(defcfun ("NSMenuAllocInit" ns-menu-alloc-init) :pointer
+  (title ns-string))
 
 (defcfun ("NSMenuAddItem" ns-menu-add-item) :void
   (menu :pointer)
   (item :pointer))
 
-(defcfun ("NSMenuAddItemWithTitle" %ns-menu-add-item-with-title) :void
+(defcfun ("NSMenuAddItemWithTitle" ns-menu-add-item-with-title) :void
   (menu :pointer)
-  (title :pointer)
+  (title ns-string)
   (selector :pointer)
-  (key-equiv :pointer))
-(defun ns-menu-add-item-with-title (menu title selector key-equiv)
-  (with-ns-strings ((ns-str-title title)
-                    (ns-str-key-equiv key-equiv))
-    (%ns-menu-add-item-with-title menu ns-str-title selector ns-str-key-equiv)))
+  (key-equiv ns-string))
 
-(defcfun ("NSMenuItemAllocInit" %ns-menu-item-alloc-init) :void
-  (title :pointer)
+(defcfun ("NSMenuItemAllocInit" ns-menu-item-alloc-init) :void
+  (title ns-string)
   (selector :pointer)
-  (key-equiv :pointer))
-(defun ns-menu-item-alloc-init (title selector key-equiv)
-  (with-ns-strings ((ns-str-title title)
-                    (ns-str-key-equiv key-equiv))
-    (%ns-menu-item-alloc-init ns-str-title selector ns-str-key-equiv)))
+  (key-equiv ns-string))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -407,6 +395,13 @@
 ;;;                             NSOpenGLContext                              ;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+
+(defcfun ("NSOpenGLContextInit" ns-opengl-context-init) :pointer
+  (format :pointer))
+
+(defcfun ("NSOpenGLContextSetView" ns-opengl-context-set-view) :void
+  (context :pointer)
+  (view :pointer))
 
 (defcfun ("NSOpenGLContextClearDrawable" ns-opengl-context-clear-drawable) :void
   (context :pointer))

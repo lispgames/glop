@@ -18,7 +18,5 @@
   (mode :pointer))
 (defcfun ("CGDisplayModeGetRefreshRate" mode-rate) :double
   (mode :pointer))
-(defcfun ("CGDisplayModeCopyPixelEncoding" %mode-pixel-encoding) :pointer
+(defcfun ("CGDisplayModeCopyPixelEncoding" mode-pixel-encoding) ns-string
   (mode :pointer))
-(defun mode-pixel-encoding (mode)
-  (ns-string-to-lisp-string (%mode-pixel-encoding mode)))

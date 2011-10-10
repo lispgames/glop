@@ -199,6 +199,13 @@ set window fullscreen state."
    "Swaps GL buffers."))
 
 ;;; Events handling
+(defmacro define-simple-print-object (type &rest attribs)
+  `(defmethod print-object ((event ,type) stream)
+     (with-slots ,attribs event
+       (format stream
+               ,(format nil "#<~~s~{ ~s ~~s~}>" attribs)
+               (type-of event) ,@attribs))))
+
 (defclass event () ()
   (:documentation "Common ancestor for all events."))
 
@@ -208,6 +215,7 @@ set window fullscreen state."
    (text :initarg :text :reader text)
    (pressed :initarg :pressed :reader pressed))
   (:documentation "Keyboard key press or release."))
+(define-simple-print-object key-event keycode keysym text pressed)
 
 (defclass key-press-event (key-event)
   ()
@@ -223,6 +231,7 @@ set window fullscreen state."
   ((button :initarg :button :reader button)
    (pressed :initarg :pressed :reader pressed))
   (:documentation "Mouse button press or release."))
+(define-simple-print-object button-event button pressed)
 
 (defclass button-press-event (button-event)
   ()
@@ -240,16 +249,19 @@ set window fullscreen state."
    (dx :initarg :dx :reader dx)
    (dy :initarg :dy :reader dy))
   (:documentation "Mouse motion."))
+(define-simple-print-object mouse-motion-event x y dx dy)
 
 (defclass expose-event (event)
   ((width :initarg :width :reader width)
    (height :initarg :height :reader height))
   (:documentation "Window expose."))
+(define-simple-print-object expose-event width height)
 
 (defclass resize-event (event)
   ((width :initarg :width :reader width)
    (height :initarg :height :reader height))
   (:documentation "Window resized."))
+(define-simple-print-object resize-event width height)
 
 (defclass close-event (event) ()
   (:documentation "Window closed."))
@@ -257,6 +269,7 @@ set window fullscreen state."
 (defclass visibility-event (event)
   ((visible :initarg :visible :reader visible))
   (:documentation "Window visibility changed."))
+(define-simple-print-object visibility-event visible)
 
 (defclass visibility-obscured-event (visibility-event)
   ()
@@ -271,6 +284,7 @@ set window fullscreen state."
 (defclass focus-event (event)
   ((focused :initarg :focused :reader focused))
   (:documentation "Window focus state changed."))
+(define-simple-print-object focus-event focused)
 
 (defclass focus-in-event (focus-event)
   ()
