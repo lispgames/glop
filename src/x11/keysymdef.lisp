@@ -1,7 +1,7 @@
 (in-package :glop-xlib)
 
 ;;; Taken from X11's keysymdef.h header, capital- prefixed on redundant symbols, with deprecated entries removed.
-(cffi:defcenum keysym
+(defcenum x-keysym-value
   (:voidsymbol #xffffff)              ; void symbol
   ;; tty function keys, cleverly chosen to map to ascii, for convenience of
   ;; programming, but could have been arbitrary (at the cost of lookup

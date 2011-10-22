@@ -269,32 +269,6 @@
 (defcstruct x-compose-status
     (compose-ptr :pointer) (chars-matched :int))
 
-;; Only define interesting keysym and just use iso-8859-1 for the remaining ones
-;; too many keysyms exists and I don't want to write so many things right now.
-;; TODO: add keypad support but I don't have it on the laptop here
-(defcenum x-keysym-value
-  ;; cursor control & motion
-  (:key-left #xff51)
-  :key-up
-  :key-right
-  :key-down
-  :key-page-up
-  :key-page-down
-  :key-end
-  :key-begin
-  ;; function keys
-  (:key-f1 #xffbe)
-  :key-f2
-  :key-f3
-  :key-f4
-  :key-f5
-  :key-f6
-  :key-f7
-  :key-f8
-  :key-f9
-  :key-f10
-  :key-f11)
-
 (defctype x-status :int)
 
 (defctype x-queued-mode :int)
@@ -556,12 +530,12 @@
 
 (defun x-lookup-string (key-event)
   "Returns the input string corresponding to a keypress."
-  (with-foreign-objects ((buffer :char 32) (keysym 'keysym))
+  (with-foreign-objects ((buffer :char 32) (keysym 'x-keysym-value))
     #+ccl(loop for i below 32 do (setf (mem-aref buffer :char i) 0)) ;; buffer is not zeroed in cll
     (%x-lookup-string key-event buffer 32 keysym (null-pointer))
     (let ((string (foreign-string-to-lisp buffer)))
       (values (if (zerop (length string)) nil string)
-              (mem-ref keysym 'keysym)))))
+              (mem-ref keysym 'x-keysym-value)))))
 
 (defcfun ("XGetGeometry" %x-get-geometry) x-status
   (display-ptr :pointer) (d drawable) (root-return :pointer)

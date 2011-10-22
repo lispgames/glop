@@ -1,15 +1,6 @@
 ;;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; Base: 10; indent-tabs-mode: nil -*-
 
 ;;; GLX bindings
-(defpackage :glop-glx
-  (:use #:cl #:cffi #:glop-xlib)
-  (:export #:glx-get-proc-address #:correct-context? #:glx-destroy-context
-           #:glx-create-specific-context #:glx-create-context
-           #:glx-get-version
-           #:glx-make-current #:glx-release-context #:glx-choose-fb-config
-           #:glx-get-visual-from-fb-config #:glx-choose-visual
-           #:glx-wait-gl #:glx-swap-buffers))
-
 (in-package #:glop-glx)
 
 (defcenum (glx-attributes :int)

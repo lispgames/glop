@@ -1,10 +1,6 @@
 ;;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; Base: 10; indent-tabs-mode: nil -*-
 
 ;; WGL bindings
-(defpackage :glop-wgl
-  (:use #:cl #:cffi #:glop-win32)
-  (:export #:wgl-get-proc-address #:wgl-create-context #:wgl-delete-context
-           #:wgl-make-current))
 
 (in-package #:glop-wgl)
 
