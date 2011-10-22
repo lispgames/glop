@@ -88,33 +88,33 @@
   :4
   :6
   :5
-  :|=|
+  :equal
   :9
   :7
-  :|-|
+  :minus
   :8
   :0
-  :|]|
+  :bracket-right
   :o
   :u
-  :|[|
+  :bracket-left
   :i
   :p
   :return
   :l
   :j
-  :|'|
+  :quote
   :k
-  (:|;| 41)
-  :|\\|
-  :|,|
-  :|/|
+  (:semicolon 41)
+  :backslash
+  :comma
+  :forwardslash
   :n
   :m
-  :|.|
+  :decimal
   :tab
   :space
-  :|`|
+  :grave
   (:backspace 51)
   (:escape 53)
   :super-r
@@ -236,6 +236,26 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
+(defbitfield ns-window-style
+  (:borderless 0)
+  (:titled #x1)
+  (:closable #x2)
+  (:miniaturizable #x4)
+  (:resizable #x8)
+  (:textured-background #x80))
+
+(defcenum ns-window-level
+  (:normal #x0)
+  (:floating #x3)
+  (:submenu #x3)
+  (:torn-off-menu #x3)
+  (:main-menu #x18)
+  (:status #x19)
+  (:modal-panel #x8)
+  (:pop-up-menu #x65)
+  (:screen-saver #x3e8)
+  (:dock #x14))
+
 (defcfun ("NSWindowAllocInit" ns-window-alloc-init) :pointer
   (x :int)
   (y :int)
@@ -290,6 +310,36 @@
 (defcfun ("NSWindowDiscardRemainingEvents" ns-window-discard-remaining-events)
     :void
   (window :pointer))
+
+(defcfun ("NSWindowContentView" ns-window-content-view) :pointer
+  (window :pointer))
+
+(defcfun ("NSWindowSetFrame" ns-window-set-frame) :void
+  (window :pointer)
+  (x :int)
+  (y :int)
+  (width :int)
+  (height :int))
+
+(defcfun ("NSWindowSetStyleMask" ns-window-set-style-mask) :void
+  (window :pointer)
+  (style ns-window-style))
+
+(defcfun ("NSWindowSetLevel" ns-window-set-level) :void
+  (window :pointer)
+  (level ns-window-level))
+
+(defcfun ("NSFrameMethod" ns-window-frame) ns-rect
+  (window :pointer))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;                                 NSView                                   ;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+(defcfun ("NSFrameMethod" ns-view-frame) ns-rect
+  (view :pointer))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -399,12 +449,21 @@
 (defcfun ("NSOpenGLContextInit" ns-opengl-context-init) :pointer
   (format :pointer))
 
+(defcfun ("NSOpenGLContextMakeCurrentContext"
+          ns-opengl-context-make-current-context)
+    :void
+  (context :pointer))
+
 (defcfun ("NSOpenGLContextSetView" ns-opengl-context-set-view) :void
   (context :pointer)
   (view :pointer))
 
+(defcfun ("NSOpenGLContextSetFullScreen" ns-opengl-context-set-full-screen)
+    :void
+  (context :pointer))
+
 (defcfun ("NSOpenGLContextClearDrawable" ns-opengl-context-clear-drawable) :void
   (context :pointer))
 
-(defcfun ("NSOpneGLContextFlushBuffer" ns-opengl-context-flush-buffer) :void
+(defcfun ("NSOpenGLContextFlushBuffer" ns-opengl-context-flush-buffer) :void
   (context :pointer))

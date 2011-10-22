@@ -1,4 +1,6 @@
 #include <AppKit/AppKit.h>
+#include <malloc/malloc.h>
+#include <string.h>
 
 
 /******************************************************************************/
@@ -97,6 +99,7 @@ NSWindow *NSWindowAllocInit (int x, int y, int width, int height)
                  styleMask:NSClosableWindowMask | NSTitledWindowMask
                    backing:NSBackingStoreBuffered
                      defer:NO];
+  [window setFrameTopLeftPoint:NSMakePoint(x, y)];
   return window;
 }
 
@@ -161,6 +164,46 @@ void NSWindowDiscardRemainingEvents (NSWindow *window)
           beforeEvent:nil];
 }
 
+NSView *NSWindowContentView (NSWindow *window)
+{
+  return [window contentView];
+}
+
+// Implied by NSWindow and NSView without an actual protocol.
+@protocol FrameProtocol
+- (NSRect)frame;
+@end
+
+NSRect *NSFrameMethod (NSObject *object)
+{
+  NSRect *rect = malloc(sizeof(NSRect));
+  NSRect tmp = [(id <FrameProtocol>)object frame];
+  memcpy(rect, &tmp, sizeof(NSRect));
+  return rect;
+}
+
+void NSWindowSetFrameTopLeftPoint (NSWindow *window, int x, int y)
+{
+  [window setFrameTopLeftPoint:NSMakePoint(x, y)];
+}
+
+void NSWindowSetFrame (NSWindow *window, int x, int y, int width, int height)
+{
+  [window setFrame:NSMakeRect(x, y, width, height) display:YES];
+  [window setFrameTopLeftPoint:NSMakePoint(x, y)];
+}
+
+void NSWindowSetStyleMask (NSWindow *window, NSUInteger syleMask)
+{
+  [window setStyleMask:syleMask];
+}
+
+void NSWindowSetLevel (NSWindow *window, NSInteger level)
+{
+  [window setLevel:level];
+}
+
+
 /******************************************************************************/
 /***                                NSMenu                                  ***/
 /******************************************************************************/
@@ -221,9 +264,19 @@ NSOpenGLContext *NSOpenGLContextInit (NSOpenGLPixelFormat *format)
                                     shareContext:nil];
 }
 
+void NSOpenGLContextMakeCurrentContext (NSOpenGLContext *context)
+{
+  [context makeCurrentContext];
+}
+
 void NSOpenGLContextSetView (NSOpenGLContext *context, NSView *view)
 {
   [context setView:view];
+}
+
+void NSOpenGLContextSetFullScreen (NSOpenGLContext *context)
+{
+  [context setFullScreen];
 }
 
 void NSOpenGLContextClearDrawable (NSOpenGLContext *context)

@@ -14,15 +14,38 @@
   (x cg-float)
   (y cg-float))
 
-;; (define-foreign-type ns-point-type ()
-;;   ()
-;;   (:actual-type ns-point-struct)
-;;   (:simple-parser ns-point))
+(defcstruct ns-size
+  (width cg-float)
+  (height cg-float))
 
-;; (defmethod translate-from-foreign (value (type ns-point-type))
-;;   (with-foreign-slots ((x y) value ns-point-struct)
-;;     (list x y)))
+(defstruct rect
+  (x 0 :type fixnum)
+  (y 0 :type fixnum)
+  (width 0 :type fixnum)
+  (height 0 :type fixnum))
 
+(defcstruct ns-rect-struct
+  (point ns-point)
+  (size ns-size))
+
+(define-foreign-type ns-rect-type ()
+  ()
+  (:actual-type ns-size)
+  (:simple-parser ns-rect))
+
+(defmethod translate-from-foreign (ns-rect (type ns-rect-type))
+  (with-foreign-slots ((point size) ns-rect ns-rect-struct)
+    (with-foreign-slots ((x y) point ns-point)
+      (with-foreign-slots ((width height) size ns-size)
+        (make-rect
+          :x (truncate x)
+          :y (truncate y)
+          :width (truncate width)
+          :height (truncate height))))))
+
+(defmethod free-translated-object (ns-rect (type ns-rect-type) param)
+  (declare (ignore param))
+  (foreign-free ns-rect))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;                            NSAutoreleasePool                             ;;;
@@ -61,8 +84,7 @@
 
 
 (define-foreign-type ns-string-type ()
-  ((ns-string :initform nil
-              :accessor ns-string))
+  ()
   (:actual-type :pointer)
   (:simple-parser ns-string))
 
@@ -108,15 +130,14 @@
 (defmethod translate-to-foreign (lisp-string (type ns-string-type))
   (let ((buffer-size (1+ (length lisp-string))))
     (with-foreign-object (buffer :char buffer-size)
-      (setf (ns-string type)
-            (ns-string-alloc-init-with-c-string
-              (lisp-string-to-foreign lisp-string buffer buffer-size
-                                      :encoding :utf-8)
-              :utf-8)))))
+      (ns-string-alloc-init-with-c-string
+        (lisp-string-to-foreign lisp-string buffer buffer-size
+                                :encoding :utf-8)
+        :utf-8))))
 
-(defmethod free-translated-object (pointer (type ns-string-type) param)
+(defmethod free-translated-object (ns-string (type ns-string-type) param)
   (declare (ignore param))
-  (ns-release (ns-string type)))
+  (ns-release ns-string))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
