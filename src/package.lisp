@@ -35,6 +35,11 @@
    ;; helper macros
    #:with-window #:with-idle-forms
    ;; multiple windows
-   #:set-gl-window))
+   #:set-gl-window
+   ;; platform-specific export for external event loop
+   #+(and unix (not darwin))#:x11-window-id
+   #+(and unix (not darwin))#:x11-window-display
+   #+(or win32 windows)#:win32-window-id
+   ))
 
 
