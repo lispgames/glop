@@ -2,9 +2,11 @@
 
 @implementation GlopView
 
-- (id)initWithEventCallback:(GlopEventCallback)callback;
+- (id)initWithEventCallback:(GlopEventCallback)eventCallbackFunc
+             noticeCallback:(GlopNoticeCallback)noticeCallbackFunc;
 {
-  eventCallback = callback;
+  noticeCallback = noticeCallbackFunc;
+  eventCallback = eventCallbackFunc;
   return [self init];
 }
 
@@ -48,6 +50,11 @@
   eventCallback(event);
 }
 
+- (void)mouseDragged:(NSEvent *)event
+{
+  eventCallback(event);
+}
+
 - (void)rightMouseDown:(NSEvent *)event
 {
   eventCallback(event);
@@ -58,12 +65,22 @@
   eventCallback(event);
 }
 
+- (void)rightMouseDragged:(NSEvent *)event
+{
+  eventCallback(event);
+}
+
 - (void)otherMouseDown:(NSEvent *)event
 {
   eventCallback(event);
 }
 
 - (void)otherMouseUp:(NSEvent *)event
+{
+  eventCallback(event);
+}
+
+- (void)otherMouseDragged:(NSEvent *)event
 {
   eventCallback(event);
 }
@@ -80,13 +97,27 @@
 
 - (void)windowWillClose:(NSNotification *)notification
 {
+  GlopNotice *notice = malloc(sizeof(GlopNotice));
+  notice->type = GlopNoticeWindowClose;
+  notice->source = [notification object];
+  noticeCallback(notice);
+}
+
+- (void)windowDidResize:(NSNotification *)notification
+{
+  GlopNotice *notice = malloc(sizeof(GlopNotice));
+  notice->type = GlopNoticeWindowResize;
+  notice->source = [notification object];
+  noticeCallback(notice);
 }
 
 @end
 
 
-GlopView *GlopViewInit (GlopEventCallback callback)
+GlopView *GlopViewInit (GlopEventCallback eventCallbackFunc,
+                        GlopNoticeCallback noticeCallbackFunc)
 {
-  return [[GlopView alloc] initWithEventCallback:callback];
+  return [[GlopView alloc] initWithEventCallback:eventCallbackFunc
+                                  noticeCallback:noticeCallbackFunc];
 }
 

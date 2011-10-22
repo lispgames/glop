@@ -36,10 +36,10 @@
 (defclass osx-window ()
   ((ns-window :initform nil
               :accessor ns-window)
+   (fs-window :initform nil
+              :accessor fs-window)
    (gl-view :initform nil
             :accessor gl-view)
-   (responder :initform nil
-              :accessor responder)
    (pixel-format-list :initform '()
                       :accessor pixel-format-list)))
 

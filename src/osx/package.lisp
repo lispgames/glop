@@ -82,4 +82,23 @@
            #:ns-opengl-context-set-view
            #:ns-event-key-sym
            #:ns-event-characters
-           #:keysym))
+           #:keysym
+           #:glop-notice
+           #:make-rect
+           #:rect-p
+           #:rect-x
+           #:rect-y
+           #:rect-width
+           #:rect-height
+           #:ns-window-frame
+           #:ns-view-frame
+           #:ns-window-content-view
+           #:ns-window-set-frame
+           #:ns-window-set-style-mask
+           #:ns-window-set-level
+           #:ns-opengl-context-make-current-context
+           #:set-display-mode
+           #:capture-all-displays
+           #:release-all-displays
+           #:ns-opengl-context-set-full-screen
+           #:translate-to-video-mode))
