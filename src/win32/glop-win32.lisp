@@ -18,19 +18,35 @@
 (defstruct wgl-context
   ctx)
 
+;; FIXME: we should use specific context creation if available regardless of
+;; :major and :minor being nil
 (defmethod create-gl-context ((win win32-window) &key (make-current t) major minor
                                                       forward-compat debug
                                                       profile)
 
-  (when (or major minor forward-compat debug profile)
-      (warn "Specific context version is not implemented, MAJOR and MINOR arguments ignored."))
   (let ((ctx (make-wgl-context)))
-    (let ((wgl-ctx (glop-wgl:wgl-create-context (win32-window-dc win))))
-      (unless wgl-ctx
-        (format t "Error creating GL context: ~S~%" (glop-win32:get-last-error)))
-      (setf (wgl-context-ctx ctx) wgl-ctx))
+    (setf (wgl-context-ctx ctx)
+          (if (and major minor)
+              (let ((attrs (list :major-version major :minor-version minor)))
+                (when profile
+                  (case profile
+                    (:core (push :core-profile-bit attrs))
+                    (:compat (push :compatibility-profile-bit attrs)))
+                  (push :profile-mask attrs))
+                (when (or forward-compat debug)
+                  (let ((flags '()))
+                    (when forward-compat (push :forward-compatible-bit flags))
+                    (when debug (push :debug-bit flags))
+                    (push flags attrs)
+                    (push :flags attrs)))
+                (glop-wgl:wgl-create-specific-context (win32-window-dc win) attrs))
+              (glop-wgl:wgl-create-context (win32-window-dc win))))
+    (unless wgl-ctx
+      (format t "Error creating GL context: ~S~%" (glop-win32:get-last-error)))
     (when make-current
       (attach-gl-context win ctx))
+    (when (and major minor)
+      (glop-glx:correct-context? major minor))
     ctx))
 
 (defmethod destroy-gl-context ((ctx wgl-context))
