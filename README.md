@@ -83,12 +83,14 @@ In that case the `(on-event window event)` method will be called instead of `on-
 The `glop:dispatch-events` macro isn't mandatory and you can use your own event dispatch code,
 see `glop-test:test-manual-events` for an example of how to do this.
 
+You may also completely bypass glop's event handling mechanism and use your own,
+see `glop-test:test-custom-event-loop` (X11 only) for a simple example of how it may be done.
+Basically just don't call any of glop's event related functions and do the work yourself.
+
 See `test.lisp` for more details.
 
 Notes
 -----
-The win32 implementation is not as complete as the X11 one, major missing features are:
- - no OpenGL 3.x
  
 See also [issues](http://github.com/patzy/glop/issues) on github.
 
