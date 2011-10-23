@@ -113,8 +113,10 @@
   (:wm-char 258)
   (:wm-mouse-wheel 522)
   (:wm-size 5)
+  (:wm-exit-size-move #x0232)
   (:wm-show-window 24)
   (:wm-set-focus 7)
+  (:wm-kill-focus 8)
   (:wm-sys-command 274))
 
 (defcenum vkey-type
@@ -477,6 +479,7 @@
 (defun get-client-area-offset (wnd)
   (multiple-value-bind (wx wy ww wh) (get-window-rect wnd)
     (multiple-value-bind (cx cy cw ch) (get-client-rect wnd)
+      (declare (ignore ww wh cw ch))
       (values (- cx wx) (- cy wy)))))
 
 (defcfun ("MoveWindow" move-window) bool

@@ -1,7 +1,6 @@
 ;;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; Base: 10; indent-tabs-mode: nil -*-
 
 ;; WGL bindings
-
 (in-package #:glop-wgl)
 
 (defcstruct pixelformatdescriptor
