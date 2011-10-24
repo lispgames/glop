@@ -12,7 +12,10 @@
            #:x-create-null-cursor #:x-define-cursor #:x-undefine-cursor
            #:x-free-cursor
            #:current-mode #:set-mode #:supported-modes
-           #:xkb-set-detectable-auto-repeat))
+           #:xkb-set-detectable-auto-repeat
+           #:add-connection-watch
+           #:remove-connection-watch
+           #:process-internal-connection))
 
 (defpackage :glop-glx
   (:use #:cl #:cffi #:glop-xlib)

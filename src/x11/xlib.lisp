@@ -17,6 +17,8 @@
 
 (defctype visualid :unsigned-long)
 
+(defctype watch-proc :pointer)
+
 (defcstruct xcolor
   (pixel :ulong)
   (red :ushort) (green :ushort) (blue :ushort)
@@ -670,3 +672,17 @@
 
 (defcfun ("XUndefineCursor" x-undefine-cursor) :int
   (display-ptr :pointer) (win window))
+
+(defcfun ("XAddConnectionWatch" add-connection-watch) x-status
+  (display :pointer)
+  (procedure watch-proc)
+  (client-data :pointer))
+
+(defcfun ("XRemoveConnectionWatch" remove-connection-watch) x-status
+  (display :pointer)
+  (procedure watch-proc)
+  (client-data :pointer))
+
+(defcfun ("XProcessInternalConnection" process-internal-connection) :void
+  (display :pointer)
+  (fd :int))
