@@ -12,20 +12,35 @@
             :components
             ((:file "package")
              (:file "utils")
-             #+unix(:module "x11"
-                            :serial t
-                            :components ((:file "package")
-                                         (:file "keysymdef")
-                                         (:file "xlib")
-                                         (:file "xkb")
-                                         (:file "glx")
-                                         (:file "display-ctrl")
-                                         (:file "glop-x11")))
-             #+(or win32 windows)(:module "win32"
-                                          :serial t
-                                          :components ((:file "package")
-                                                       (:file "win32")
-                                                       (:file "wgl")
-                                                       (:file "glop-win32")))
+             #+(and unix (not darwin))
+             (:module "x11"
+                      :serial t
+                      :components ((:file "package")
+                                   (:file "keysymdef")
+                                   (:file "xlib")
+                                   (:file "xkb")
+                                   (:file "glx")
+                                   (:file "display-ctrl")
+                                   (:file "glop-x11")))
+             #+darwin
+             (:module "osx"
+                      :serial t
+                      :components ((:file "package")
+                                   (:file "carbon")
+                                   (:file "quartz")
+                                   (:file "bridge")
+                                   (:file "foundation")
+                                   (:file "appkit")
+                                   (:file "glop-app")
+                                   (:file "glop-window-responder")
+                                   (:file "glop-gl-view")
+                                   (:file "glop-osx")))
+             #+(or win32 windows)
+             (:module "win32"
+                      :serial t
+                      :components ((:file "package")
+                                   (:file "win32")
+                                   (:file "wgl")
+                                   (:file "glop-win32")))
              (:file "glop")))))
 

@@ -5,6 +5,7 @@
   (:use #:cl #:cffi #:glop-xlib)
   (:export #:glx-get-proc-address #:correct-context? #:glx-destroy-context
            #:glx-create-specific-context #:glx-create-context
+           #:glx-get-version
            #:glx-make-current #:glx-release-context #:glx-choose-fb-config
            #:glx-get-visual-from-fb-config #:glx-choose-visual
            #:glx-wait-gl #:glx-swap-buffers))
@@ -62,7 +63,9 @@
   (:bad-enum))
 
 (define-foreign-library opengl
-  (t (:default "libGL")))
+  (t (:or (:default "libGL")
+          "libGL.so.1"
+          "libGL.so.2")))
 (use-foreign-library opengl)
 
 (defctype fb-config :pointer)

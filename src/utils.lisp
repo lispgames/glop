@@ -4,7 +4,7 @@
   (width 0 :type integer)
   (height 0 :type integer)
   (depth 0 :type integer)
-  (rate 0 :type integer))
+  (rate 0 :type double-float))
 
 ;; platform specific windows
 ;; XXX: this may move to platform specific directories
@@ -20,7 +20,7 @@
 #+(or win32 windows)
 (defstruct (win32-video-mode (:include video-mode)))
 
-#+unix
+#+(and unix (not darwin))
 (defclass x11-window ()
   ((display :initarg :display :accessor x11-window-display)
    (screen :initarg :screen :accessor x11-window-screen)
@@ -29,13 +29,30 @@
    (fb-config :accessor x11-window-fb-config)
    (cursor :accessor x11-window-cursor)))
 
-#+unix
+#+(and unix (not darwin))
 (defstruct (x11-video-mode (:include video-mode))
   (index -1 :type integer))
 
+#+darwin
+(defclass osx-window ()
+  ((ns-window :initform nil
+              :accessor ns-window)
+   (gl-view :initform nil
+            :accessor gl-view)
+   (responder :initform nil
+              :accessor responder)
+   (pixel-format-list :initform '()
+                      :accessor pixel-format-list)))
+
+#+darwin
+(defstruct (osx-video-mode (:include video-mode))
+  mode)
+
 ;; base window structure
 ;; you may inherit your own window class from this
-(defclass window (#+unix x11-window #+(or win32 windows) win32-window)
+(defclass window (#+(and unix (not darwin)) x11-window
+                  #+(or win32 windows) win32-window
+                  #+darwin osx-window)
   ((x :initform 0 :initarg :x :accessor window-x)
    (y :initform 0 :initarg :y :accessor window-y)
    (width :initform 100 :initarg :width :accessor window-width)
@@ -105,23 +122,27 @@ Otherwise, only one key-press event will be triggered.")
 
 ;; misc.
 (defun load-libraries ()
-  #+unix(progn (cffi:define-foreign-library xlib
-                   (t (:default "libX11")))
-               (cffi:use-foreign-library xlib)
-               (cffi:define-foreign-library opengl
-                   (t (:default "libGL")))
-               (cffi:use-foreign-library opengl))
-  #+(or win32 windows)(progn (cffi:define-foreign-library user32
-                               (t (:default "user32")))
-                             (cffi:use-foreign-library user32)
-                             (cffi:define-foreign-library kernel32
-                               (t (:default "kernel32")))
-                             (cffi:use-foreign-library kernel32)
-                             (cffi:define-foreign-library opengl
-                               (t (:default "opengl32")))
-                             (cffi:use-foreign-library opengl)
-                             (cffi:define-foreign-library gdi32
-                               (t (:default "gdi32")))
-                             (cffi:use-foreign-library gdi32)))
+  #+(and unix (not darwin))
+  (progn (cffi:define-foreign-library xlib
+           (t (:default "libX11")))
+         (cffi:use-foreign-library xlib)
+         (cffi:define-foreign-library opengl
+           (t (:or (:default "libGL")
+                   "libGL.so.1"
+                   "libGL.so.2")))
+         (cffi:use-foreign-library opengl))
+  #+(or win32 windows)
+  (progn (cffi:define-foreign-library user32
+           (t (:default "user32")))
+         (cffi:use-foreign-library user32)
+         (cffi:define-foreign-library kernel32
+           (t (:default "kernel32")))
+         (cffi:use-foreign-library kernel32)
+         (cffi:define-foreign-library opengl
+           (t (:default "opengl32")))
+         (cffi:use-foreign-library opengl)
+         (cffi:define-foreign-library gdi32
+           (t (:default "gdi32")))
+         (cffi:use-foreign-library gdi32)))
 
 
