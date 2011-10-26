@@ -95,20 +95,37 @@
   eventCallback(event);
 }
 
-- (void)windowWillClose:(NSNotification *)notification
+- (void)sendGlopNotice:(GlopNoticeType)type
 {
   GlopNotice *notice = malloc(sizeof(GlopNotice));
-  notice->type = GlopNoticeWindowClose;
-  notice->source = [notification object];
+  notice->type = type;
+  notice->source = [self window];
   noticeCallback(notice);
+}
+
+- (void)windowWillClose:(NSNotification *)notification
+{
+  [self sendGlopNotice:GlopNoticeWindowClose];
 }
 
 - (void)windowDidResize:(NSNotification *)notification
 {
-  GlopNotice *notice = malloc(sizeof(GlopNotice));
-  notice->type = GlopNoticeWindowResize;
-  notice->source = [notification object];
-  noticeCallback(notice);
+  [self sendGlopNotice:GlopNoticeWindowResize];
+}
+
+- (void)windowDidExpose:(NSNotification *)notification
+{
+  [self sendGlopNotice:GlopNoticeWindowExpose];
+}
+
+- (void)windowDidBecomeKey:(NSNotification *)notification
+{
+  [self sendGlopNotice:GlopNoticeWindowFocus];
+}
+
+- (void)windowDidResignKey:(NSNotification *)notification
+{
+  [self sendGlopNotice:GlopNoticeWindowUnfocus];
 }
 
 @end
@@ -120,4 +137,3 @@ GlopView *GlopViewInit (GlopEventCallback eventCallbackFunc,
   return [[GlopView alloc] initWithEventCallback:eventCallbackFunc
                                   noticeCallback:noticeCallbackFunc];
 }
-

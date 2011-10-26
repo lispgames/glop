@@ -2,10 +2,9 @@
 
 (defparameter *autorelease-pool* nil)
 (defparameter *opengl-bundle* nil)
-(defparameter *main-menu* nil)
 (defparameter *event-stacks* (make-hash-table))
+(defparameter *fullscreen-active* nil)
 (declaim (special *native-video-mode*))
-
 
 (defun event-stack (ns-window)
   (gethash (cffi:pointer-address ns-window) *event-stacks*))
@@ -86,12 +85,21 @@
             ((:mouse-moved :left-mouse-dragged :right-mouse-dragged
               :other-mouse-dragged)
              (destructuring-bind (x y)
-                 (glop-bridge:ns-event-location-in-window ns-event)
-               (make-instance 'mouse-motion-event
-                 :x x
-                 :y y
-                 :dx (truncate (glop-bridge:ns-event-delta-x ns-event))
-                 :dy (truncate (glop-bridge:ns-event-delta-y ns-event)))))
+                 (mapcar #'truncate
+                         (if *fullscreen-active*                 
+                             (glop-bridge:ns-event-mouse-location)
+                             (glop-bridge:ns-event-location-in-window
+                                ns-event)))
+               (let ((inverted-y (- (glop-bridge:rect-height
+                                     (glop-bridge:ns-view-frame
+                                      (glop-bridge:ns-window-content-view
+                                       (glop-bridge:ns-event-window ns-event))))
+                                    y)))
+                 (make-instance 'mouse-motion-event
+                   :x x
+                   :y inverted-y
+                   :dx (truncate (glop-bridge:ns-event-delta-x ns-event))
+                   :dy (truncate (glop-bridge:ns-event-delta-y ns-event))))))
             ((:left-mouse-down :right-mouse-down :other-mouse-down)
              (make-instance 'button-press-event
                :button (glop-bridge:ns-event-button-number ns-event)
@@ -103,20 +111,43 @@
     (when event
       (push event (event-stack (glop-bridge:ns-event-window ns-event))))))
 
+(defun push-event (window event)
+  (with-accessors ((ns-window ns-window)) window
+    (push event (event-stack ns-window))
+    (glop-bridge:glop-send-notice-event ns-window)))
+
+(defun push-expose-event (window)
+  (with-accessors ((width window-width) (height window-height)) window
+    (push-event window 
+                (make-instance 'expose-event :width width :height height))))
+
 (cffi:defcallback push-notification-to-event-stack :void
     ((notice glop-bridge:glop-notice))
   (destructuring-bind (&key type source) notice
-    (let ((event
-           (case type
-             (:window-close (make-instance 'close-event))
-             (:resize
-              (let ((rect (glop-bridge:ns-view-frame
-                            (glop-bridge:ns-window-content-view source))))
-                (make-instance 'resize-event
-                               :height (glop-bridge:rect-height rect)
-                               :width (glop-bridge:rect-width rect)))))))
-      (when event
-        (push event (event-stack source))))))
+    (macrolet ((with-view-size (width height &body body)
+                 (let ((rect-var (gensym "RECT-")))
+                  `(let* ((,rect-var (glop-bridge:ns-view-frame
+                                      (glop-bridge:ns-window-content-view
+                                        source)))
+                          (,width (glop-bridge:rect-width ,rect-var))
+                          (,height (glop-bridge:rect-height ,rect-var)))
+                     ,@body))))
+      (let ((event
+             (case type
+               (:window-close (make-instance 'close-event))
+               (:window-resize
+                (with-view-size width height
+                  (make-instance 'resize-event :width width :height height)))
+               (:window-expose
+                (with-view-size width height
+                  (make-instance 'expose-event :width width :height height)))
+               (:window-focus
+                (make-instance 'focus-in-event :focused t))
+               (:window-unfocus
+                (make-instance 'focus-out-event :focused nil)))))
+        (when event
+          (push event (event-stack source))
+          (glop-bridge:glop-send-notice-event source))))))
 
 (defmethod open-window ((window osx-window) title width height
                         &key (x 0) (y 0) (rgba t) (double-buffer t) stereo
@@ -127,6 +158,8 @@
   (declare (ignore rgba accum-buffer stencil-buffer))
   (when (cffi:null-pointer-p glop-bridge:*ns-app*) (init-ns-app))
   (unless *autorelease-pool* (init-global-autorelease-pool))
+  (unless (boundp '*native-video-mode*)
+    (defparameter *native-video-mode* (current-video-mode)))
   (let* ((color-size (+ red-size green-size blue-size alpha-size))
          (accum-size (+ accum-red-size accum-blue-size accum-green-size))
          (pf-list (list :full-screen
@@ -186,7 +219,9 @@
 
 (defmethod attach-gl-context ((window osx-window) ctx)
   (with-accessors ((gl-view gl-view)) window
-    (glop-bridge:ns-opengl-context-set-view ctx gl-view)))
+    (glop-bridge:ns-opengl-context-make-current-context ctx)
+    (glop-bridge:ns-opengl-context-set-view ctx gl-view)
+    (push-expose-event window)))
 
 (defmethod detach-gl-context (ctx)
   (glop-bridge:ns-opengl-context-clear-drawable ctx))
@@ -199,18 +234,15 @@
                    (pixel-format-list pixel-format-list)
                    (ns-window ns-window) (gl-view gl-view)
                    (gl-context window-gl-context)) window
-    (glop-bridge:with-ns-autorelease-pool
-      (let ((pixel-format (glop-bridge:ns-autorelease
-                            (glop-bridge:ns-opengl-pixel-format-init
-                              pixel-format-list))))
-        (setf gl-context (glop-bridge:ns-opengl-context-init pixel-format))
-        (glop-bridge:ns-opengl-context-make-current-context gl-context)
-        (attach-gl-context window gl-context)
-        (glop-bridge:ns-opengl-context-set-view gl-context gl-view)))))
+    (let ((pixel-format (glop-bridge:ns-opengl-pixel-format-init
+                         pixel-format-list)))
+      (glop-bridge:ns-autorelease
+        (setf gl-context (glop-bridge:ns-opengl-context-init pixel-format)))
+      (glop-bridge:ns-release pixel-format)
+      (attach-gl-context window gl-context))))
 
-(defmethod destroy-gl-context (context)
-  (detach-gl-context context)
-  (glop-bridge:ns-release context))
+(defmethod destroy-gl-context (ctx)
+  (detach-gl-context ctx))
 
 (defmethod swap-buffers ((window osx-window))
   (glop-bridge:ns-opengl-context-flush-buffer (window-gl-context window)))
@@ -218,8 +250,11 @@
 (defmethod set-fullscreen ((window osx-window)
                            &optional (state (not (window-fullscreen window))))
   (declare (ignorable window state))
+  (when (eq (window-fullscreen window) state)
+    (return-from set-fullscreen))
   (with-accessors ((gl-context window-gl-context)
-                   (gl-view gl-view)) window
+                   (gl-view gl-view)
+                   (ns-window ns-window)) window
     (if state
         (let ((fullscreen-mode
                (closest-video-mode (current-video-mode)
@@ -228,33 +263,38 @@
                                    (window-height window))))
           (glop-bridge:capture-all-displays)
           (glop-bridge:set-display-mode
-            (glop-bridge:main-display-id)
-            (osx-video-mode-mode fullscreen-mode)
-            (cffi:null-pointer))
+           (glop-bridge:main-display-id)
+           (osx-video-mode-mode fullscreen-mode)
+           (cffi:null-pointer))
           (glop-bridge:ns-opengl-context-clear-drawable gl-context)
           (glop-bridge:ns-opengl-context-set-full-screen gl-context)
-          (glop-bridge:ns-retain gl-context)
-          (setf (window-fullscreen window) t))
+          (setf (window-fullscreen window) t
+                *fullscreen-active* t)
+          (push-expose-event window))
         (progn
           (glop-bridge:set-display-mode
-            (glop-bridge:main-display-id)
-            (osx-video-mode-mode *native-video-mode*)
-            (cffi:null-pointer))
+           (glop-bridge:main-display-id)
+           (osx-video-mode-mode *native-video-mode*)
+           (cffi:null-pointer))
           (glop-bridge:ns-opengl-context-clear-drawable gl-context)
           (glop-bridge:release-all-displays)
           (glop-bridge:ns-opengl-context-set-view gl-context gl-view)
-          (setf (window-fullscreen window) nil)))))
+          (setf (window-fullscreen window) nil
+                *fullscreen-active* nil)
+          (push-expose-event window)))))
 
 (defun %next-event (win &key blocking)
   (loop
      for ns-window = (ns-window win)
      for event = (glop-bridge:glop-app-next-event glop-bridge:*ns-app* blocking)
-     for found = (cffi:pointer-eq ns-window (glop-bridge:ns-event-window event))
-     do (progn (glop-bridge:glop-app-send-event glop-bridge:*ns-app* event)
+     for found = (or (cffi:pointer-eq ns-window
+                                      (glop-bridge:ns-event-window event))
+                     *fullscreen-active*)
+     do (progn (glop-bridge:ns-event-type event)
+               (glop-bridge:glop-app-send-event glop-bridge:*ns-app* event)
                (glop-bridge:glop-app-update-windows))
      while (and blocking (or (not found) (null (event-stack ns-window))))
-     finally (when found
-               (return (pop (event-stack ns-window))))))
+     finally (when found (return (pop (event-stack ns-window))))))
 
 (defun gl-get-proc-address (proc-name)
   (init-opengl-bundle)
@@ -263,5 +303,3 @@
     (unwind-protect (glop-bridge:cf-bundle-get-function-pointer-for-name
                       *opengl-bundle* name)
       (glop-bridge:ns-release name))))
-
-(defparameter *native-video-mode* (current-video-mode))

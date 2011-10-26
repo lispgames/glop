@@ -101,4 +101,7 @@
            #:capture-all-displays
            #:release-all-displays
            #:ns-opengl-context-set-full-screen
-           #:translate-to-video-mode))
+           #:translate-to-video-mode
+           #:ns-opengl-context-update
+           #:glop-send-notice-event
+           #:ns-event-mouse-location))

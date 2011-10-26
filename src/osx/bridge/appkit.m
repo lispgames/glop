@@ -1,5 +1,7 @@
 #include <AppKit/AppKit.h>
 #include <malloc/malloc.h>
+#include <CoreServices/CoreServices.h>
+#include <unistd.h>
 #include <string.h>
 
 
@@ -49,9 +51,20 @@ NSWindow *NSEventWindow (NSEvent *event)
   return [event window];
 }
 
-void NSEventLocationInWindow (NSEvent *event, NSPoint *point)
+NSPoint *NSEventLocationInWindow (NSEvent *event)
 {
-  *point = [event locationInWindow];
+  NSPoint point = [event locationInWindow];
+  NSPoint *ptr = malloc(sizeof(NSPoint));
+  memcpy(ptr, &point, sizeof(NSPoint));
+  return ptr;
+}
+
+NSPoint *NSEventMouseLocation ()
+{
+  NSPoint point = [NSEvent mouseLocation];
+  NSPoint *ptr = malloc(sizeof(NSPoint));
+  memcpy(ptr, &point, sizeof(NSPoint));
+  return ptr;
 }
 
 NSInteger NSEventButtonNumber (NSEvent *event)
@@ -74,6 +87,21 @@ NSString *NSEventCharacters (NSEvent *event)
   return [event characters];
 }
 
+void GlopSendNoticeEvent (NSWindow *window)
+{
+  NSTimeInterval time = AbsoluteToDuration(UpTime())/(NSTimeInterval)1000.0;
+  NSEvent *event =
+    [NSEvent otherEventWithType:NSApplicationDefined
+                       location:NSMakePoint(0.0, 0.0)
+                  modifierFlags:0
+                      timestamp:time
+                   windowNumber:window == NULL ? 0 : [window windowNumber]
+                        context:NULL
+                        subtype:0
+                          data1:0
+                          data2:0];
+  [NSApp postEvent:event atStart:NO];
+}
 
 /******************************************************************************/
 /***                            NSApplication                               ***/
@@ -287,4 +315,9 @@ void NSOpenGLContextClearDrawable (NSOpenGLContext *context)
 void NSOpenGLContextFlushBuffer (NSOpenGLContext *context)
 {
   [context flushBuffer];
+}
+
+void NSOpenGLContextUpdate (NSOpenGLContext *context)
+{
+  [context update];
 }
