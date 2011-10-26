@@ -2,7 +2,10 @@
 
 (defcenum glop-notice-type
   :window-close
-  :window-resize)
+  :window-resize
+  :window-expose
+  :window-focus
+  :window-unfocus)
 
 (defcstruct glop-notice-struct
   (type glop-notice-type)

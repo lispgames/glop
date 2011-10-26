@@ -10,9 +10,22 @@
 (defctype ns-integer #+x86-64 :long #-x86-64 :int)
 (defctype cg-float #+x86-64 :double #-x86-64 :float)
 
-(defcstruct ns-point
+(defcstruct ns-point-struct
   (x cg-float)
   (y cg-float))
+
+(define-foreign-type ns-point-type ()
+  ()
+  (:actual-type ns-point-struct)
+  (:simple-parser ns-point))
+
+(defmethod translate-from-foreign (point (type ns-point-type))
+  (with-foreign-slots ((x y) point ns-point-struct)
+    (list x y)))
+
+(defmethod free-translated-object (point (type ns-point-type) param)
+  (declare (ignore param))
+  (foreign-free point))
 
 (defcstruct ns-size
   (width cg-float)
@@ -25,7 +38,7 @@
   (height 0 :type fixnum))
 
 (defcstruct ns-rect-struct
-  (point ns-point)
+  (point ns-point-struct)
   (size ns-size))
 
 (define-foreign-type ns-rect-type ()
@@ -35,7 +48,7 @@
 
 (defmethod translate-from-foreign (ns-rect (type ns-rect-type))
   (with-foreign-slots ((point size) ns-rect ns-rect-struct)
-    (with-foreign-slots ((x y) point ns-point)
+    (with-foreign-slots ((x y) point ns-point-struct)
       (with-foreign-slots ((width height) size ns-size)
         (make-rect
           :x (truncate x)

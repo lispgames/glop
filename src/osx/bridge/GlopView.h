@@ -3,7 +3,10 @@
 
 typedef enum {
   GlopNoticeWindowClose,
-  GlopNoticeWindowResize
+  GlopNoticeWindowResize,
+  GlopNoticeWindowExpose,
+  GlopNoticeWindowFocus,
+  GlopNoticeWindowUnfocus
 } GlopNoticeType;
 
 typedef struct glopNotice {
@@ -23,5 +26,6 @@ typedef void(*GlopEventCallback)(NSEvent*);
 
 - (id)initWithEventCallback:(GlopEventCallback)eventCallbackFunc
              noticeCallback:(GlopNoticeCallback)noticeCallbackFunc;
+- (void)sendGlopNotice:(GlopNoticeType)type;
 
 @end

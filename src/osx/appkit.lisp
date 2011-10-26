@@ -58,11 +58,8 @@
   (:begin-gesture 19)
   (:end-gesture 20))
 
-(defcfun ("NSEventGetType" %ns-event-type) ns-uinteger
+(defcfun ("NSEventGetType" ns-event-type) ns-event-type
   (event :pointer))
-
-(defun ns-event-type (event)
-  (foreign-enum-keyword 'ns-event-type (%ns-event-type event)))
 
 (defcenum ns-key-code
   :a
@@ -199,16 +196,10 @@
 (defcfun ("NSEventWindow" ns-event-window) :pointer
   (event :pointer))
 
-(defcfun ("NSEventLocationInWindow" %ns-event-location-in-window) :void
-  (event :pointer)
-  (point :pointer))
+(defcfun ("NSEventLocationInWindow" ns-event-location-in-window) ns-point
+  (event :pointer))
 
-(defun ns-event-location-in-window (event)
-  (with-foreign-object (point 'ns-point)
-    (%ns-event-location-in-window event point)
-    (let ((x (foreign-slot-value point 'ns-point 'x))
-          (y (foreign-slot-value point 'ns-point 'y)))
-      (list (truncate x) (truncate y)))))
+(defcfun ("NSEventMouseLocation" ns-event-mouse-location) ns-point)
 
 (defcfun ("NSEventButtonNumber" ns-event-button-number) ns-integer
   (event :pointer))
@@ -221,6 +212,9 @@
 
 (defcfun ("NSEventCharacters" ns-event-characters) ns-string
   (event :pointer))
+
+(defcfun ("GlopSendNoticeEvent" glop-send-notice-event) :void
+  (window :pointer))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;                             NSApplication                                ;;;
@@ -466,4 +460,7 @@
   (context :pointer))
 
 (defcfun ("NSOpenGLContextFlushBuffer" ns-opengl-context-flush-buffer) :void
+  (context :pointer))
+
+(defcfun ("NSOpenGLContextUpdate" ns-opengl-context-update) :void
   (context :pointer))

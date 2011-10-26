@@ -37,12 +37,12 @@
 (defclass osx-window ()
   ((ns-window :initform nil
               :accessor ns-window)
-   (fs-window :initform nil
-              :accessor fs-window)
    (gl-view :initform nil
             :accessor gl-view)
    (pixel-format-list :initform '()
-                      :accessor pixel-format-list)))
+                      :accessor pixel-format-list)
+   (invert-mouse-y :initform nil
+                   :accessor invert-mouse-y)))
 
 #+darwin
 (defstruct (osx-video-mode (:include video-mode))
