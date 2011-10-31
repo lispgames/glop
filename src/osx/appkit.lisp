@@ -28,6 +28,7 @@
 
 
 (defcenum ns-event-type
+  (:unknown 0) ;; Must fix.
   (:left-mouse-down 1)
   (:left-mouse-up 2)
   (:right-mouse-down 3)

@@ -4,6 +4,7 @@
 (defparameter *opengl-bundle* nil)
 (defparameter *event-stacks* (make-hash-table))
 (defparameter *fullscreen-active* nil)
+(defparameter *displays-captured* nil)
 (declaim (special *native-video-mode*))
 
 (defun event-stack (ns-window)
@@ -47,6 +48,26 @@
 (defmethod current-video-mode ()
   (glop-bridge:copy-display-mode (glop-bridge:main-display-id)))
 
+(defun capture-displays ()
+  (unless *displays-captured*
+    (glop-bridge:capture-all-displays)
+    (setf *displays-captured* t)))
+
+(defun key-state (key)
+  (key-pressed (cffi:foreign-enum-value 'glop-bridge::ns-key-code key)))
+
+(defun release-displays ()
+  (when *displays-captured*
+    (glop-bridge:release-all-displays)
+    (setf *displays-captured* nil)))
+
+(defmethod set-video-mode (mode)
+  (capture-displays)
+  (glop-bridge:set-display-mode
+    (glop-bridge:main-display-id)
+    (osx-video-mode-mode mode)
+    (cffi:null-pointer)))
+
 (defun invert-screen-y (y)
   (- (video-mode-height (current-video-mode)) y))
 
@@ -56,7 +77,7 @@
     (loop for i below (glop-bridge:ns-array-count display-modes)
           collect (glop-bridge:translate-to-video-mode
                     (glop-bridge:ns-array-object-at-index
-                       display-modes i)))))
+                      display-modes i)))))
 
 (cffi:defcallback push-event-to-stack :void ((ns-event :pointer))
   (let* ((event-type (glop-bridge:ns-event-type ns-event))
@@ -261,23 +282,16 @@
                                    (list-video-modes)
                                    (window-width window)
                                    (window-height window))))
-          (glop-bridge:capture-all-displays)
-          (glop-bridge:set-display-mode
-           (glop-bridge:main-display-id)
-           (osx-video-mode-mode fullscreen-mode)
-           (cffi:null-pointer))
+          (set-video-mode fullscreen-mode)
           (glop-bridge:ns-opengl-context-clear-drawable gl-context)
           (glop-bridge:ns-opengl-context-set-full-screen gl-context)
           (setf (window-fullscreen window) t
                 *fullscreen-active* t)
           (push-expose-event window))
         (progn
-          (glop-bridge:set-display-mode
-           (glop-bridge:main-display-id)
-           (osx-video-mode-mode *native-video-mode*)
-           (cffi:null-pointer))
+          (set-video-mode *native-video-mode*)
+          (release-displays)
           (glop-bridge:ns-opengl-context-clear-drawable gl-context)
-          (glop-bridge:release-all-displays)
           (glop-bridge:ns-opengl-context-set-view gl-context gl-view)
           (setf (window-fullscreen window) nil
                 *fullscreen-active* nil)
@@ -290,8 +304,7 @@
      for found = (or (cffi:pointer-eq ns-window
                                       (glop-bridge:ns-event-window event))
                      *fullscreen-active*)
-     do (progn (glop-bridge:ns-event-type event)
-               (glop-bridge:glop-app-send-event glop-bridge:*ns-app* event)
+     do (progn (glop-bridge:glop-app-send-event glop-bridge:*ns-app* event)
                (glop-bridge:glop-app-update-windows))
      while (and blocking (or (not found) (null (event-stack ns-window))))
      finally (when found (return (pop (event-stack ns-window))))))
