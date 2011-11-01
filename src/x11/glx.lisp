@@ -54,9 +54,9 @@
   (:bad-enum))
 
 (define-foreign-library opengl
-  (t (:or (:default "libGL")
-          "libGL.so.1"
-          "libGL.so.2")))
+  (:darwin (:framework "OpenGL"))
+  (:windows "opengl32.dll" :convention :stdcall)
+  (:unix (:or "libGL.so.4" "libGL.so.3" "libGL.so.2" "libGL.so.1" "libGL.so")))
 (use-foreign-library opengl)
 
 (defctype fb-config :pointer)
