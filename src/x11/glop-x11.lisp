@@ -47,31 +47,32 @@
 (defmethod create-gl-context ((win x11-window) &key (make-current t) major minor
                                                     forward-compat debug
                                                     profile)
-  (let ((ctx (make-glx-context :display (x11-window-display win))))
-    (setf (glx-context-ctx ctx)
-          (if (and major minor)
-              (let ((attrs (list :major-version major :minor-version minor)))
-                (when profile
-                  (case profile
-                    (:core (push :core-profile-bit attrs))
-                    (:compat (push :compatibility-profile-bit attrs)))
-                  (push :profile-mask attrs))
-                (when (or forward-compat debug)
-                  (let ((flags '()))
-                    (when forward-compat (push :forward-compatible-bit flags))
-                    (when debug (push :debug-bit flags))
-                    (push flags attrs)
-                    (push :flags attrs)))
-                (glop-glx:glx-create-specific-context (x11-window-display win)
-                                                      (x11-window-fb-config win)
-                                                      attrs))
-              (glop-glx:glx-create-context (x11-window-display win)
-                                           (x11-window-visual-infos win))))
-    (when make-current
-      (attach-gl-context win ctx))
-    (when (and major minor)
-      (glop-glx:correct-context? major minor))
-    ctx))
+  (without-fp-traps
+    (let ((ctx (make-glx-context :display (x11-window-display win))))
+      (setf (glx-context-ctx ctx)
+            (if (and major minor)
+                (let ((attrs (list :major-version major :minor-version minor)))
+                  (when profile
+                    (case profile
+                      (:core (push :core-profile-bit attrs))
+                      (:compat (push :compatibility-profile-bit attrs)))
+                    (push :profile-mask attrs))
+                  (when (or forward-compat debug)
+                    (let ((flags '()))
+                      (when forward-compat (push :forward-compatible-bit flags))
+                      (when debug (push :debug-bit flags))
+                      (push flags attrs)
+                      (push :flags attrs)))
+                  (glop-glx:glx-create-specific-context (x11-window-display win)
+                                                        (x11-window-fb-config win)
+                                                        attrs))
+                (glop-glx:glx-create-context (x11-window-display win)
+                                             (x11-window-visual-infos win))))
+      (when make-current
+        (attach-gl-context win ctx))
+      (when (and major minor)
+        (glop-glx:correct-context? major minor))
+      ctx)))
 
 (defmethod destroy-gl-context ((ctx glx-context))
   (detach-gl-context ctx)

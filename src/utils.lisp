@@ -104,7 +104,7 @@ Otherwise, only one key-press event will be triggered.")
 #+(and sbcl x86-64)
 (defmacro without-fp-traps (&body body)
  `(sb-int:with-float-traps-masked (:invalid :divide-by-zero)
- ,@body))
+    ,@body))
 
 ;;; Do nothing on Lisps that don't need traps disabled.
 #-(and sbcl x86-64)
