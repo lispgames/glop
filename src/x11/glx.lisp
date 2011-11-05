@@ -182,7 +182,7 @@
   (redirect :boolean))
 
 (defun glx-create-context (dpy visual)
-  (let ((ctx (%glx-create-context dpy visual (null-pointer) 1)))
+  (let ((ctx (%glx-create-context dpy visual (null-pointer) t)))
     (when (null-pointer-p ctx)
       (error "Unable to create context"))
     ctx))
