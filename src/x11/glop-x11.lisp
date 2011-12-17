@@ -42,34 +42,37 @@
   display       ;; X display ptr
   )
 
+;; FIXME: we should use specific context creation if available regardless of
+;; :major and :minor being nil
 (defmethod create-gl-context ((win x11-window) &key (make-current t) major minor
                                                     forward-compat debug
                                                     profile)
-  (let ((ctx (make-glx-context :display (x11-window-display win))))
-    (setf (glx-context-ctx ctx)
-          (if (and major minor)
-              (let ((attrs (list :major-version major :minor-version minor)))
-                (when profile
-                  (case profile
-                    (:core (push :core-profile-bit attrs))
-                    (:compat (push :compatibility-profile-bit attrs)))
-                  (push :profile-mask attrs))
-                (when (or forward-compat debug)
-                  (let ((flags '()))
-                    (when forward-compat (push :forward-compatible-bit flags))
-                    (when debug (push :debug-bit flags))
-                    (push flags attrs)
-                    (push :flags attrs)))
-                (glop-glx:glx-create-specific-context (x11-window-display win)
-                                                      (x11-window-fb-config win)
-                                                      attrs))
-              (glop-glx:glx-create-context (x11-window-display win)
-                                           (x11-window-visual-infos win))))
-    (when make-current
-      (attach-gl-context win ctx))
-    (when (and major minor)
-      (glop-glx:correct-context? major minor))
-    ctx))
+  (without-fp-traps
+    (let ((ctx (make-glx-context :display (x11-window-display win))))
+      (setf (glx-context-ctx ctx)
+            (if (and major minor)
+                (let ((attrs (list :major-version major :minor-version minor)))
+                  (when profile
+                    (case profile
+                      (:core (push :core-profile-bit attrs))
+                      (:compat (push :compatibility-profile-bit attrs)))
+                    (push :profile-mask attrs))
+                  (when (or forward-compat debug)
+                    (let ((flags '()))
+                      (when forward-compat (push :forward-compatible-bit flags))
+                      (when debug (push :debug-bit flags))
+                      (push flags attrs)
+                      (push :flags attrs)))
+                  (glop-glx:glx-create-specific-context (x11-window-display win)
+                                                        (x11-window-fb-config win)
+                                                        attrs))
+                (glop-glx:glx-create-context (x11-window-display win)
+                                             (x11-window-visual-infos win))))
+      (when make-current
+        (attach-gl-context win ctx))
+      (when (and major minor)
+        (glop-glx:correct-context? major minor))
+      ctx)))
 
 (defmethod destroy-gl-context ((ctx glx-context))
   (detach-gl-context ctx)
@@ -122,21 +125,24 @@
         (with-accessors ((display x11-window-display)
                          (screen x11-window-screen)
                          (id x11-window-id)
+                         (cursor x11-window-cursor)
                          (visual-infos x11-window-visual-infos)
                          (fb-config x11-window-fb-config)
                          (win-title window-title))
             win
           (setf display (glop-xlib:x-open-display)
                 screen 0)
-          ;; FIXME: something like defglextfun from cl-opengl would be nice for extensions
-          ;; FIXME: all the fb config stuff should be checked as extensions too
-          (if (cffi::null-pointer-p (gl-get-proc-address "glXCreateContextAttribsARB"))
-              (setf visual-infos (glop-glx:glx-choose-visual display screen attribs))
-              (setf fb-config (glop-glx:glx-choose-fb-config display screen attribs)
-                    visual-infos (glop-glx:glx-get-visual-from-fb-config display fb-config)))
+          (multiple-value-bind (glx-major glx-minor)
+              (glop-glx:glx-get-version display)
+            (if (and (>= glx-major 1)
+                     (>= glx-minor 3))
+                (setf fb-config (glop-glx:glx-choose-fb-config display screen attribs)
+                      visual-infos (glop-glx:glx-get-visual-from-fb-config display fb-config))
+                (setf visual-infos (glop-glx:glx-choose-visual display screen attribs))))
           (setf id (glop-xlib:x-create-window display
                                               (glop-xlib:x-default-root-window display)
                                               x y width height visual-infos))
+          (setf cursor (glop-xlib:x-create-null-cursor display id))
           (cffi:with-foreign-object (array :unsigned-long)
             (setf (cffi:mem-aref array :unsigned-long)
                   (glop-xlib:x-intern-atom display "WM_DELETE_WINDOW" nil))
@@ -151,8 +157,10 @@
 (defmethod close-window ((win x11-window))
   (with-accessors ((display x11-window-display)
                    (id x11-window-id)
+                   (cursor x11-window-cursor)
                    (context window-gl-context))
       win
+    (glop-xlib:x-free-cursor display cursor)
     (glop-xlib:x-destroy-window display id)
     (glop-xlib:x-close-display display)))
 
@@ -185,6 +193,19 @@
 (defmethod swap-buffers ((win x11-window))
   (glop-glx:glx-wait-gl)
   (glop-glx:glx-swap-buffers (x11-window-display win) (x11-window-id win)))
+
+(defmethod show-cursor ((win x11-window))
+  (with-accessors ((display x11-window-display)
+                   (id x11-window-id))
+      win
+    (glop-xlib:x-undefine-cursor display id)))
+
+(defmethod hide-cursor ((win x11-window))
+  (with-accessors ((display x11-window-display)
+                   (id x11-window-id)
+                   (cursor x11-window-cursor))
+      win
+    (glop-xlib:x-define-cursor display id cursor)))
 
 (defun %next-event (win &key blocking)
   (glop-xlib:x-next-event win (x11-window-display win) blocking))

@@ -113,8 +113,10 @@
   (:wm-char 258)
   (:wm-mouse-wheel 522)
   (:wm-size 5)
+  (:wm-exit-size-move #x0232)
   (:wm-show-window 24)
   (:wm-set-focus 7)
+  (:wm-kill-focus 8)
   (:wm-sys-command 274))
 
 (defcenum vkey-type
@@ -372,6 +374,9 @@
     (t (:default "user32")))
 (use-foreign-library user32)
 
+(defcfun ("ShowCursor" show-cursor) :int
+  (show bool))
+
 (defcfun ("EnumDisplaySettingsA" enum-display-settings) bool
   (device-name :string) (mode-num dword) (dev-mode :pointer))
 
@@ -474,6 +479,7 @@
 (defun get-client-area-offset (wnd)
   (multiple-value-bind (wx wy ww wh) (get-window-rect wnd)
     (multiple-value-bind (cx cy cw ch) (get-client-rect wnd)
+      (declare (ignore ww wh cw ch))
       (values (- cx wx) (- cy wy)))))
 
 (defcfun ("MoveWindow" move-window) bool
@@ -517,8 +523,15 @@
 (defcfun ("GetKeyboardState" get-keyboard-state) bool
   (state-out :pointer))
 
+
+
 (defcfun ("ToAscii" to-ascii) :int
-  (vkey :uint) (scan-code :uint) (kbd-state :pointer) (buffer :pointer) (flags :uint))
+  (vkey :uint)
+  (scan-code :uint) (kbd-state :pointer) (buffer :pointer) (flags :uint))
+
+(defcfun ("ToUnicode" to-unicode) :int
+  (vkey :uint)
+  (scan-code :uint) (kbd-state :pointer) (buffer :pointer) (buffer-size :int) (flags :uint))
 
 ;; XXX: this is an ugly hack and should probably be changed
 ;; We use the %event% var to allow window-proc callback to generate glop:event objects
@@ -552,18 +565,18 @@
   (values (foreign-enum-keyword 'vkey-type w-param :errorp nil)
           (with-foreign-object (kbd-state :char 256)
             (when (get-keyboard-state kbd-state)
-              (with-foreign-object (buffer :int16)
-                (let ((res (to-ascii (ldb (byte 32 0) w-param)
-                                     (ldb (byte 32 0) l-param)
-                                     kbd-state buffer 0)))
+              (with-foreign-object (buffer :int32)
+                (setf (mem-ref buffer :int32) 0)
+                (let ((res (to-unicode (ldb (byte 32 0) w-param)
+                                       (ldb (byte 32 0) l-param)
+                                       kbd-state buffer 4 0)))
                   (case res
                     (0 nil)
                     (t (foreign-string-to-lisp buffer)))))))))
 
 
 (let ((last-x 0)
-      (last-y 0)
-      (from-configure nil))
+      (last-y 0))
   (defcallback window-proc :long ((wnd hwnd) (msg :uint) (w-param wparam) (l-param lparam))
      (let ((msg-type (foreign-enum-keyword 'msg-type msg :errorp nil)))
        (case msg-type
@@ -582,13 +595,25 @@
                                                  :dx (- low last-x) :dy (- high last-y)))
               (setf last-x low last-y high))
             (return-from window-proc 0)))
-         (:wm-paint
-          ;; XXX: this is an ugly hack but WM_SIZE acts strangely...
+         (:wm-size
+          (when %window% ;; XXX: WM_SIZE is called on window creation when %window% is nil ...
+            (glop::%update-geometry %window% (glop:window-x %window%) (glop:window-y %window%)
+                                    (low-word l-param) (high-word l-param)))
+          (return-from window-proc 0))
+         (:wm-move
+          (when %window% ;; XXX: WM_MOVE is called on window creation when %window% is nil ...
+            (multiple-value-bind (x y w h) (get-window-rect wnd)
+              (glop::%update-geometry %window% x y ;;(low-word l-param) (high-word l-param)
+                                      (glop:window-width %window%) (glop:window-height %window%)))
+            (return-from window-proc 0)))
+         (:wm-exit-size-move
+          (setf %event% (make-instance 'glop:resize-event
+                                       :width (glop:window-width %window%)
+                                       :height (glop:window-height %window%)))
+            (return-from window-proc 0))
+         (:wm-paint ;; XXX: we need to call defaut windowproc too here
           (multiple-value-bind (x y width height) (get-client-rect wnd)
-            (setf %event% (glop::make-instance (if from-configure
-                                                   (progn (setf from-configure nil)
-                                                          'glop:resize-event)
-                                                   'glop:expose-event)
+            (setf %event% (glop::make-instance 'glop:expose-event
                                                :width width :height height))))
          (:wm-lbutton-down
           (set-capture wnd)
@@ -643,34 +668,18 @@
                                              :button (if (> w-param 0)
                                                          4 5)))
           (return-from window-proc 0))
-         (:wm-size
-          ;; XXX: other part of above ugly hack...
-          ;; Not sure why but it looks WM_SIZE doesn't get out of window-proc
-          ;; until mouse button is released...
-          ;; Maybe we can use WM_EXITSIZEMOVE and send :configure event only at the end
-          ;; of the window resize while still sending a proper expose event...
-          ;; With this hack it seems that WM_PAINT is handled directly thus overwriting
-          ;; our glop :configure event with a :expose event...weird
-          (setf from-configure t)
-          (when %window% ;; XXX: WM_SIZE is called on window creation when %window% is nil ...
-            (glop::%update-geometry %window% (glop:window-x %window%) (glop:window-y %window%)
-                                    (low-word l-param) (high-word l-param)))
-          (return-from window-proc 0))
-         (:wm-move
-          (when %window% ;; XXX: WM_MOVE is called on window creation when %window% is nil ...
-            (multiple-value-bind (x y w h) (get-window-rect wnd)
-              (glop::%update-geometry %window% x y ;;(low-word l-param) (high-word l-param)
-                                      (glop:window-width %window%) (glop:window-height %window%)))
-            (return-from window-proc 0)))
          (:wm-show-window
           (setf %event% (glop::make-instance (if (zerop w-param)
                                                  'glop:visibility-unobscured-event
                                                  'glop:visibility-obscured-event)))
           (return-from window-proc 0))
          (:wm-set-focus
+          (setf %event% (make-instance 'glop:focus-in-event))
+          (return-from window-proc 0))
+         (:wm-kill-focus
+          (setf %event% (make-instance 'glop:focus-out-event))
           (return-from window-proc 0)))
-       ;; (:wm-sys-command
-       ;;  (format t "WM_SYSCOMMAND~%")))
+       ;; Pass unhandled messages to default windowproc
        (%def-window-proc wnd msg w-param l-param))))
 
 (defcfun ("RegisterClassA" %register-class) :int16

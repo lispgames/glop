@@ -5,6 +5,7 @@
 
 (defctype xid :unsigned-long)
 (defctype window xid)
+(defctype font xid)
 (defctype drawable xid)
 (defctype colormap xid)
 (defctype pixmap xid)
@@ -15,6 +16,13 @@
 (defctype display _xdisplay)
 
 (defctype visualid :unsigned-long)
+
+(defctype watch-proc :pointer)
+
+(defcstruct xcolor
+  (pixel :ulong)
+  (red :ushort) (green :ushort) (blue :ushort)
+  (flags :char) (pad :char))
 
 (defcstruct visual-info
     (visual :pointer) (visual-id visualid) (screen :int)
@@ -262,32 +270,6 @@
 
 (defcstruct x-compose-status
     (compose-ptr :pointer) (chars-matched :int))
-
-;; Only define interesting keysym and just use iso-8859-1 for the remaining ones
-;; too many keysyms exists and I don't want to write so many things right now.
-;; TODO: add keypad support but I don't have it on the laptop here
-(defcenum x-keysym-value
-  ;; cursor control & motion
-  (:key-left #xff51)
-  :key-up
-  :key-right
-  :key-down
-  :key-page-up
-  :key-page-down
-  :key-end
-  :key-begin
-  ;; function keys
-  (:key-f1 #xffbe)
-  :key-f2
-  :key-f3
-  :key-f4
-  :key-f5
-  :key-f6
-  :key-f7
-  :key-f8
-  :key-f9
-  :key-f10
-  :key-f11)
 
 (defctype x-status :int)
 
@@ -550,12 +532,12 @@
 
 (defun x-lookup-string (key-event)
   "Returns the input string corresponding to a keypress."
-  (with-foreign-objects ((buffer :char 32) (keysym 'keysym))
+  (with-foreign-objects ((buffer :char 32) (keysym 'x-keysym-value))
     #+ccl(loop for i below 32 do (setf (mem-aref buffer :char i) 0)) ;; buffer is not zeroed in cll
     (%x-lookup-string key-event buffer 32 keysym (null-pointer))
     (let ((string (foreign-string-to-lisp buffer)))
       (values (if (zerop (length string)) nil string)
-              (mem-ref keysym 'keysym)))))
+              (mem-ref keysym 'x-keysym-value)))))
 
 (defcfun ("XGetGeometry" %x-get-geometry) x-status
   (display-ptr :pointer) (d drawable) (root-return :pointer)
@@ -601,3 +583,106 @@
     (%x-configure-window dpy win (foreign-bitfield-value 'x-window-configure-flags
                                                          '(:cw-x :cw-y :cw-width :cw-height))
                          changes)))
+
+(defcfun ("XCreatePixmapCursor" %x-create-pixmap-cursor) cursor
+  (display-ptr :pointer) (src pixmap) (mask pixmap)
+  (foreground-color xcolor) (background-color xcolor)
+  (x :uint) (y :uint))
+
+(defcfun ("XCreatePixmap" %x-create-pixmap) pixmap
+  (display-ptr :pointer) (d drawable)
+  (width :uint) (height :uint)
+  (depth :uint))
+
+(defcenum xgcvalues-function
+  (:GXclear #x0)
+  :GXand
+  :GXandReverse
+  :GXcopy
+  :GXandInverted
+  :GXnoop
+  :GXxor
+  :GXor
+  :GXnor
+  :GXequiv
+  :GXinvert
+  :GXorReverse
+  :GXcopyInverted
+  :GXorInverted
+  :GXnand
+  :GXset)
+
+(defcstruct xgcvalues
+  (function xgcvalues-function)
+  (plane-mask :ulong) (foreground :ulong) (background :ulong)
+  (line-width :int) (line-style :int)
+  (cap-style :int) (join-style :int) (fill-style :int)
+  (fill-rule :int) (arc-mode :int)
+  (tile pixmap) (stipple pixmap)
+  (ts-x-origin :int) (ts-y-origin :int)
+  (font font) (subwindow-mode :int)
+  (graphics-exposures :boolean)
+  (clip-x-origin :int) (clip-y-origin :int)
+  (clip-mask pixmap)
+  (dash-offset :int) (dashes :char))
+
+(defbitfield xgcvalues-flags
+  (:gcv-function #x0001))
+
+(defcfun ("XCreateGC" %x-create-gc) gcontext
+  (display-ptr :pointer) (d drawable)
+  (value-mask xgcvalues-flags)
+  (xgc-values-ptr :pointer))
+
+(defcfun ("XFillRectangle" %x-fill-rectangle) :int
+  (display-ptr :pointer) (d drawable) (gc gcontext)
+  (x :int) (y :int) (width :uint) (height :uint))
+
+(defun x-create-null-cursor (dpy win)
+  (with-foreign-objects ((xgc 'xgcvalues) (col 'xcolor))
+    (setf (foreign-slot-value xgc 'xgcvalues 'function)
+          (foreign-enum-value 'xgcvalues-function :GXclear)
+          (foreign-slot-value col 'xcolor 'pixel)
+          0
+          (foreign-slot-value col 'xcolor 'red)
+          0
+          (foreign-slot-value col 'xcolor 'flags)
+          4)
+    (let* ((cursor-mask (%x-create-pixmap dpy win 1 1 1))
+           (gc (%x-create-gc dpy cursor-mask '(:gcv-function) xgc)))
+      (%x-fill-rectangle dpy cursor-mask gc 0 0 1 1)
+      (let ((cursor (%x-create-pixmap-cursor dpy cursor-mask cursor-mask
+                                             col col 0 0)))
+        (x-free-pixmap dpy cursor-mask)
+        (x-free-gc dpy gc)
+        cursor))))
+
+(defcfun ("XFreePixmap" x-free-pixmap) :int
+  (display-ptr :pointer) (p pixmap))
+
+(defcfun ("XFreeGC" x-free-gc) :int
+  (display-ptr :pointer) (gc gcontext))
+
+(defcfun ("XFreeCursor" x-free-cursor) :int
+  (display-ptr :pointer) (cursor cursor))
+
+(defcfun ("XDefineCursor" x-define-cursor) :int
+  (display-ptr :pointer) (win window)
+  (cursor cursor))
+
+(defcfun ("XUndefineCursor" x-undefine-cursor) :int
+  (display-ptr :pointer) (win window))
+
+(defcfun ("XAddConnectionWatch" add-connection-watch) x-status
+  (display :pointer)
+  (procedure watch-proc)
+  (client-data :pointer))
+
+(defcfun ("XRemoveConnectionWatch" remove-connection-watch) x-status
+  (display :pointer)
+  (procedure watch-proc)
+  (client-data :pointer))
+
+(defcfun ("XProcessInternalConnection" process-internal-connection) :void
+  (display :pointer)
+  (fd :int))

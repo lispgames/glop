@@ -16,6 +16,7 @@
    #:swap-buffers
    #:window-x #:window-y #:window-width #:window-height #:window-gl-context #:set-fullscreen
    #:set-geometry #:set-aspect-ratio #:toggle-fullscreen
+   #:show-cursor #:hide-cursor
    ;; state
    #:key-pressed #:*ignore-auto-repeat*
    ;; events
@@ -34,6 +35,11 @@
    ;; helper macros
    #:with-window #:with-idle-forms
    ;; multiple windows
-   #:set-gl-window))
+   #:set-gl-window
+   ;; platform-specific export for external event loop
+   #+(and unix (not darwin))#:x11-window-id
+   #+(and unix (not darwin))#:x11-window-display
+   #+(or win32 windows)#:win32-window-id
+   ))
 
 

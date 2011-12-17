@@ -26,7 +26,8 @@
    (screen :initarg :screen :accessor x11-window-screen)
    (id :accessor x11-window-id)
    (visual-infos :accessor x11-window-visual-infos)
-   (fb-config :accessor x11-window-fb-config)))
+   (fb-config :accessor x11-window-fb-config)
+   (cursor :accessor x11-window-cursor)))
 
 #+(and unix (not darwin))
 (defstruct (x11-video-mode (:include video-mode))
@@ -103,7 +104,7 @@ Otherwise, only one key-press event will be triggered.")
 #+(and sbcl x86-64)
 (defmacro without-fp-traps (&body body)
  `(sb-int:with-float-traps-masked (:invalid :divide-by-zero)
- ,@body))
+    ,@body))
 
 ;;; Do nothing on Lisps that don't need traps disabled.
 #-(and sbcl x86-64)

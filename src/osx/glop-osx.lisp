@@ -77,7 +77,7 @@
     (loop for i below (glop-bridge:ns-array-count display-modes)
           collect (glop-bridge:translate-to-video-mode
                     (glop-bridge:ns-array-object-at-index
-                      display-modes i)))))
+                       display-modes i)))))
 
 (cffi:defcallback push-event-to-stack :void ((ns-event :pointer))
   (let* ((event-type (glop-bridge:ns-event-type ns-event))

@@ -4,7 +4,8 @@
   (:use #:cl)
   (:export #:test-manual-create #:test-multiple-contexts #:test-with-window #:test-manual-events
            #:test-gl-hello #:test-gl-hello-fullscreen #:test-gl-hello-gl3 #:test-multiple-windows
-           #:test-on-event #:test-subclassing))
+           #:test-on-event #:test-subclassing
+           #+(and unix (not darwin))#:test-custom-event-loop))
 
 (in-package #:glop-test)
 
@@ -14,6 +15,8 @@
   (when (and (not pressed) (eq keysym :escape))
     (glop:push-close-event window))
   (case keysym
+    (:h (glop:hide-cursor window))
+    (:j (glop:show-cursor window))
     (:left (decf (glop:window-x window)))
     (:right (incf (glop:window-x window)))
     (:up (decf (glop:window-y window)))
@@ -109,6 +112,38 @@
                  (gl:flush)
                  (glop:swap-buffers win))
     (glop:destroy-window win)))
+
+;; How to completely replace glop's event management on X11
+;; Note that this uses non-exported stuff from glop-xlib
+;; This is just provided as an example and you should use your own
+;; platform specific event code
+;; Necessary data (window handle etc) are probably not exported for the moment
+#+(and unix (not darwin))
+(defun test-custom-event-loop ()
+  (let ((win (glop:create-window "Glop test window" 800 600)))
+    (format t "Created window: ~S~%" win)
+    (gl:clear-color 0.3 0.3 1.0 0)
+    (loop with running = t
+       with dpy = (glop::x11-window-display win)
+       for x-evt = nil
+       while running
+       do (when (glop-xlib::x-pending-p dpy)
+            (setf x-evt (cffi:foreign-alloc 'glop-xlib::x-event))
+            (glop-xlib::%x-next-event dpy x-evt))
+       if x-evt
+       do (let ((evt (glop-xlib::process-event win dpy x-evt)))
+            (typecase evt
+              (glop:key-press-event
+               (when (eq (glop:keysym evt) :escape)
+                 (setf running nil)))
+              (glop:close-event
+               (setf running nil))
+              (t (format t "Unhandled event: ~A~%" evt)))
+            (cffi:foreign-free x-evt))
+       else do (gl:clear :color-buffer)
+               (gl:flush)
+               (glop:swap-buffers win))
+  (glop:destroy-window win)))
 
 (defun test-gl-hello ()
   (glop:with-window (win "Glop test window" 800 600)

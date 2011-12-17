@@ -1,14 +1,6 @@
 ;;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; Base: 10; indent-tabs-mode: nil -*-
 
 ;;; GLX bindings
-(defpackage :glop-glx
-  (:use #:cl #:cffi #:glop-xlib)
-  (:export #:glx-get-proc-address #:correct-context? #:glx-destroy-context
-           #:glx-create-specific-context #:glx-create-context
-           #:glx-make-current #:glx-release-context #:glx-choose-fb-config
-           #:glx-get-visual-from-fb-config #:glx-choose-visual
-           #:glx-wait-gl #:glx-swap-buffers))
-
 (in-package #:glop-glx)
 
 (defcenum (glx-attributes :int)
@@ -62,9 +54,9 @@
   (:bad-enum))
 
 (define-foreign-library opengl
-  (t (:or (:default "libGL")
-          "libGL.so.1"
-          "libGL.so.2")))
+  (:darwin (:framework "OpenGL"))
+  (:windows "opengl32.dll" :convention :stdcall)
+  (:unix (:or "libGL.so.4" "libGL.so.3" "libGL.so.2" "libGL.so.1" "libGL.so")))
 (use-foreign-library opengl)
 
 (defctype fb-config :pointer)
@@ -190,7 +182,7 @@
   (redirect :boolean))
 
 (defun glx-create-context (dpy visual)
-  (let ((ctx (%glx-create-context dpy visual (null-pointer) 1)))
+  (let ((ctx (%glx-create-context dpy visual (null-pointer) t)))
     (when (null-pointer-p ctx)
       (error "Unable to create context"))
     ctx))
