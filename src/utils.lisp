@@ -3,8 +3,7 @@
 (defstruct video-mode
   (width 0 :type integer)
   (height 0 :type integer)
-  (depth 0 :type integer)
-  (rate 0 :type double-float))
+  (depth 0 :type integer))
 
 ;; platform specific windows
 ;; XXX: this may move to platform specific directories
@@ -18,7 +17,8 @@
    (id :accessor win32-window-id)))
 
 #+(or win32 windows)
-(defstruct (win32-video-mode (:include video-mode)))
+(defstruct (win32-video-mode (:include video-mode))
+  (rate 0 :type integer))
 
 #+(and unix (not darwin))
 (defclass x11-window ()
@@ -31,6 +31,7 @@
 
 #+(and unix (not darwin))
 (defstruct (x11-video-mode (:include video-mode))
+  (rate 0 :type integer)
   (index -1 :type integer))
 
 #+darwin
@@ -46,6 +47,7 @@
 
 #+darwin
 (defstruct (osx-video-mode (:include video-mode))
+  (rate 0 :type double-float)
   mode)
 
 ;; base window structure
