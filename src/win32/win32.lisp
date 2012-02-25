@@ -395,7 +395,7 @@
                          dmode devmode)
       (setf size (foreign-type-size 'devmode))
       (enum-display-settings (cffi:null-pointer) -1 dmode)
-      (glop::make-win32-video-mode :width pels-width
+      (glop::make-video-mode :width pels-width
                                    :height pels-height
                                    :depth bits-per-pixel
                                    :rate display-frequency))))
@@ -409,10 +409,10 @@
          for res = (enum-display-settings (cffi:null-pointer) mode-index dmode)
          do (incf mode-index)
          until (zerop res)
-         collect (glop::make-win32-video-mode :width pels-width
-                                              :height pels-height
-                                              :depth bits-per-pixel
-                                              :rate display-frequency)))))
+         collect (glop::make-video-mode :width pels-width
+                                        :height pels-height
+                                        :depth bits-per-pixel
+                                        :rate display-frequency)))))
 
 (defun set-video-mode (mode)
   (let ((width (glop::video-mode-width mode))

@@ -1,6 +1,22 @@
 (in-package #:glop)
 
-(defstruct video-mode
+#+(or win32 windows)
+(defstruct win32-video-mode
+  (rate 0 :type integer))
+
+#+(and unix (not darwin))
+(defstruct x11-video-mode
+  (rate 0 :type integer)
+  (index -1 :type integer))
+
+#+darwin
+(defstruct osx-video-mode
+  (rate 0 :type double-float)
+  mode)
+
+(defstruct (video-mode (:include #+(and unix (not darwin)) x11-video-mode
+                                 #+(and win32 windows) win32-video-mode
+                                 #+darwin osx-video-mode))
   (width 0 :type integer)
   (height 0 :type integer)
   (depth 0 :type integer))
@@ -16,10 +32,6 @@
    (dc :accessor win32-window-dc)
    (id :accessor win32-window-id)))
 
-#+(or win32 windows)
-(defstruct (win32-video-mode (:include video-mode))
-  (rate 0 :type integer))
-
 #+(and unix (not darwin))
 (defclass x11-window ()
   ((display :initarg :display :accessor x11-window-display)
@@ -28,11 +40,6 @@
    (visual-infos :accessor x11-window-visual-infos)
    (fb-config :accessor x11-window-fb-config)
    (cursor :accessor x11-window-cursor)))
-
-#+(and unix (not darwin))
-(defstruct (x11-video-mode (:include video-mode))
-  (rate 0 :type integer)
-  (index -1 :type integer))
 
 #+darwin
 (defclass osx-window ()
@@ -44,11 +51,6 @@
                       :accessor pixel-format-list)
    (invert-mouse-y :initform nil
                    :accessor invert-mouse-y)))
-
-#+darwin
-(defstruct (osx-video-mode (:include video-mode))
-  (rate 0 :type double-float)
-  mode)
 
 ;; base window structure
 ;; you may inherit your own window class from this

@@ -11,7 +11,7 @@
 
 (declaim (inline display-to-video-mode))
 (defun translate-to-video-mode (mode)
-  (glop::make-osx-video-mode
+  (glop::make-video-mode
     :width (mode-width mode)
     :height (mode-height mode)
     :rate (mode-rate mode)

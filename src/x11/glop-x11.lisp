@@ -17,24 +17,24 @@
            for rate = (third res)
            for index = (fourth res)
            do (loop for depth in depth-list
-                 do (push (make-x11-video-mode :width width
-                                               :height height
-                                               :depth depth
-                                               :rate rate
-                                               :index index)
+                 do (push (make-video-mode :width width
+                                           :height height
+                                           :depth depth
+                                           :rate rate
+                                           :index index)
                           modes)))))
     modes))
 
-(defmethod set-video-mode ((mode x11-video-mode))
+(defmethod set-video-mode ((mode video-mode))
   (glop-xlib::with-current-display dpy
-    (glop-xlib::set-mode dpy 0 (x11-video-mode-index mode)
-                         (x11-video-mode-rate mode))))
+    (glop-xlib::set-mode dpy 0 (video-mode-index mode)
+                         (video-mode-rate mode))))
 
 (defmethod current-video-mode ()
   (glop-xlib::with-current-display dpy
     (multiple-value-bind (width height depth rate index)
         (glop-xlib::current-mode dpy 0)
-      (make-x11-video-mode :width width :height height :depth depth
+      (make-video-mode :width width :height height :depth depth
                        :rate rate :index index))))
 
 (defstruct glx-context

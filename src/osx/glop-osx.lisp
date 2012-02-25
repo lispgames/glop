@@ -264,7 +264,7 @@
           (glop-bridge:capture-all-displays)
           (glop-bridge:set-display-mode
            (glop-bridge:main-display-id)
-           (osx-video-mode-mode fullscreen-mode)
+           (video-mode-mode fullscreen-mode)
            (cffi:null-pointer))
           (glop-bridge:ns-opengl-context-clear-drawable gl-context)
           (glop-bridge:ns-opengl-context-set-full-screen gl-context)
@@ -274,7 +274,7 @@
         (progn
           (glop-bridge:set-display-mode
            (glop-bridge:main-display-id)
-           (osx-video-mode-mode *native-video-mode*)
+           (video-mode-mode *native-video-mode*)
            (cffi:null-pointer))
           (glop-bridge:ns-opengl-context-clear-drawable gl-context)
           (glop-bridge:release-all-displays)

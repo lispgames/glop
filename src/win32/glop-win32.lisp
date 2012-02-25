@@ -9,7 +9,7 @@
 (defmethod list-video-modes ()
   (glop-win32::list-video-modes))
 
-(defmethod set-video-mode ((mode win32-video-mode))
+(defmethod set-video-mode ((mode video-mode))
   (glop-win32::set-video-mode mode))
 
 (defmethod current-video-mode ()
