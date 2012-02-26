@@ -65,7 +65,8 @@
    (gl-context :accessor window-gl-context)
    (pushed-event :initform nil :accessor window-pushed-event)
    (fullscreen :initform nil :accessor window-fullscreen)
-   (previous-video-mode :accessor window-previous-video-mode)))
+   (previous-video-mode :accessor window-previous-video-mode
+                        :initform nil)))
 
 (defun %update-geometry (win x y width height)
   (setf (slot-value win 'x) x
