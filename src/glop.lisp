@@ -156,15 +156,18 @@ Returns NIL if no match is found."
 (defun toggle-fullscreen (window)
   "Attempt to change display mode to the mode closest to geometry and
 set window fullscreen state."
-  (if (window-fullscreen window)
-      (progn (set-fullscreen window nil)
-             (set-video-mode (window-previous-video-mode window)))
-      (progn (setf (window-previous-video-mode window) (current-video-mode))
+  (cond
+    ((and (window-previous-video-mode window) (window-fullscreen window))
+     (progn (set-fullscreen window nil)
+            (set-video-mode (window-previous-video-mode window))
+            (setf (window-previous-video-mode window) nil)))
+    ((not (window-fullscreen window))
+     (progn (setf (window-previous-video-mode window) (current-video-mode))
              (set-video-mode (closest-video-mode (current-video-mode)
                                                  (list-video-modes)
                                                  (window-width window)
                                                  (window-height window)))
-             (set-fullscreen window t))))
+             (set-fullscreen window t)))))
 
 (defgeneric set-geometry (window x y width height)
   (:documentation

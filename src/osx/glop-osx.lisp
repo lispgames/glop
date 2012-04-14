@@ -282,15 +282,21 @@
                                    (list-video-modes)
                                    (window-width window)
                                    (window-height window))))
-          (set-video-mode fullscreen-mode)
+          (glop-bridge:capture-all-displays)
+          (glop-bridge:set-display-mode
+           (glop-bridge:main-display-id)
+           (video-mode-mode fullscreen-mode)
+           (cffi:null-pointer))
           (glop-bridge:ns-opengl-context-clear-drawable gl-context)
           (glop-bridge:ns-opengl-context-set-full-screen gl-context)
           (setf (window-fullscreen window) t
                 *fullscreen-active* t)
           (push-expose-event window))
         (progn
-          (set-video-mode *native-video-mode*)
-          (release-displays)
+          (glop-bridge:set-display-mode
+           (glop-bridge:main-display-id)
+           (video-mode-mode *native-video-mode*)
+           (cffi:null-pointer))
           (glop-bridge:ns-opengl-context-clear-drawable gl-context)
           (glop-bridge:ns-opengl-context-set-view gl-context gl-view)
           (setf (window-fullscreen window) nil
