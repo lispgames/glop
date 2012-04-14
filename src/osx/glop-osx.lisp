@@ -307,9 +307,10 @@
   (loop
      for ns-window = (ns-window win)
      for event = (glop-bridge:glop-app-next-event glop-bridge:*ns-app* blocking)
-     for found = (or (cffi:pointer-eq ns-window
-                                      (glop-bridge:ns-event-window event))
-                     *fullscreen-active*)
+     for found = (and (not (cffi:null-pointer-p event))
+                      (or (cffi:pointer-eq ns-window
+                                           (glop-bridge:ns-event-window event))
+                          *fullscreen-active*))
      do (progn (glop-bridge:glop-app-send-event glop-bridge:*ns-app* event)
                (glop-bridge:glop-app-update-windows))
      while (and blocking (or (not found) (null (event-stack ns-window))))
