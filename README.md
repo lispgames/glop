@@ -1,6 +1,5 @@
 Glop
 ====
-
 The goal is to provide simple OpenGL window and context manipulation code as well as system
 input handling (i.e. mouse & keyboard).
 
@@ -9,16 +8,33 @@ except system libraries.
 
 Dependencies
 ------------
- - CFFI
 
-Tested CL implementations/platforms
---------------------------------------
- - CLISP/X11
- - CLISP/Win32 (Windows XP)
- - SBCL/X11
- - CCL/X11
- - ECL/X11
+ - CFFI 
+
+Tested implementations/platforms
+--------------------------------
+The following list is just here for information and is certainly not
+meant to be exhaustive and/or up-to-date.
+
+Tested platforms:
+
+ - `Win32`: WindowsXP SP2
+ - `X11`: Linux64
+ - `OSX`: OSX 10.6
+
+The following combinations have been tested sucessfully for GL 2.X:
+
+ - CLISP 2.49      / X11
+ - CLISP 2.48      / Win32
+ - SBCL 1.0.55     / X11
+ - SBCL 1.0.46     / OSX  (still experimental)
+ - CCL 1.7-r14925M / X11
+ - ECL 12.2.1      / X11
  
+ The following combination are known to fail:
+ 
+ - CCL / OSX
+  
 Running the tests
 -----------------
 Make sure `glop.asd` and `glop-test.asd`  are in a location known to asdf and run:
@@ -91,7 +107,14 @@ See `test.lisp` for more details.
 
 Notes
 -----
+
+OsX support is still experimental.
+
+GL 3.x contexts are known to work on Linux and there should be experimental
+support those on Win32 (not tested).
  
 See also [issues](http://github.com/patzy/glop/issues) on github.
+
+Patches and improvements are welcome :=)
 
 
