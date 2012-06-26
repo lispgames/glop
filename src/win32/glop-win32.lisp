@@ -46,7 +46,7 @@
     (when make-current
       (attach-gl-context win ctx))
     (when (and major minor)
-      (glop-glx:correct-context? major minor))
+      (glop-wgl:correct-context? major minor))
     ctx))
 
 (defmethod destroy-gl-context ((ctx wgl-context))
