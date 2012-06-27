@@ -8,7 +8,7 @@
 (defctype lparam :int32)
 
 (defctype word :int16)
-(defctype dword  :int32)
+(defctype dword	 :int32)
 
 (defctype bool :int) ;; XXX: Win32 BOOL isn't used as a boolean (e.g.: see GetMessage)
 
@@ -371,7 +371,7 @@
   (panning-height dword))
 
 (define-foreign-library user32
-    (t (:default "user32")))
+  (t (:default "user32")))
 (use-foreign-library user32)
 
 (defcfun ("ShowCursor" show-cursor) :int
@@ -391,96 +391,96 @@
 
 (defun current-video-mode ()
   (with-foreign-object (dmode 'devmode)
-    (with-foreign-slots ((size bits-per-pixel pels-width pels-height display-frequency)
-                         dmode devmode)
-      (setf size (foreign-type-size 'devmode))
-      (enum-display-settings (cffi:null-pointer) -1 dmode)
-      (glop::make-video-mode :width pels-width
-                                   :height pels-height
-                                   :depth bits-per-pixel
-                                   :rate display-frequency))))
+	(with-foreign-slots ((size bits-per-pixel pels-width pels-height display-frequency)
+						 dmode devmode)
+	  (setf size (foreign-type-size 'devmode))
+	  (enum-display-settings (cffi:null-pointer) -1 dmode)
+	  (glop::make-video-mode :width pels-width
+							 :height pels-height
+							 :depth bits-per-pixel
+							 :rate display-frequency))))
 
 (defun list-video-modes ()
   (with-foreign-object (dmode 'devmode)
-    (with-foreign-slots ((size bits-per-pixel pels-width pels-height display-frequency)
-                         dmode devmode)
-      (setf size (foreign-type-size 'devmode))
-      (loop with mode-index = 0
-         for res = (enum-display-settings (cffi:null-pointer) mode-index dmode)
-         do (incf mode-index)
-         until (zerop res)
-         collect (glop::make-video-mode :width pels-width
-                                        :height pels-height
-                                        :depth bits-per-pixel
-                                        :rate display-frequency)))))
+	(with-foreign-slots ((size bits-per-pixel pels-width pels-height display-frequency)
+						 dmode devmode)
+	  (setf size (foreign-type-size 'devmode))
+	  (loop with mode-index = 0
+		 for res = (enum-display-settings (cffi:null-pointer) mode-index dmode)
+		 do (incf mode-index)
+		 until (zerop res)
+		 collect (glop::make-video-mode :width pels-width
+										:height pels-height
+										:depth bits-per-pixel
+										:rate display-frequency)))))
 
 (defun set-video-mode (mode)
   (let ((width (glop::video-mode-width mode))
-        (height (glop::video-mode-height mode))
-        (depth (glop::video-mode-depth mode))
-        (rate (glop::video-mode-rate mode)))
-    (with-foreign-object (dmode 'devmode)
-      (with-foreign-slots ((size bits-per-pixel pels-width pels-height display-frequency fields)
-                           dmode devmode)
-        (setf size (foreign-type-size 'devmode))
-        (enum-display-settings (cffi:null-pointer) -1 dmode)
-        (setf pels-width width
-              pels-height height
-              display-frequency rate
-              bits-per-pixel depth
-              fields (foreign-bitfield-value 'device-mode-fields '(:dm-pels-width
-                                                                   :dm-pels-height
-                                                                   :dm-bits-per-pixel
-                                                                   :dm-display-frequency)))
-        (change-display-settings dmode
-                                 (foreign-enum-value 'display-settings-mode
-                                                         :cds-fullscreen))))))
+		(height (glop::video-mode-height mode))
+		(depth (glop::video-mode-depth mode))
+		(rate (glop::video-mode-rate mode)))
+	(with-foreign-object (dmode 'devmode)
+	  (with-foreign-slots ((size bits-per-pixel pels-width pels-height display-frequency fields)
+						   dmode devmode)
+		(setf size (foreign-type-size 'devmode))
+		(enum-display-settings (cffi:null-pointer) -1 dmode)
+		(setf pels-width width
+			  pels-height height
+			  display-frequency rate
+			  bits-per-pixel depth
+			  fields (foreign-bitfield-value 'device-mode-fields '(:dm-pels-width
+																   :dm-pels-height
+																   :dm-bits-per-pixel
+																   :dm-display-frequency)))
+		(change-display-settings dmode
+								 (foreign-enum-value 'display-settings-mode
+													 :cds-fullscreen))))))
 
 (defun default-video-mode ()
   (change-display-settings (cffi:null-pointer) 0))
 
 (defun %set-fullscreen (wnd state)
   (if state
-      (progn (set-window-long wnd :gwl-style
-                      (foreign-bitfield-value 'wstyle
-                              '(:ws-popup :ws-clip-siblings :ws-clip-children)))
-             (set-window-long wnd :gwl-ex-style
-                      (foreign-bitfield-value 'wex-style
-                              '(:ws-ex-app-window :ws-ex-topmost))))
-      (progn (set-window-long wnd :gwl-style
-                      (foreign-bitfield-value 'wstyle
-                              '(:ws-overlapped-window :ws-clip-siblings :ws-clip-children)))
-             (set-window-long wnd :gwl-ex-style
-                      (foreign-bitfield-value 'wex-style
-                              '(:ws-ex-app-window :ws-ex-window-edge))))))
+	  (progn (set-window-long wnd :gwl-style
+							  (foreign-bitfield-value 'wstyle
+													  '(:ws-popup :ws-clip-siblings :ws-clip-children)))
+			 (set-window-long wnd :gwl-ex-style
+							  (foreign-bitfield-value 'wex-style
+													  '(:ws-ex-app-window :ws-ex-topmost))))
+	  (progn (set-window-long wnd :gwl-style
+							  (foreign-bitfield-value 'wstyle
+													  '(:ws-overlapped-window :ws-clip-siblings :ws-clip-children)))
+			 (set-window-long wnd :gwl-ex-style
+							  (foreign-bitfield-value 'wex-style
+													  '(:ws-ex-app-window :ws-ex-window-edge))))))
 
 (defcfun ("GetClientRect" %get-client-rect) bool
   (wnd hwnd) (rect-out :pointer))
 
 (defun get-client-rect (wnd)
   (with-foreign-object (rct 'rect)
-    (%get-client-rect wnd rct)
-    (with-foreign-slots ((left top right bottom) rct rect)
-      (values left top
-              (- right left)
-              (- bottom top)))))
+	(%get-client-rect wnd rct)
+	(with-foreign-slots ((left top right bottom) rct rect)
+	  (values left top
+			  (- right left)
+			  (- bottom top)))))
 
 (defcfun ("GetWindowRect" %get-window-rect) bool
   (wnd hwnd) (rect-out :pointer))
 
 (defun get-window-rect (wnd)
   (with-foreign-object (rct 'rect)
-    (%get-window-rect wnd rct)
-    (with-foreign-slots ((left top right bottom) rct rect)
-      (values left top
-              (- right left)
-              (- bottom top)))))
+	(%get-window-rect wnd rct)
+	(with-foreign-slots ((left top right bottom) rct rect)
+	  (values left top
+			  (- right left)
+			  (- bottom top)))))
 
 (defun get-client-area-offset (wnd)
   (multiple-value-bind (wx wy ww wh) (get-window-rect wnd)
-    (multiple-value-bind (cx cy cw ch) (get-client-rect wnd)
-      (declare (ignore ww wh cw ch))
-      (values (- cx wx) (- cy wy)))))
+	(multiple-value-bind (cx cy cw ch) (get-client-rect wnd)
+	  (declare (ignore ww wh cw ch))
+	  (values (- cx wx) (- cy wy)))))
 
 (defcfun ("MoveWindow" move-window) bool
   (wnd hwnd) (x :int) (y :int) (width :int) (height :int)
@@ -544,15 +544,15 @@
 
 (defun next-event (win wnd &optional blocking)
   (let ((%window% win))
-    (with-foreign-object (msg 'msg)
-      (if blocking
-          (when (> (%get-message msg wnd 0 0) 0)
-            (%translate-message msg)
-            (%dispatch-message msg))
-          (when (%peek-message msg wnd 0 0 :pm-remove)
-            (%translate-message msg)
-            (%dispatch-message msg))))
-    %event%))
+	(with-foreign-object (msg 'msg)
+	  (if blocking
+		  (when (> (%get-message msg wnd 0 0) 0)
+			(%translate-message msg)
+			(%dispatch-message msg))
+		  (when (%peek-message msg wnd 0 0 :pm-remove)
+			(%translate-message msg)
+			(%dispatch-message msg))))
+	%event%))
 
 ;; XXX: we probably have problems with negative numbers here...
 (defun low-word (value)
@@ -563,124 +563,124 @@
 
 (defun win32-lookup-key (w-param l-param)
   (values (foreign-enum-keyword 'vkey-type w-param :errorp nil)
-          (with-foreign-object (kbd-state :char 256)
-            (when (get-keyboard-state kbd-state)
-              (with-foreign-object (buffer :int32)
-                (setf (mem-ref buffer :int32) 0)
-                (let ((res (to-unicode (ldb (byte 32 0) w-param)
-                                       (ldb (byte 32 0) l-param)
-                                       kbd-state buffer 4 0)))
-                  (case res
-                    (0 nil)
-                    (t (foreign-string-to-lisp buffer)))))))))
+		  (with-foreign-object (kbd-state :char 256)
+			(when (get-keyboard-state kbd-state)
+			  (with-foreign-object (buffer :int32)
+				(setf (mem-ref buffer :int32) 0)
+				(let ((res (to-unicode (ldb (byte 32 0) w-param)
+									   (ldb (byte 32 0) l-param)
+									   kbd-state buffer 4 0)))
+				  (case res
+					(0 nil)
+					(t (foreign-string-to-lisp buffer)))))))))
 
 
 (let ((last-x 0)
-      (last-y 0))
+	  (last-y 0))
   (defcallback window-proc :long ((wnd hwnd) (msg :uint) (w-param wparam) (l-param lparam))
-     (let ((msg-type (foreign-enum-keyword 'msg-type msg :errorp nil)))
-       (case msg-type
-         (:wm-close
-          (setf %event% (glop::make-instance 'glop:close-event))
-          (return-from window-proc 0))
-         (:wm-destroy
-          (%post-quit-message 0)
-          (return-from window-proc 0))
-         (:wm-mouse-move
-          (let ((low (low-word l-param))
-                (high (high-word l-param)))
-            (when (or (/= low last-x) (/= high last-y))
-              (setf %event% (glop::make-instance 'glop:mouse-motion-event
-                                                 :x low :y high
-                                                 :dx (- low last-x) :dy (- high last-y)))
-              (setf last-x low last-y high))
-            (return-from window-proc 0)))
-         (:wm-size
-          (when %window% ;; XXX: WM_SIZE is called on window creation when %window% is nil ...
-            (glop::%update-geometry %window% (glop:window-x %window%) (glop:window-y %window%)
-                                    (low-word l-param) (high-word l-param)))
-          (return-from window-proc 0))
-         (:wm-move
-          (when %window% ;; XXX: WM_MOVE is called on window creation when %window% is nil ...
-            (multiple-value-bind (x y w h) (get-window-rect wnd)
-              (glop::%update-geometry %window% x y ;;(low-word l-param) (high-word l-param)
-                                      (glop:window-width %window%) (glop:window-height %window%)))
-            (return-from window-proc 0)))
-         (:wm-exit-size-move
-          (setf %event% (make-instance 'glop:resize-event
-                                       :width (glop:window-width %window%)
-                                       :height (glop:window-height %window%)))
-            (return-from window-proc 0))
-         (:wm-paint ;; XXX: we need to call defaut windowproc too here
-          (multiple-value-bind (x y width height) (get-client-rect wnd)
-            (setf %event% (glop::make-instance 'glop:expose-event
-                                               :width width :height height))))
-         (:wm-lbutton-down
-          (set-capture wnd)
-          (setf %event% (glop::make-instance 'glop:button-press-event
-                                             :button 1))
-          (return-from window-proc 0))
-         (:wm-lbutton-up
-          (release-capture)
-          (setf %event% (glop::make-instance 'glop:button-release-event
-                                             :button 1))
-          (return-from window-proc 0))
-         (:wm-rbutton-down
-          (set-capture wnd)
-          (setf %event% (glop::make-instance 'glop:button-press-event
-                                             :button 3))
-          (return-from window-proc 0))
-         (:wm-rbutton-up
-          (release-capture)
-          (setf %event% (glop::make-instance 'glop:button-release-event
-                                             :button 3))
-          (return-from window-proc 0))
-         (:wm-mbutton-down
-          (set-capture wnd)
-          (setf %event% (glop::make-instance 'glop:button-press-event
-                                             :button 2))
-          (return-from window-proc 0))
-         (:wm-mbutton-up
-          (release-capture)
-          (setf %event% (glop::make-instance 'glop:button-release-event
-                                             :button 2))
-          (return-from window-proc 0))
-         (:wm-key-up
-          (multiple-value-bind (keysym text) (win32-lookup-key w-param l-param)
-            (setf (glop:key-pressed w-param) nil)
-            (setf %event% (glop::make-instance 'glop:key-release-event
-                                               :keycode  w-param
-                                               :keysym keysym
-                                               :text text)))
-          (return-from window-proc 0))
-         (:wm-key-down
-          (multiple-value-bind (keysym text) (win32-lookup-key w-param l-param)
-            (when (and glop:*ignore-auto-repeat* (glop:key-pressed w-param))
-              (return-from window-proc 0))
-            (setf (glop:key-pressed w-param) t)
-            (setf %event% (glop::make-instance 'glop:key-press-event
-                                               :keycode  w-param
-                                               :keysym keysym
-                                               :text text)))
-          (return-from window-proc 0))
-         (:wm-mouse-wheel
-          (setf %event% (glop::make-instance 'glop:button-press-event
-                                             :button (if (> w-param 0)
-                                                         4 5)))
-          (return-from window-proc 0))
-         (:wm-show-window
-          (setf %event% (glop::make-instance (if (zerop w-param)
-                                                 'glop:visibility-unobscured-event
-                                                 'glop:visibility-obscured-event)))
-          (return-from window-proc 0))
-         (:wm-set-focus
-          (setf %event% (make-instance 'glop:focus-in-event))
-          (return-from window-proc 0))
-         (:wm-kill-focus
-          (setf %event% (make-instance 'glop:focus-out-event))
-          (return-from window-proc 0)))
-       ;; Pass unhandled messages to default windowproc
-       (%def-window-proc wnd msg w-param l-param))))
+	(let ((msg-type (foreign-enum-keyword 'msg-type msg :errorp nil)))
+	  (case msg-type
+		(:wm-close
+		 (setf %event% (glop::make-instance 'glop:close-event))
+		 (return-from window-proc 0))
+		(:wm-destroy
+		 (%post-quit-message 0)
+		 (return-from window-proc 0))
+		(:wm-mouse-move
+		 (let ((low (low-word l-param))
+			   (high (high-word l-param)))
+		   (when (or (/= low last-x) (/= high last-y))
+			 (setf %event% (glop::make-instance 'glop:mouse-motion-event
+												:x low :y high
+												:dx (- low last-x) :dy (- high last-y)))
+			 (setf last-x low last-y high))
+		   (return-from window-proc 0)))
+		(:wm-size
+		 (when %window% ;; XXX: WM_SIZE is called on window creation when %window% is nil ...
+		   (glop::%update-geometry %window% (glop:window-x %window%) (glop:window-y %window%)
+								   (low-word l-param) (high-word l-param)))
+		 (return-from window-proc 0))
+		(:wm-move
+		 (when %window% ;; XXX: WM_MOVE is called on window creation when %window% is nil ...
+		   (multiple-value-bind (x y w h) (get-window-rect wnd)
+			 (glop::%update-geometry %window% x y ;;(low-word l-param) (high-word l-param)
+									 (glop:window-width %window%) (glop:window-height %window%)))
+		   (return-from window-proc 0)))
+		(:wm-exit-size-move
+		 (setf %event% (make-instance 'glop:resize-event
+									  :width (glop:window-width %window%)
+									  :height (glop:window-height %window%)))
+		 (return-from window-proc 0))
+		(:wm-paint ;; XXX: we need to call defaut windowproc too here
+		 (multiple-value-bind (x y width height) (get-client-rect wnd)
+		   (setf %event% (glop::make-instance 'glop:expose-event
+											  :width width :height height))))
+		(:wm-lbutton-down
+		 (set-capture wnd)
+		 (setf %event% (glop::make-instance 'glop:button-press-event
+											:button 1))
+		 (return-from window-proc 0))
+		(:wm-lbutton-up
+		 (release-capture)
+		 (setf %event% (glop::make-instance 'glop:button-release-event
+											:button 1))
+		 (return-from window-proc 0))
+		(:wm-rbutton-down
+		 (set-capture wnd)
+		 (setf %event% (glop::make-instance 'glop:button-press-event
+											:button 3))
+		 (return-from window-proc 0))
+		(:wm-rbutton-up
+		 (release-capture)
+		 (setf %event% (glop::make-instance 'glop:button-release-event
+											:button 3))
+		 (return-from window-proc 0))
+		(:wm-mbutton-down
+		 (set-capture wnd)
+		 (setf %event% (glop::make-instance 'glop:button-press-event
+											:button 2))
+		 (return-from window-proc 0))
+		(:wm-mbutton-up
+		 (release-capture)
+		 (setf %event% (glop::make-instance 'glop:button-release-event
+											:button 2))
+		 (return-from window-proc 0))
+		(:wm-key-up
+		 (multiple-value-bind (keysym text) (win32-lookup-key w-param l-param)
+		   (setf (glop:key-pressed w-param) nil)
+		   (setf %event% (glop::make-instance 'glop:key-release-event
+											  :keycode	 w-param
+											  :keysym keysym
+											  :text text)))
+		 (return-from window-proc 0))
+		(:wm-key-down
+		 (multiple-value-bind (keysym text) (win32-lookup-key w-param l-param)
+		   (when (and glop:*ignore-auto-repeat* (glop:key-pressed w-param))
+			 (return-from window-proc 0))
+		   (setf (glop:key-pressed w-param) t)
+		   (setf %event% (glop::make-instance 'glop:key-press-event
+											  :keycode	 w-param
+											  :keysym keysym
+											  :text text)))
+		 (return-from window-proc 0))
+		(:wm-mouse-wheel
+		 (setf %event% (glop::make-instance 'glop:button-press-event
+											:button (if (> w-param 0)
+														4 5)))
+		 (return-from window-proc 0))
+		(:wm-show-window
+		 (setf %event% (glop::make-instance (if (zerop w-param)
+												'glop:visibility-unobscured-event
+												'glop:visibility-obscured-event)))
+		 (return-from window-proc 0))
+		(:wm-set-focus
+		 (setf %event% (make-instance 'glop:focus-in-event))
+		 (return-from window-proc 0))
+		(:wm-kill-focus
+		 (setf %event% (make-instance 'glop:focus-out-event))
+		 (return-from window-proc 0)))
+	  ;; Pass unhandled messages to default windowproc
+	  (%def-window-proc wnd msg w-param l-param))))
 
 (defcfun ("RegisterClassA" %register-class) :int16
   (wndclass :pointer))
@@ -688,27 +688,34 @@
 (defcfun ("RegisterClassExA" %register-class-ex) :int16
   (wndclass-ex :pointer))
 
+(defcfun ("GetClassInfoA" %get-class-info) bool
+  (instance hinstance) (class-name :string) (wndclass :pointer))
 
 (defcfun ("UnregisterClassA" unregister-class) bool
   (class-name :string) (instance hinstance))
 
-(defun create-and-register-class (module-instance name)
+(defun class-exists-p (module-instance name)
   (with-foreign-object (class 'wndclass)
-    (with-foreign-slots ((style wndproc cls-extra wnd-extra instance icon cursor
-                                br-background menu-name class-name) class wndclass)
-      (setf style (foreign-bitfield-value 'class-style-flags
-                                          '(:cs-hredraw :cs-vredraw :cs-own-dc))
-            wndproc (callback window-proc)
-            cls-extra 0
-            wnd-extra 0
-            instance module-instance
-            icon  (null-pointer)
-            cursor (null-pointer)
-            br-background (null-pointer)
-            menu-name (null-pointer)
-            class-name name))
-    (when (zerop (%register-class class))
-      (format t "Error registering class ~S: ~S~%" name (get-last-error)))))
+	(%get-class-info module-instance name class)))
+
+(defun create-and-register-class (module-instance name)
+  (unless (class-exists-p module-instance name)
+	(with-foreign-object (class 'wndclass)
+	  (with-foreign-slots ((style wndproc cls-extra wnd-extra instance icon cursor
+								  br-background menu-name class-name) class wndclass)
+		(setf style (foreign-bitfield-value 'class-style-flags
+											'(:cs-hredraw :cs-vredraw :cs-own-dc))
+			  wndproc (callback window-proc)
+			  cls-extra 0
+			  wnd-extra 0
+			  instance module-instance
+			  icon	(null-pointer)
+			  cursor (null-pointer)
+			  br-background (null-pointer)
+			  menu-name (null-pointer)
+			  class-name name))
+	  (when (zerop (%register-class class))
+		(format t "Error registering class ~S: ~S~%" name (get-last-error))))))
 
 (defcfun ("SetWindowTextA" set-window-text) bool
   (wnd hwnd) (title :string))
@@ -734,7 +741,7 @@
   (wnd hwnd))
 
 (define-foreign-library kernel32
-    (t (:default "kernel32")))
+  (t (:default "kernel32")))
 (use-foreign-library kernel32)
 
 (defcfun ("GetModuleHandleW" get-module-handle) hmodule
