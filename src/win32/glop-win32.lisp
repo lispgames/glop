@@ -41,7 +41,7 @@
                     (push :flags attrs)))
                 (glop-wgl:wgl-create-specific-context (win32-window-dc win) attrs))
               (glop-wgl:wgl-create-context (win32-window-dc win))))
-    (unless wgl-ctx
+    (unless (wgl-context-ctx ctx)
       (format t "Error creating GL context: ~S~%" (glop-win32:get-last-error)))
     (when make-current
       (attach-gl-context win ctx))
