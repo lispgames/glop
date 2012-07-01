@@ -699,23 +699,22 @@
 	(%get-class-info module-instance name class)))
 
 (defun create-and-register-class (module-instance name)
-  (unless (class-exists-p module-instance name)
-	(with-foreign-object (class 'wndclass)
-	  (with-foreign-slots ((style wndproc cls-extra wnd-extra instance icon cursor
-								  br-background menu-name class-name) class wndclass)
-		(setf style (foreign-bitfield-value 'class-style-flags
-											'(:cs-hredraw :cs-vredraw :cs-own-dc))
-			  wndproc (callback window-proc)
-			  cls-extra 0
-			  wnd-extra 0
-			  instance module-instance
-			  icon	(null-pointer)
-			  cursor (null-pointer)
-			  br-background (null-pointer)
-			  menu-name (null-pointer)
-			  class-name name))
+  (with-foreign-object (class 'wndclass)
+    (with-foreign-slots ((style wndproc cls-extra wnd-extra instance icon cursor
+                                br-background menu-name class-name) class wndclass)
+      (setf style (foreign-bitfield-value 'class-style-flags
+                                          '(:cs-hredraw :cs-vredraw :cs-own-dc))
+            wndproc (callback window-proc)
+            cls-extra 0
+            wnd-extra 0
+            instance module-instance
+            icon	(null-pointer)
+            cursor (null-pointer)
+            br-background (null-pointer)
+            menu-name (null-pointer)
+            class-name name))
 	  (when (zerop (%register-class class))
-		(format t "Error registering class ~S: ~S~%" name (get-last-error))))))
+		(format t "Error registering class ~S: ~S~%" name (get-last-error)))))
 
 (defcfun ("SetWindowTextA" set-window-text) bool
   (wnd hwnd) (title :string))
