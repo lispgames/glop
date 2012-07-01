@@ -66,6 +66,9 @@
   (:debug-bit #x00000001)
   (:forward-compatible-bit #x00000002))
 
+(defcenum (gl-enum :unsigned-int)
+  (:version #x1F02))
+
 (define-foreign-library opengl
   (t (:default "opengl32")))
 (use-foreign-library opengl)
@@ -82,8 +85,8 @@
       for attr in context-attribs do
         (setf (mem-aref atts :int i)
               (typecase attr
-                (keyword (foreign-enum-value 'glx-context-attributes attr))
-                (list (foreign-bitfield-value 'glx-context-attribute-flags attr))
+                (keyword (foreign-enum-value 'wgl-context-attributes attr))
+                (list (foreign-bitfield-value 'wgl-context-attribute-flags attr))
                 (t attr))))
     (setf (mem-aref atts :int (length context-attribs)) 0)
     ;; we need a fake gl context to be able to use wgl-get-proc-address
@@ -91,7 +94,7 @@
     ;; FIXME: need some more error checking here
     (let ((tmp-ctx  (wgl-create-context hdc)))
       (wgl-make-current hdc tmp-ctx)
-      (let ((ptr (glx-get-proc-address "wglCreateContextAttribsARB")))
+      (let ((ptr (wgl-get-proc-address "wglCreateContextAttribsARB")))
         ;; remove out temporary context
         (wgl-make-current (cffi:null-pointer) (cffi:null-pointer))
         (wgl-delete-context tmp-ctx)
