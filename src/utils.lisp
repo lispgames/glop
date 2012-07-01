@@ -15,7 +15,7 @@
   mode)
 
 (defstruct (video-mode (:include #+(and unix (not darwin)) x11-video-mode
-                                 #+(and win32 windows) win32-video-mode
+                                 #+(or win32 windows) win32-video-mode
                                  #+darwin osx-video-mode))
   (width 0 :type integer)
   (height 0 :type integer)

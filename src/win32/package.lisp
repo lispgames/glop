@@ -13,5 +13,5 @@
 
 (defpackage :glop-wgl
   (:use #:cl #:cffi #:glop-win32)
-  (:export #:wgl-get-proc-address #:wgl-create-context #:wgl-delete-context
-           #:wgl-make-current))
+  (:export #:wgl-get-proc-address #:wgl-create-context #:wgl-create-specific-context
+           #:wgl-delete-context  #:wgl-make-current #:correct-context?))
