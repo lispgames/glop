@@ -652,9 +652,11 @@
     ;; pass no-error flag?)
     (let ((string (or (ignore-errors (foreign-string-to-lisp buffer))
                       (format nil "decoding error?~s"
-                              (foreign-string-to-lisp buffer :encoding :latin1)))))
+                              (foreign-string-to-lisp buffer :encoding :latin1))))
+          (value (mem-ref keysym :uint32)))
       (values (if (zerop (length string)) nil string)
-              (mem-ref keysym 'x-keysym-value)))))
+              (or (cffi:foreign-enum-keyword 'x-keysym-value value :errorp nil)
+                  value)))))
 
 (defcfun ("XGetGeometry" %x-get-geometry) x-status
   (display-ptr :pointer) (d drawable) (root-return :pointer)
