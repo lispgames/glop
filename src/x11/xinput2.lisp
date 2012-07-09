@@ -208,7 +208,9 @@
   (mask :pointer))
 
 (defcstruct %xi-any-class-info
-  (type #++ :int xi-device-classes)
+  ;; "clients are required to ignore unknown input classes" so can't
+  ;; let cffi automatically translate the enum
+  (type :int #++ xi-device-classes)
   (source-id :int))
 
 (defclass xi-any-class-info ()
@@ -257,7 +259,7 @@
 
 (defun make-class-info (pointer display)
   (with-foreign-slots ((type source-id) pointer %xi-any-class-info)
-    (ecase type
+    (case (cffi:foreign-enum-keyword 'xi-device-classes type :errorp nil)
       (:xi-button-class
        (with-foreign-slots ((num-buttons labels state)
                             pointer %xi-button-class-info)
