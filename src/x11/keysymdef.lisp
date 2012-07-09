@@ -2212,4 +2212,199 @@
   (:braille-dots-1345678 #x10028fd)  ; u+28fd braille pattern dots-1345678
   (:braille-dots-2345678 #x10028fe)  ; u+28fe braille pattern dots-2345678
   (:braille-dots-12345678 #x10028ff)  ; u+28ff braille pattern dots-12345678
+
+  ;;; XFree86 vendor specific keysyms #x10080001 - #x1008FFFF
+  (:XF86XK-Mode-Lock #x1008FF01) ; Mode Switch Lock
+  ;; Backlight controls.
+  (:XF86XK-Mon-Brightness-Up #x1008FF02) ; Monitor/panel brightness
+  (:XF86XK-Mon-Brightness-Down #x1008FF03) ; Monitor/panel brightness
+  (:XF86XK-Kbd-Light-On-Off #x1008FF04) ; Keyboards may be lit
+  (:XF86XK-Kbd-Brightness-Up #x1008FF05) ; Keyboards may be lit
+  (:XF86XK-Kbd-Brightness-Down #x1008FF06) ; Keyboards may be lit
+
+  ;; Keys found on some "Internet" keyboards.
+  (:XF86XK-Standby #x1008FF10) ; System into standby mode
+  (:XF86XK-Audio-Lower-Volume #x1008FF11) ; Volume control down
+  (:XF86XK-Audio-Mute #x1008FF12) ; Mute sound from the system
+  (:XF86XK-Audio-Raise-Volume #x1008FF13) ; Volume control up
+  (:XF86XK-Audio-Play #x1008FF14) ; Start playing of audio >
+  (:XF86XK-Audio-Stop #x1008FF15) ; Stop playing audio
+  (:XF86XK-Audio-Prev #x1008FF16) ; Previous track
+  (:XF86XK-Audio-Next #x1008FF17) ; Next track
+  (:XF86XK-Home-Page #x1008FF18) ; Display user's home page
+  (:XF86XK-Mail #x1008FF19) ; Invoke user's mail program
+  (:XF86XK-Start #x1008FF1A) ; Start application
+  (:XF86XK-Search #x1008FF1B) ; Search
+  (:XF86XK-Audio-Record #x1008FF1C) ; Record audio application
+
+  ;; These are sometimes found on PDA's (e.g. Palm, PocketPC or elsewhere)
+  (:XF86XK-Calculator #x1008FF1D) ; Invoke calculator program
+  (:XF86XK-Memo #x1008FF1E) ; Invoke Memo taking program
+  (:XF86XK-To-Do-List #x1008FF1F) ; Invoke To Do List program
+  (:XF86XK-Calendar #x1008FF20) ; Invoke Calendar program
+  (:XF86XK-Power-Down #x1008FF21) ; Deep sleep the system
+  (:XF86XK-Contrast-Adjust #x1008FF22) ; Adjust screen contrast
+  (:XF86XK-Rocker-Up #x1008FF23) ; Rocker switches exist up
+  (:XF86XK-Rocker-Down #x1008FF24) ; and down
+  (:XF86XK-Rocker-Enter #x1008FF25) ; and let you press them
+
+  ;; Some more "Internet" keyboard symbols
+  (:XF86XK-Back #x1008FF26) ; Like back on a browser
+  (:XF86XK-Forward #x1008FF27) ; Like forward on a browser
+  (:XF86XK-Stop #x1008FF28) ; Stop current operation
+  (:XF86XK-Refresh #x1008FF29) ; Refresh the page
+  (:XF86XK-Power-Off #x1008FF2A) ; Power off system entirely
+  (:XF86XK-Wake-Up #x1008FF2B) ; Wake up system from sleep
+  (:XF86XK-Eject #x1008FF2C) ; Eject device (e.g. DVD)
+  (:XF86XK-Screen-Saver #x1008FF2D) ; Invoke screensaver
+  (:XF86XK-WWW #x1008FF2E) ; Invoke web browser
+  (:XF86XK-Sleep #x1008FF2F) ; Put system to sleep
+  (:XF86XK-Favorites #x1008FF30) ; Show favorite locations
+  (:XF86XK-Audio-Pause #x1008FF31) ; Pause audio playing
+  (:XF86XK-Audio-Media #x1008FF32) ; Launch media collection app
+  (:XF86XK-My-Computer #x1008FF33) ; Display "My Computer" window
+  (:XF86XK-Vendor-Home #x1008FF34) ; Display vendor home web site
+  (:XF86XK-Light-Bulb #x1008FF35) ; Light bulb keys exist
+  (:XF86XK-Shop #x1008FF36) ; Display shopping web site
+  (:XF86XK-History #x1008FF37) ; Show history of web surfing
+  (:XF86XK-Open-URL #x1008FF38) ; Open selected URL
+  (:XF86XK-Add-Favorite #x1008FF39) ; Add URL to favorites list
+  (:XF86XK-Hot-Links #x1008FF3A) ; Show "hot" links
+  (:XF86XK-Brightness-Adjust #x1008FF3B) ; Invoke brightness adj. UI
+  (:XF86XK-Finance #x1008FF3C) ; Display financial site
+  (:XF86XK-Community #x1008FF3D) ; Display user's community
+  (:XF86XK-Audio-Rewind #x1008FF3E) ; "rewind" audio track
+  (:XF86XK-Back-Forward #x1008FF3F) ; ???
+  (:XF86XK-Launch0 #x1008FF40) ; Launch Application
+  (:XF86XK-Launch1 #x1008FF41) ; Launch Application
+  (:XF86XK-Launch2 #x1008FF42) ; Launch Application
+  (:XF86XK-Launch3 #x1008FF43) ; Launch Application
+  (:XF86XK-Launch4 #x1008FF44) ; Launch Application
+  (:XF86XK-Launch5 #x1008FF45) ; Launch Application
+  (:XF86XK-Launch6 #x1008FF46) ; Launch Application
+  (:XF86XK-Launch7 #x1008FF47) ; Launch Application
+  (:XF86XK-Launch8 #x1008FF48) ; Launch Application
+  (:XF86XK-Launch9 #x1008FF49) ; Launch Application
+  (:XF86XK-LaunchA #x1008FF4A) ; Launch Application
+  (:XF86XK-LaunchB #x1008FF4B) ; Launch Application
+  (:XF86XK-LaunchC #x1008FF4C) ; Launch Application
+  (:XF86XK-LaunchD #x1008FF4D) ; Launch Application
+  (:XF86XK-LaunchE #x1008FF4E) ; Launch Application
+  (:XF86XK-LaunchF #x1008FF4F) ; Launch Application
+
+  (:XF86XK-Application-Left #x1008FF50) ; switch to application, left
+  (:XF86XK-Application-Right #x1008FF51) ; switch to application, righ
+  (:XF86XK-Book #x1008FF52) ; Launch bookreader
+  (:XF86XK-CD #x1008FF53) ; Launch CD/DVD player
+  (:XF86XK-Calculater #x1008FF54) ; Launch Calculater
+  (:XF86XK-Clear #x1008FF55) ; Clear window, screen
+  (:XF86XK-Close #x1008FF56) ; Close window
+  (:XF86XK-Copy #x1008FF57) ; Copy selection
+  (:XF86XK-Cut #x1008FF58) ; Cut selection
+  (:XF86XK-Display #x1008FF59) ; Output switch key
+  (:XF86XK-DOS #x1008FF5A) ; Launch DOS (emulation)
+  (:XF86XK-Documents #x1008FF5B) ; Open documents window
+  (:XF86XK-Excel #x1008FF5C) ; Launch spread sheet
+  (:XF86XK-Explorer #x1008FF5D) ; Launch file explorer
+  (:XF86XK-Game #x1008FF5E) ; Launch game
+  (:XF86XK-Go #x1008FF5F) ; Go to URL
+  (:XF86XK-iTouch #x1008FF60) ; Logitch iTouch- don't use
+  (:XF86XK-Log-Off #x1008FF61) ; Log off system
+  (:XF86XK-Market #x1008FF62) ; ??
+  (:XF86XK-Meeting #x1008FF63) ; enter meeting in calendar
+  (:XF86XK-Menu-KB #x1008FF65) ; distingush keyboard from PB
+  (:XF86XK-Menu-PB #x1008FF66) ; distinuish PB from keyboard
+  (:XF86XK-MySites #x1008FF67) ; Favourites
+  (:XF86XK-New #x1008FF68) ; folder, document...    */
+  (:XF86XK-News #x1008FF69) ; News
+  (:XF86XK-Office-Home #x1008FF6A) ; Office home (old Staroffice
+  (:XF86XK-Open #x1008FF6B) ; Open
+  (:XF86XK-Option #x1008FF6C) ; ??
+  (:XF86XK-Paste #x1008FF6D) ; Paste
+  (:XF86XK-Phone #x1008FF6E) ; Launch phone                ; dial number
+  (:XF86XK-Q #x1008FF70) ; Compaq's Q - don't use
+  (:XF86XK-Reply #x1008FF72) ; Reply e.g., mail
+  (:XF86XK-Reload #x1008FF73) ; Reload web page, file, etc.
+  (:XF86XK-Rotate-Windows #x1008FF74) ; Rotate windows e.g. xrandr
+  (:XF86XK-Rotation-PB #x1008FF75) ; don't use
+  (:XF86XK-Rotation-KB #x1008FF76) ; don't use
+  (:XF86XK-Save #x1008FF77) ; Save (file, document, state */
+  (:XF86XK-Scroll-Up #x1008FF78) ; Scroll window/contents up
+  (:XF86XK-Scroll-Down #x1008FF79) ; Scrool window/contentd down
+  (:XF86XK-Scroll-Click #x1008FF7A) ; Use XKB mousekeys instead
+  (:XF86XK-Send #x1008FF7B) ; Send mail, file, object
+  (:XF86XK-Spell #x1008FF7C) ; Spell checker
+  (:XF86XK-Split-Screen #x1008FF7D) ; Split window or screen
+  (:XF86XK-Support #x1008FF7E) ; Get support (??)
+  (:XF86XK-Task-Pane #x1008FF7F) ; Show tasks
+  (:XF86XK-Terminal #x1008FF80) ; Launch terminal emulator
+  (:XF86XK-Tools #x1008FF81) ; toolbox of desktop/app.
+  (:XF86XK-Travel #x1008FF82) ; ??
+  (:XF86XK-User-PB #x1008FF84) ; ??
+  (:XF86XK-User1-KB #x1008FF85) ; ??
+  (:XF86XK-User2-KB #x1008FF86) ; ??
+  (:XF86XK-Video #x1008FF87) ; Launch video player
+  (:XF86XK-Wheel-Button #x1008FF88) ; button from a mouse wheel
+  (:XF86XK-Word #x1008FF89) ; Launch word processor
+  (:XF86XK-Xfer #x1008FF8A)
+  (:XF86XK-Zoom-In #x1008FF8B) ; zoom in view, map, etc.
+  (:XF86XK-Zoom-Out #x1008FF8C) ; zoom out view, map, etc.
+
+  (:XF86XK-Away #x1008FF8D) ; mark yourself as away
+  (:XF86XK-Messenger #x1008FF8E) ; as in instant messaging
+  (:XF86XK-Web-Cam #x1008FF8F) ; Launch web camera app.
+  (:XF86XK-Mail-Forward #x1008FF90) ; Forward in mail
+  (:XF86XK-Pictures #x1008FF91) ; Show pictures
+  (:XF86XK-Music #x1008FF92) ; Launch music application
+
+  (:XF86XK-Battery #x1008FF93) ; Display battery information
+  (:XF86XK-Bluetooth #x1008FF94) ; Enable/disable Bluetooth
+  (:XF86XK-WLAN #x1008FF95) ; Enable/disable WLAN
+  (:XF86XK-UWB #x1008FF96) ; Enable/disable UWB
+
+  (:XF86XK-Audio-Forward #x1008FF97) ; fast-forward audio track
+  (:XF86XK-Audio-Repeat #x1008FF98) ; toggle repeat mode
+  (:XF86XK-Audio-Random-Play #x1008FF99) ; toggle shuffle mode
+  (:XF86XK-Subtitle #x1008FF9A) ; cycle through subtitle
+  (:XF86XK-Audio-Cycle-Track #x1008FF9B) ; cycle through audio tracks
+  (:XF86XK-Cycle-Angle #x1008FF9C) ; cycle through angles
+  (:XF86XK-Frame-Back #x1008FF9D) ; video: go one frame back
+  (:XF86XK-Frame-Forward #x1008FF9E) ; video: go one frame forward
+  (:XF86XK-Time #x1008FF9F) ; display, or shows an entry for time seeking
+  (:XF86XK-Select #x1008FFA0) ; Select button on joypads and remotes
+  (:XF86XK-View #x1008FFA1) ; Show a view options/properties
+  (:XF86XK-Top-Menu #x1008FFA2) ; Go to a top-level menu in a video
+
+  (:XF86XK-Red #x1008FFA3) ; Red button
+  (:XF86XK-Green #x1008FFA4) ; Green button
+  (:XF86XK-Yellow #x1008FFA5) ; Yellow button
+  (:XF86XK-Blue #x1008FFA6) ; Blue button
+
+  (:XF86XK-Suspend #x1008FFA7) ; Sleep to RAM
+  (:XF86XK-Hibernate #x1008FFA8) ; Sleep to disk
+  (:XF86XK-Touchpad-Toggle #x1008FFA9) ; Toggle between touchpad/trackstick
+  (:XF86XK-Touchpad-On #x1008FFB0) ; The touchpad got switched on
+  (:XF86XK-Touchpad-Off #x1008FFB1) ; The touchpad got switched off
+
+  ;; Keys for special action keys (hot keys)
+  ;; Virtual terminals on some operating systems
+  (:XF86XK-Switch-VT-1 #x1008FE01)
+  (:XF86XK-Switch-VT-2 #x1008FE02)
+  (:XF86XK-Switch-VT-3 #x1008FE03)
+  (:XF86XK-Switch-VT-4 #x1008FE04)
+  (:XF86XK-Switch-VT-5 #x1008FE05)
+  (:XF86XK-Switch-VT-6 #x1008FE06)
+  (:XF86XK-Switch-VT-7 #x1008FE07)
+  (:XF86XK-Switch-VT-8 #x1008FE08)
+  (:XF86XK-Switch-VT-9 #x1008FE09)
+  (:XF86XK-Switch-VT-10 #x1008FE0A)
+  (:XF86XK-Switch-VT-11 #x1008FE0B)
+  (:XF86XK-Switch-VT-12 #x1008FE0C)
+
+  (:XF86XK-Ungrab #x1008FE20) ; force ungrab
+  (:XF86XK-Clear-Grab #x1008FE21) ; kill application with grab
+  (:XF86XK-Next-Video-Mode #x1008FE22) ; next video mode available
+  (:XF86XK-Prev-Video-Mode #x1008FE23) ; prev. video mode available
+  (:XF86XK-Log-Window-Tree #x1008FE24) ; print window tree to log
+  (:XF86XK-Log-Grab-Info #x1008FE25) ; print all active grabs to log
   )
