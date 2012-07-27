@@ -5,7 +5,8 @@
   (:export #:test-manual-create #:test-multiple-contexts #:test-with-window #:test-manual-events
            #:test-gl-hello #:test-gl-hello-fullscreen #:test-gl-hello-gl3 #:test-multiple-windows
            #:test-on-event #:test-subclassing
-           #+(and unix (not darwin))#:test-custom-event-loop))
+           #+(and unix (not darwin))#:test-custom-event-loop
+           #+(and unix (not darwin))#:test-xinput-2))
 
 (in-package #:glop-test)
 
@@ -421,7 +422,5 @@
            (glop:swap-buffers win)))
     (format t "done~%")))
 
-#++
-(test-xinput-2)
 
 
