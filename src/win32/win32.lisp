@@ -549,7 +549,7 @@
 		  (when (> (%get-message msg wnd 0 0) 0)
 			(%translate-message msg)
 			(%dispatch-message msg))
-		  (when (%peek-message msg wnd 0 0 :pm-remove)
+		  (when (> (%peek-message msg wnd 0 0 :pm-remove) 0)
 			(%translate-message msg)
 			(%dispatch-message msg))))
 	%event%))
