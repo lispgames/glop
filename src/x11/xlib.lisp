@@ -516,12 +516,14 @@
 (defun x-next-event (win dpy &optional blocking)
   (x-sync dpy nil)
   (with-foreign-object (evt 'x-event)
-    (if blocking
-        (progn (%x-next-event dpy evt)
-               (process-event win dpy evt))
-        (progn (when (x-pending-p dpy)
-                 (%x-next-event dpy evt)
-                 (process-event win dpy evt))))))
+    (loop for processed-event = (if blocking
+                                    (progn (%x-next-event dpy evt)
+                                           (process-event win dpy evt))
+                                    (progn (when (x-pending-p dpy)
+                                             (%x-next-event dpy evt)
+                                             (process-event win dpy evt))))
+          while (and processed-event (eq processed-event :unknown-event))
+          finally (return processed-event))))
 
 (let ((last-x 0)
       (last-y 0))
@@ -615,7 +617,9 @@
         (:generic-event
          (process-generic-event evt))
         ;; unhandled event
-        (t nil)))))
+        ;; can't return NIL, since DISPATCH-EVENTS interprets that as
+        ;; no more events
+        (t :unknown-event)))))
 
 ;; dispatcher for extension events, extensions should eql specialize on
 ;; extension name and opcode, data cffi pointer to event structure, which
