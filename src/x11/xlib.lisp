@@ -24,11 +24,22 @@
   (red :ushort) (green :ushort) (blue :ushort)
   (flags :char) (pad :char))
 
+(defcstruct visual
+  (ext-data :pointer)
+  (visual-id visualid)
+  (class :int)
+  (red-mask :unsigned-long)
+  (green-mask :unsigned-long)
+  (blue-mask :unsigned-long)
+  (bits-per-rgb :int)
+  (map-entries :int))
+
 (defcstruct visual-info
-    (visual :pointer) (visual-id visualid) (screen :int)
-    (depth :int) (class :int)
-    (red-mask :ulong) (green-mask :ulong) (blue-mask :ulong)
-    (colormap-size :int) (bpp :int))
+  (visual (:pointer (:struct visual)))
+  (visual-id visualid) (screen :int)
+  (depth :int) (class :int)
+  (red-mask :ulong) (green-mask :ulong) (blue-mask :ulong)
+  (colormap-size :int) (bpp :int))
 
 (defcstruct set-window-attributes
   (bg-pixmap pixmap) (bg-pixel :unsigned-long)
@@ -321,6 +332,30 @@
 
 (defctype x-queued-mode :int)
 
+(defcstruct x-window-attributes
+  ;; fixme: figure out better types for fields that are enums/bits
+  (x :int)
+  (y :int)
+  (width :int)
+  (height :int)
+  (depth :int)
+  (visual (:pointer (:struct visual)))
+  (root window)
+  (class :int)
+  (bit-gravity :int)
+  (win-gravity :int)
+  (backing-store :int)
+  (backing-planes :unsigned-long)
+  (backing-pixel :unsigned-long)
+  (save-under :boolean)
+  (colormap colormap)
+  (map-installed :boolean)
+  (map-state :int)
+  (all-event-masks :long)
+  (your-event-mask :long)
+  (override-redirect :boolean)
+  (screen :pointer))
+
 ;; X11 bindings
 (define-foreign-library xlib
   (t (:default "libX11")))
@@ -393,6 +428,45 @@
   (display-ptr :pointer) (parent window) (x :int) (y :int) (width :int) (height :int)
   (border-width :int) (depth :int) (win-class x-window-class) (visual :pointer)
   (value-mask x-window-attributes-flags) (attributes (:pointer (:struct set-window-attributes))))
+
+(defcfun ("XCreateSimpleWindow" x-create-simple-window) window
+  (display-ptr :pointer)
+  (parent window)
+  (x :int)
+  (y :int)
+  (width :int)
+  (height :int)
+  (border-width :int)
+  (background :int))
+
+(defcfun ("XDefaultVisual" default-visual) (:pointer (:struct visual))
+  (display-ptr :pointer)
+  (screen :int))
+
+(defcfun ("XSetInputFocus" x-set-input-focus) :void
+  (display-ptr :pointer)
+  (focus window)
+  (revert-to :int)
+  (time x-time))
+
+(defcfun ("XGetInputFocus" x-get-input-focus) :void
+  (display :pointer)
+  (window (:pointer window))
+  (revert-to (:pointer :int)))
+
+(defcfun ("XSelectInput" x-select-input) :void
+  (display :pointer)
+  (window window)
+  (event-mask x-event-mask-flags))
+
+(defcfun ("XQueryTree" x-query-tree) x-status
+  (display :pointer)
+  (window window)
+  (root (:pointer window))
+  (parent (:pointer window))
+  (children (:pointer (:pointer window)))
+  (nchildren (:pointer :unsigned-int)))
+
 
 (defun %set-fullscreen (window dpy be-fullscreen)
   (let ((wm-state (x-intern-atom dpy "_NET_WM_STATE" nil))
@@ -931,6 +1005,16 @@
     (if (%x-query-extension display name opcode event error)
         (values t (mem-ref opcode :int) (mem-ref event :int) (mem-ref error :int))
         (values nil 0 0 0))))
+
+(defcfun ("XGetWindowAttributes" %x-get-window-attributes) x-status
+  (display :pointer)
+  (window window)
+  (window-attributes-return (:pointer (:struct x-window-attributes))))
+
+(defun x-get-window-attributes (display win)
+  (with-foreign-object (attr '(:struct x-window-attributes))
+    (%x-get-window-attributes display win attr)
+    (mem-aref attr '(:struct x-window-attributes))))
 
 
 (defconstant +status-success+ 0)
