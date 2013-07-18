@@ -23,11 +23,24 @@
   (:accum-alpha-size)
   (:render-type #x8011)
   (:sample-buffers 100000)
-  (:samples 100001))
+  (:samples 100001)
+
+  (:bind-to-texture-rgb-ext #x20d0)
+  (:bind-to-texture-rgba-ext #x20d1)
+  (:bind-to-mipmap-texture-ext #x20d2)
+  (:bind-to-texture-targets-ext #x20d3)
+  (:y-inverted-ext #x20d4)
+
+  (:drawable-type #x8010)
+  (:dont-care -1))
 
 (defbitfield (glx-attribute-flags :int)
   (:rgba-bit 1)
-  (:color-index-bit 2))
+  (:color-index-bit 2)
+  (:pixmap-bit 1)
+  (:texture-1d-bit-ext #x00000001)
+  (:texture-2d-bit-ext #x00000002)
+  (:texture-rectangle-bit-ext #x00000004))
 
 (defcenum (gl-enum :unsigned-int)
   (:version #x1F02))
