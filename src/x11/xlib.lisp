@@ -533,7 +533,7 @@
                            event (:struct x-error-event))
         (let ((message (with-foreign-pointer-as-string (m 256)
                          (x-get-error-text display-ptr error-code m 256))))
-         (format t "x error ~s: ~a, opcode ~s . ~s, resource id ~s, serial ~s"
+         (format t "~&x error ~s: ~a, opcode ~s . ~s, resource id ~s, serial ~s~%"
                  error-code message request-code minor-code resource-id serial)
          (error "x error ~s: ~a, opcode ~s . ~s, resource id ~s, serial ~s"
                 error-code message request-code minor-code resource-id serial)))
@@ -598,6 +598,13 @@
 
 (defcfun ("XUnmapWindow" x-unmap-window) :int
   (display-ptr :pointer) (win window))
+
+(defcfun ("XReparentWindow" x-reparent-window) :void
+  (display :pointer)
+  (window window)
+  (parent window)
+  (x :int)
+  (y :int))
 
 (defcfun ("XStoreName" x-store-name) :int
   (display-ptr :pointer) (win window) (name :string))
@@ -847,9 +854,15 @@
                          (width :unsigned-int) (height :unsigned-int)
                          (border-width :unsigned-int) (depth :unsigned-int))
     (%x-get-geometry dpy win root x y width height border-width depth)
-    (values (mem-ref root 'window) (mem-ref x :int) (mem-ref y :int)
+    #++(values (mem-ref root 'window) (mem-ref x :int) (mem-ref y :int)
             (mem-ref width :unsigned-int) (mem-ref height :unsigned-int)
-            (mem-ref border-width :unsigned-int) (mem-ref depth :unsigned-int))))
+            (mem-ref border-width :unsigned-int) (mem-ref depth :unsigned-int))
+    (list :root (mem-ref root 'window)
+          :x (mem-ref x :int) :y (mem-ref y :int)
+          :width (mem-ref width :unsigned-int)
+          :height (mem-ref height :unsigned-int)
+          :border-width (mem-ref border-width :unsigned-int)
+          :depth (mem-ref depth :unsigned-int))))
 
 (defbitfield x-window-configure-flags
   :cw-x
@@ -1016,6 +1029,83 @@
     (%x-get-window-attributes display win attr)
     (mem-aref attr '(:struct x-window-attributes))))
 
+(defcstruct x-size-hints
+  (flags :long)
+  (x :int)
+  (y :int)
+  (width :int)
+  (height :int)
+  (min-width :int)
+  (min-height :int)
+  (max-width :int)
+  (max-height :int)
+  (width-inc :int)
+  (height-inc :int)
+  (min-aspect-numerator :int)
+  (min-aspect-denominator :int)
+  (max-aspect-numerator :int)
+  (max-aspect-denominator :int)
+  (base-width :int)
+  (base-height :int)
+  ;; fixme: define an enum for gravity
+  (win-gravity :int))
+
+(defbitfield x-size-hints-mask :long
+  (:us-position 1)
+  :us-size
+  :p-position
+  :p-size
+  :p-min-size
+  :p-max-size
+  :p-resize-inc
+  :p-aspect
+  :p-base-size
+  :p-win-gravity)
+
+(defcfun ("XGetWMNormalHints" %x-get-wm-normal-hints) x-status
+  (display :pointer)
+  (window window)
+  (hints (:pointer (:struct x-size-hints)))
+  (supplied (:pointer :long)))
+
+(defun x-get-wm-normal-hints (display window)
+  (with-foreign-objects ((hints '(:struct x-size-hints))
+                         (%mask 'x-size-hints-mask))
+    (%x-get-wm-normal-hints display window hints %mask)
+    (let ((r nil)
+          (mask (cffi:mem-aref %mask 'x-size-hints-mask)))
+      (macrolet ((s (k s)
+                   `(setf r (list* ,k
+                                   (foreign-slot-value hints
+                                                       '(:struct x-size-hints)
+                                                       ',s)
+                                   r))))
+        (when (member :p-min-size mask)
+          (s :min-width min-width)
+          (s :min-height min-height))
+        (when (member :p-max-size mask)
+          (s :max-width max-width)
+          (s :max-height max-height))
+        (when (member :p-resize-inc mask)
+          (s :width-inc width-inc)
+          (s :height-inc height-inc))
+        (when (member :p-base-size mask)
+          (s :base-width base-width)
+          (s :base-height base-height))
+        (when (member :p-aspect mask)
+          (setf r
+                (list* :min-aspect
+                       (list (foreign-slot-value hints '(:struct x-size-hints)
+                                              'min-aspect-numerator)
+                          (foreign-slot-value hints '(:struct x-size-hints)
+                                              'min-aspect-denominator))
+                       :max-aspect
+                       (list (foreign-slot-value hints '(:struct x-size-hints)
+                                              'max-aspect-numerator)
+                          (foreign-slot-value hints '(:struct x-size-hints)
+                                              'max-aspect-denominator))
+                       r)))
+        r))))
 
 (defconstant +status-success+ 0)
 (defconstant +status-bad-request+ 1)
