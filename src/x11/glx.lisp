@@ -109,7 +109,7 @@
        for value in (cdr attribs) by #'cddr
        do (if (eq attr :rgba)
               (progn (if value
-                         (push '(:rgba-bit :color-index-bit) filtered-attribs)
+                         (push '(:rgba-bit) filtered-attribs)
                          (push '(:color-index-bit) filtered-attribs))
                      (push :render-type filtered-attribs))
               (progn (push value filtered-attribs)
@@ -143,7 +143,8 @@
             (unless (null-pointer-p vi)
               (setf cur-samples
                     (multiple-value-bind (rtn value)
-                        (glx-get-fb-config-attrib dpy (mem-aref fb-configs 'fb-config index) :sample-buffers)
+                        (glx-get-fb-config-attrib dpy (mem-aref fb-configs 'fb-config index)
+                                                  :sample-buffers)
                       (declare (ignore rtn)) value))
               (when (> cur-samples best-samples)
                 (setf best-samples cur-samples)
