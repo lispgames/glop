@@ -26,9 +26,9 @@ The following combinations have been tested sucessfully for GL 2.X:
 
  - CLISP 2.49      / X11
  - CLISP 2.48      / Win32
- - SBCL 1.0.55     / X11
+ - SBCL 1.1.14     / X11
  - SBCL 1.0.46     / OSX  (still experimental)
- - CCL 1.7-r14925M / X11
+ - CCL  1.9-r15756 / X11
  - ECL 12.2.1      / X11
  
  The following combination are known to fail:
