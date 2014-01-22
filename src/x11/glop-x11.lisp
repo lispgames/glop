@@ -42,8 +42,6 @@
   display       ;; X display ptr
   )
 
-;; FIXME: we should use specific context creation if available regardless of
-;; :major and :minor being nil
 (defmethod create-gl-context ((win x11-window) &key (make-current t) major minor
                                                     forward-compat debug
                                                     profile)

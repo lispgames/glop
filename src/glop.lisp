@@ -21,8 +21,6 @@
    "Returns the current video mode."))
 
 ;; XXX: stupid distance match is maybe not the best option here...
-;; FIXME: consider video modes with different refresh rate and depth?
-;; FIXME: return current-mode as a default if no match found?
 (defun closest-video-mode (current-mode modes-list dwidth dheight &optional ddepth drate)
   "Try to find the closest video mode matching desired parameters within modes-list.
 Returns NIL if no match is found."

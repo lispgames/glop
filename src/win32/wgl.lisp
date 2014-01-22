@@ -91,7 +91,6 @@
     (setf (mem-aref atts :int (length context-attribs)) 0)
     ;; we need a fake gl context to be able to use wgl-get-proc-address
     ;; see http://www.opengl.org/wiki/Creating_an_OpenGL_Context#Proper_Context_Creation
-    ;; FIXME: need some more error checking here
     (let ((tmp-ctx  (wgl-create-context hdc)))
       (wgl-make-current hdc tmp-ctx)
       (let ((ptr (wgl-get-proc-address "wglCreateContextAttribsARB")))
@@ -187,7 +186,6 @@
 
 (defcfun ("SwapBuffers" swap-buffers) bool
   (dc hdc))
-
 
 
 (defun correct-context? (major-desired minor-desired)

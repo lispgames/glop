@@ -346,7 +346,7 @@
   (size word)
   (driver-extra word)
   (fields dword)
-  (union-1 :short :count 8) ;; FIXME: orientation data is here
+  (union-1 :short :count 8) ;; XXX: orientation data is here
   (color :short)
   (duplex :short)
   (y-resolution :short)
