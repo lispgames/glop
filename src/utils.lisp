@@ -148,4 +148,14 @@ Otherwise, only one key-press event will be triggered.")
            (t (:default "gdi32")))
          (cffi:use-foreign-library gdi32)))
 
+(defun parse-gl-version-string-values (string)
+  ;; major version is integer value up to first #\.
+  ;; minor version is integer from first #\. to a #\. or #\space
+  (let ((dot (position #\. string)))
+    (values
+     (values (parse-integer string :end dot :junk-allowed t)) ; major
+     (if dot ; minor
+         (values (parse-integer string :start (1+ dot) :junk-allowed t))
+         0))))
+
 

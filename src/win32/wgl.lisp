@@ -189,16 +189,6 @@
   (dc hdc))
 
 
-;; FIXME: this is copied from x11/glx.lisp, we should put this in some common file
-(defun parse-gl-version-string-values (string)
-  ;; major version is integer value up to first #\.
-  ;; minor version is integer from first #\. to a #\. or #\space
-  (let ((dot (position #\. string)))
-    (values
-     (values (parse-integer string :end dot :junk-allowed t)) ; major
-     (if dot ; minor
-         (values (parse-integer string :start (1+ dot) :junk-allowed t))
-         0))))
 
 (defun correct-context? (major-desired minor-desired)
   (multiple-value-bind (major minor)
