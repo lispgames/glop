@@ -73,25 +73,34 @@
                                                                 (accum-blue-size 0)
                                                                 stencil-buffer
                                                                 (stencil-size 0))
-  (setf (win32-window-module-handle win)
-                (glop-win32:get-module-handle (cffi:null-pointer)))
-  ;; register window class
-  (glop-win32:create-and-register-class (win32-window-module-handle win) "GLOP-OpenGL")
-  (setf (win32-window-class-name win) "GLOP-OpenGL")
-  ;; create the window
-  (let ((wnd (glop-win32:create-window-ex '(:ws-ex-app-window :ws-ex-window-edge)
-                                        "GLOP-OpenGL"
-                                        title
-                                        '(:ws-overlapped-window :ws-clip-siblings :ws-clip-children)
-                                        x y width height (cffi:null-pointer) (cffi:null-pointer)
-                                        (win32-window-module-handle win) (cffi:null-pointer))))
-    (unless wnd
-      (error "Can't create window (error ~S)~%" (glop-win32:get-last-error)))
-    (setf (win32-window-id win) wnd)
-    (multiple-value-bind (.x .y width height) (glop-win32::get-client-rect wnd)
-      (declare (ignorable .x .y))
+  (let ((style '(:ws-overlapped-window :ws-clip-siblings :ws-clip-children))
+        (ex-style '(:ws-ex-app-window :ws-ex-window-edge)))
+    ;; calculate window size/position so client rect is requested size/position
+    (multiple-value-bind (ax ay aw ah)
+        (glop-win32:adjust-window-rect-ex x y width height
+                                          :style style
+                                          :ex-style ex-style)
+      (setf x ax y ay width aw height ah))
+    (setf (win32-window-module-handle win)
+          (glop-win32:get-module-handle (cffi:null-pointer)))
+    ;; register window class
+    (glop-win32:create-and-register-class (win32-window-module-handle win) "GLOP-OpenGL")
+    (setf (win32-window-class-name win) "GLOP-OpenGL")
+    ;; create the window
+    (let* ((glop-win32::%window% win)
+           (wnd (glop-win32:create-window-ex ex-style
+                                                "GLOP-OpenGL"
+                                                title
+                                                style
+                                                x y width height (cffi:null-pointer) (cffi:null-pointer)
+                                                (win32-window-module-handle win) (cffi:null-pointer))))
+      (unless wnd
+        (error "Can't create window (error ~S)~%" (glop-win32:get-last-error)))
+      (setf (win32-window-id win) wnd)
+      (setf (gethash (cffi:pointer-address wnd) glop-win32::*window-id-mapping*)
+            win)
       ;; get actual client rect instead of assuming it is specified size
-      (%update-geometry win x y width height)))
+      (glop-win32::%update-geometry-from-window win)))
 
   (setf (win32-window-dc win)
         (glop-win32:get-dc (win32-window-id win)))
@@ -117,7 +126,7 @@
   ;; window creation
   (setf (window-pushed-event win)
         (make-instance 'resize-event :width (window-width win)
-                       :height (window-height win)))
+                                     :height (window-height win)))
   win)
 
 (defmethod close-window ((win win32-window))
@@ -127,16 +136,16 @@
 
 (defmethod set-fullscreen ((win win32-window) &optional (state (not (window-fullscreen win))))
   (with-accessors ((id win32-window-id)
-                                   (fullscreen window-fullscreen))
-          win
-        (unless (eq state fullscreen)
-          (if state
-                  (progn (glop-win32::%set-fullscreen (win32-window-id win) t)
-                                 (setf fullscreen t))
-                  (progn (glop-win32::%set-fullscreen (win32-window-id win) nil)
-                                 (setf fullscreen nil))))
-        (glop-win32:update-window (win32-window-id win))
-        (show-window win)))
+                   (fullscreen window-fullscreen))
+      win
+    (unless (eq state fullscreen)
+      (if state
+          (progn (glop-win32::%set-fullscreen id t)
+                 (setf fullscreen t))
+          (progn (glop-win32::%set-fullscreen id nil)
+                 (setf fullscreen nil))))
+    (glop-win32:update-window id)
+    (show-window win)))
 
 
 (defmethod set-geometry ((win win32-window) x y width height)

@@ -207,6 +207,24 @@ set window fullscreen state."
   (:documentation
    "Disable cursor display for WINDOW"))
 
+;; slightly lower-level API for things related to fullscreen
+(defgeneric maximize-window (window)
+  (:documentation
+   "'Maximize' a window to fill screen, without changing screen mode
+   or window decoractions."))
+
+(defgeneric restore-window (window)
+  (:documentation
+   "Undo the effects of MAXIMIZE-WINDOW"))
+
+(defgeneric remove-window-decorations (window)
+  (:documentation
+   "Remove window border, title, etc. if possible."))
+
+(defgeneric restore-window-decorations (window)
+  (:documentation
+   "Restore window border, title, etc."))
+
 ;;; Events handling
 (defmacro define-simple-print-object (type &rest attribs)
   `(defmethod print-object ((event ,type) stream)

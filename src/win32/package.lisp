@@ -9,7 +9,9 @@
            #:set-geometry
            #:destroy-window #:unregister-class #:swap-buffers #:next-event
            #:set-video-mode #:show-cursor
-           #:%event%))
+           #:%event%
+           #:adjust-window-rect-ex
+           #:client-to-screen))
 
 (defpackage :glop-wgl
   (:use #:cl #:cffi #:glop-win32)

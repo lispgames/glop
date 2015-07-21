@@ -30,7 +30,10 @@
    (class-name :accessor win32-window-class-name)
    (pixel-format :accessor win32-window-pixel-format)
    (dc :accessor win32-window-dc)
-   (id :accessor win32-window-id)))
+   (id :accessor win32-window-id)
+   (in-size-move :accessor win32-window-in-size-move :initform nil
+                 :accessor in-size-move)
+   (size-event :accessor win32-window-pushed-size-event)))
 
 #+(and unix (not darwin))
 (defclass x11-window ()
