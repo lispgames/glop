@@ -40,6 +40,7 @@
                       :components ((:file "package")
                                    (:file "win32")
                                    (:file "wgl")
+                                   (:file "dwm")
                                    (:file "glop-win32")))
              (:file "glop")))))
 
