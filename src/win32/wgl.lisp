@@ -160,6 +160,7 @@
             version 1
             flags (foreign-bitfield-value 'pfd-flags
                        (list :pfd-draw-to-window :pfd-support-opengl
+                             :pfd-support-composition
                              (if double-buffer
                                  :pfd-double-buffer
                                  :pfd-double-buffer-dont-care)

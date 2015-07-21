@@ -896,6 +896,8 @@
 		 (return-from window-proc 0))
 		(:wm-kill-focus
 		 (setf %event% (make-instance 'glop:focus-out-event))
+		 (return-from window-proc 0))
+		(:wm-erase-background
 		 (return-from window-proc 0)))
 	  ;; Pass unhandled messages to default windowproc
 	  (%def-window-proc wnd msg w-param l-param))))
