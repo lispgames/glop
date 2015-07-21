@@ -47,7 +47,8 @@
   (:pfd-double-buffer-dont-care #x40000000)
   (:pfd-stereo-dont-care #x80000000)
   (:pfd-swap-copy #x00000400)
-  (:pfd-swap-exchange #x00000200))
+  (:pfd-swap-exchange #x00000200)
+  (:pfd-support-composition #x00008000))
 
 (defcenum pfd-pixel-type
   (:pfd-type-rgba 0)
