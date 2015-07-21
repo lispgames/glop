@@ -116,6 +116,8 @@
 (defcfun ("wglMakeCurrent" wgl-make-current) bool
   (dc hdc) (rc hglrc))
 
+(defcfun ("wglGetCurrentDC" wgl-get-current-dc) hdc)
+
 (defcfun ("wglDeleteContext" wgl-delete-context) bool
   (rc hglrc))
 
