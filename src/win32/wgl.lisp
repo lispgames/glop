@@ -198,3 +198,10 @@
     (when (or (< major major-desired)
               (and (= major major-desired) (< minor minor-desired)))
       (error "unable to create requested context"))))
+
+
+(defun wgl-swap-interval-ext (x)
+  ;; todo: cache the pointer (but reset it if an image is saved)
+  (let ((p (glop:gl-get-proc-address "wglSwapIntervalEXT")))
+    (when (and p (not (cffi:null-pointer-p p)))
+      (cffi:foreign-funcall-pointer p () :int x :int))))
