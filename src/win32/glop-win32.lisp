@@ -87,8 +87,12 @@
                                         (win32-window-module-handle win) (cffi:null-pointer))))
     (unless wnd
       (error "Can't create window (error ~S)~%" (glop-win32:get-last-error)))
-    (setf (win32-window-id win) wnd))
-  (%update-geometry win x y width height)
+    (setf (win32-window-id win) wnd)
+    (multiple-value-bind (.x .y width height) (glop-win32::get-client-rect wnd)
+      (declare (ignorable .x .y))
+      ;; get actual client rect instead of assuming it is specified size
+      (%update-geometry win x y width height)))
+
   (setf (win32-window-dc win)
         (glop-win32:get-dc (win32-window-id win)))
   (setf (win32-window-pixel-format win) (glop-win32:choose-pixel-format
@@ -109,6 +113,11 @@
                                          :stencil-size stencil-size))
   (glop-win32:set-foreground-window (win32-window-id win))
   (glop-win32:update-window (win32-window-id win))
+  ;; fake initial 'resize' event since we miss some size events during
+  ;; window creation
+  (setf (window-pushed-event win)
+        (make-instance 'resize-event :width (window-width win)
+                       :height (window-height win)))
   win)
 
 (defmethod close-window ((win win32-window))
