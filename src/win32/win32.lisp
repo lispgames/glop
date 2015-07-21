@@ -605,7 +605,7 @@
   (wnd hwnd) (index gwl-index))
 
 (defcfun ("SetWindowLongA" set-window-long) :long
-  (wnd hwnd) (index gwl-index) (new-long :long))
+  (wnd hwnd) (index gwl-index) (new-long :unsigned-long))
 
 (defun current-video-mode ()
   (with-foreign-object (dmode 'devmode)
