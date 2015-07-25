@@ -164,7 +164,10 @@
   (glop-win32:set-window-text (win32-window-id win) title))
 
 (defmethod swap-buffers ((win win32-window))
-  (glop-win32:swap-buffers (win32-window-dc win)))
+  (glop-win32:swap-buffers (win32-window-dc win))
+  (when (and (win32-window-dwm-active win)
+             (not (zerop (win32-window-swap-interval win))))
+    (glop-win32::dwm-flush)))
 
 (defmethod show-cursor ((win win32-window))
   (glop-win32:show-cursor 1))
@@ -176,3 +179,55 @@
   (let ((evt (glop-win32:next-event win (win32-window-id win) blocking)))
         (setf glop-win32:%event% nil)
         evt))
+
+(defun %swap-interval (win interval)
+  ;; don't check/modify win32-window-swap-interval since we
+  ;; might be emulating it with dwm
+  (unless (swap-interval-tear win)
+    (setf interval (abs interval)))
+  (if (and (cffi:pointerp (swap-interval-function win))
+           (not (cffi:null-pointer-p (swap-interval-function win))))
+      (cffi:foreign-funcall-pointer (swap-interval-function win) () :int
+                                    interval :int)))
+
+(defun %dwm-composition-changed (win)
+  (setf (slot-value win 'win32-window-dwm-active)
+        (glop-win32::dwm-is-composition-enabled))
+  (if (win32-window-dwm-active win)
+      (%swap-interval win 0)
+      (%swap-interval win (win32-window-swap-interval win))))
+
+(defmethod %init-swap-interval ((win win32-window))
+  ;; assumes we have a valid GL context...
+  (let* ((ext (split-sequence:split-sequence
+               #\space
+               (cffi:foreign-string-to-lisp
+                (glop-wgl::get-string #.(cffi:foreign-enum-value
+                                         'glop-wgl::gl-enum :extensions)))))
+         (wesi (position "WGL_EXT_swap_control" ext :test 'string-equal))
+         (wesit (position "WGL_EXT_swap_control_tear" ext :test 'string-equal))
+         (ver (glop-win32::get-version))
+         (dwm t))
+    (cond
+      ((< ver 6.0) ;; no dwm at all
+       (setf dwm nil))
+      ((< ver 6.2) ;; vista-win7, see if dwm is active
+       (setf dwm (glop-win32::dwm-is-composition-enabled))))
+    (if wesi
+      (setf (swap-interval-function win)
+            (glop:gl-get-proc-address "wglSwapIntervalEXT"))
+      (setf (swap-interval-function win)
+            :unsupported))
+    (setf (swap-interval-tear win) (not (not wesit))) ;; convert pos to boolean
+    (setf (slot-value win 'win32-window-dwm-active) dwm)
+    (if dwm
+        ;; disable swap-interval if we are using dwm
+        (%swap-interval win 0)
+        (%swap-interval win 1))
+    ;; set that we want vsync by default
+    (setf (win32-window-swap-interval win) 1)))
+
+(defmethod swap-interval ((win win32-window) interval)
+  (setf (win32-window-swap-interval win) interval)
+  (unless (win32-window-dwm-active win)
+   (%swap-interval win interval)))

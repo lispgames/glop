@@ -93,6 +93,10 @@ Returns NIL if no match is found."
   (:documentation
    "Closes the provided window *without* releasing any attached GL context."))
 
+(defgeneric %init-swap-interval (window)
+  (:method (w)
+    (setf (swap-interval-function w) :unsupported)))
+
 (defun create-window (title width height &key (x 0) (y 0) major minor fullscreen
                                               (win-class 'window)
                                               (double-buffer t)
@@ -131,6 +135,7 @@ Returns NIL if no match is found."
                  :stencil-size stencil-size)
     (create-gl-context win :major major :minor minor
                            :make-current t)
+    (%init-swap-interval win)
     (show-window win)
     (set-fullscreen win fullscreen)
     win))
@@ -198,6 +203,29 @@ set window fullscreen state."
 (defgeneric swap-buffers (window)
   (:documentation
    "Swaps GL buffers."))
+
+(defgeneric swap-interval (window interval)
+  (:documentation
+   "Specify number of vsync intervals to wait before swap-buffers takes effect.
+
+Use 0 for no vsync, 1 for normal vsync, 2 for 1/2 monitor refresh rate, etc.
+
+If INTERVAL is negativem the absolute value is used, and when
+supported swap won't wait for vsync if specified interval has already
+elapsed.
+
+May be ignored or only partially supported depending on platform and
+user settings.")
+  ;; windows: only supports 0/1 when dwm is enabled (always on win8+ i think?)
+  ;; (possibly could support > 1 with dwm, but hard to detect if some vsync
+  ;;  already passed so would always wait N frames. Possibly could combine
+  ;;  a normal SwapInterval call with N-1 and a dwmFlush?)
+  ;; linux: todo (depends on GLX_EXT_swap_control, GLX_EXT_swap_control_tear
+  ;; osx: todo
+  ;; todo: some way to query supported options
+  (:method (w i)
+    ;; just do nothing by default for now
+    (declare (ignore w i))))
 
 (defgeneric show-cursor (window)
   (:documentation

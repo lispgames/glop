@@ -21,11 +21,15 @@
   (height 0 :type integer)
   (depth 0 :type integer))
 
+(defclass swap-interval-mixin ()
+  ((swap-interval-function :accessor swap-interval-function)
+   (swap-interval-tear :accessor swap-interval-tear)))
+
 ;; platform specific windows
 ;; XXX: this may move to platform specific directories
 
 #+(or win32 windows)
-(defclass win32-window ()
+(defclass win32-window (swap-interval-mixin)
   ((module-handle :initarg :module-handle :accessor win32-window-module-handle)
    (class-name :accessor win32-window-class-name)
    (pixel-format :accessor win32-window-pixel-format)
@@ -33,7 +37,10 @@
    (id :accessor win32-window-id)
    (in-size-move :accessor win32-window-in-size-move :initform nil
                  :accessor in-size-move)
-   (size-event :accessor win32-window-pushed-size-event)))
+   (size-event :accessor win32-window-pushed-size-event)
+   ;; store desired swap interval in case we are using dwm instead
+   (swap-interval :accessor win32-window-swap-interval)
+   (win32-window-dwm-active :reader win32-window-dwm-active)))
 
 #+(and unix (not darwin))
 (defclass x11-window ()

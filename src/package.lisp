@@ -43,6 +43,7 @@
    #:maximize-window
    #:restore-window
    #:remove-window-decorations
-   #:restore-window-decorations))
+   #:restore-window-decorations
+   #:swap-interval))
 
 

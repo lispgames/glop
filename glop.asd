@@ -5,7 +5,7 @@
   :version "0.1.0"
   :description "Direct FFI bindings for OpenGL window and context management"
   :author "Morgan Veyret <patzy at oxyde dot org>"
-  :depends-on (:cffi :trivial-garbage)
+  :depends-on (:cffi :trivial-garbage :split-sequence)
   :components
   ((:module "src"
             :serial t

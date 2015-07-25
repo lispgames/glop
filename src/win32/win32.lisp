@@ -1018,7 +1018,11 @@
            (setf %event% (make-instance 'glop:focus-out-event))
            (return-from window-proc 0))
           (:wm-erase-background
-           (return-from window-proc 0))))
+           (return-from window-proc 0))
+          (:wm-dwm-composition-changed
+           ;; assuming if we get this, dwm-is-composition-enabled returns
+           ;; meaningful data...
+           (glop::%dwm-composition-changed %window%))))
       ;; Pass unhandled messages to default windowproc
       (%def-window-proc wnd msg w-param l-param))))
 
@@ -1087,3 +1091,35 @@
   (module-name :string))
 
 (defcfun ("GetLastError" get-last-error) :int32)
+
+(defcfun ("GetVersion" %get-version) dword)
+
+(defun get-version* ()
+  (let ((v (%get-version)))
+    (values (ldb (byte 8 0) v) ; major
+            (ldb (byte 8 8) v) ; minor
+            (ldb (byte 16 16) v) ; build
+            )))
+
+(defun get-version ()
+  ;; Windows 10 Insider Preview         10.0*
+  ;; Windows Server Technical Preview   10.0*
+  ;; Windows 8.1                        6.3*
+  ;; Windows Server 2012 R2             6.3*
+  ;; * only reports 6.3+ with manifest, and then only reports specific
+  ;;    version listed in manifest
+  ;; Windows 8                          6.2
+  ;; Windows Server 2012                6.2
+  ;; Windows 7                          6.1
+  ;; Windows Server 2008 R2             6.1
+  ;; Windows Server 2008                6.0
+  ;; Windows Vista                      6.0
+  ;; Windows Server 2003 R2             5.2
+  ;; Windows Server 2003                5.2
+  ;; Windows XP 64-Bit Edition          5.2
+  ;; Windows XP                         5.1
+  ;; Windows 2000                       5.0
+  (let ((v (%get-version)))
+    (float (+ (ldb (byte 8 0) v)
+              (/ (ldb (byte 8 8) v) 10)))))
+
