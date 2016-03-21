@@ -358,7 +358,8 @@
     (glop:swap-interval window (vsync window))))
 
 (defun test-vsync ()
-  (glop:with-window (win "Glop test window" 800 600 :win-class 'vsync-window)
+  (glop:with-window (win "Glop test window" 800 600
+                         :win-class 'vsync-window)
     (format t "Created window: ~S~%" win)
     ;; GL init
     (gl:clear-color 0.3 0.3 1.0 0)
@@ -371,8 +372,6 @@
       for angle from 0 by 0.1
       while (glop:dispatch-events win :blocking nil :on-foo nil)
       do
-         (when (= (vsync win) -1)
-           (sleep 1/60))
          ;; rendering
          (gl:clear :color-buffer)
          (gl:color (random 1.0) 1 1)
