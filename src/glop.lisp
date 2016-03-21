@@ -111,7 +111,8 @@ Returns NIL if no match is found."
                                               (accum-green-size 0)
                                               (accum-blue-size 0)
                                               stencil-buffer
-                                              (stencil-size 0))
+                                              (stencil-size 0)
+                                           (gl t))
   "Creates a new window with an attached GL context using the provided visual attributes.
    Major and minor arguments specify the context version to use, when NIL
    (default value) old style gl context creation is used.
@@ -133,8 +134,10 @@ Returns NIL if no match is found."
                  :accum-blue-size accum-blue-size
                  :stencil-buffer stencil-buffer
                  :stencil-size stencil-size)
-    (create-gl-context win :major major :minor minor
-                           :make-current t)
+    (if gl
+        (create-gl-context win :major major :minor minor
+                               :make-current t)
+        (setf (window-gl-context win) nil))
     (%init-swap-interval win)
     (show-window win)
     (set-fullscreen win fullscreen)
