@@ -130,6 +130,7 @@
   win)
 
 (defmethod close-window ((win win32-window))
+  (glop-win32::%release-dc (win32-window-id win) (win32-window-dc win))
   (glop-win32:destroy-window (win32-window-id win))
   (glop-win32:unregister-class (win32-window-class-name win)
                                                            (win32-window-module-handle win)))
