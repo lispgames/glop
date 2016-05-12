@@ -238,7 +238,7 @@
 
 (defun correct-context? (major-desired minor-desired)
   (multiple-value-bind (major minor)
-      (parse-gl-version-string-values
+      (glop::parse-gl-version-string-values
        (foreign-string-to-lisp (get-string (foreign-enum-value 'gl-enum :version))))
     (when (or (< major major-desired)
               (and (= major major-desired) (< minor minor-desired)))

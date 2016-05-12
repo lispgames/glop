@@ -3,7 +3,7 @@
 (defpackage :glop-test
   (:use #:cl)
   (:export #:test-manual-create #:test-multiple-contexts #:test-with-window #:test-manual-events
-           #:test-gl-hello #:test-gl-hello-fullscreen #:test-gl-hello-gl3 #:test-multiple-windows
+           #:test-gl-hello #:test-gl-hello-fullscreen #:test-gl3 #:test-multiple-windows
            #:test-on-event #:test-subclassing
            #+(and unix (not darwin))#:test-custom-event-loop))
 
@@ -181,30 +181,18 @@
            (gl:vertex 0.75 0.25 0)
            (gl:vertex 0.75 0.75 0)
            (gl:vertex 0.25 0.75 0))
-         (gl:flush)
          (glop:swap-buffers win))))
 
-(defun test-gl-hello-gl3 (&optional (major 3) (minor 1))
+(defun test-gl3 (&optional (major 3) (minor 1))
   (glop:with-window (win "Glop test window" 800 600 :major major :minor minor)
     (format t "Created window: ~S~%" win)
     (format t "GL Context version: ~a~%" (gl:get-string :version))
     ;; GL init
     (gl:clear-color 0.3 0.3 1.0 0)
-    ;; setup view
-    (gl:matrix-mode :projection)
-    (gl:load-identity)
-    (gl:ortho 0 1 0 1 -1 1)
     ;; idle loop, we draw here anyway
     (loop while (glop:dispatch-events win :blocking nil) do
          ;; rendering
          (gl:clear :color-buffer)
-         (gl:color 1 1 1)
-         (gl:with-primitive :polygon
-           (gl:vertex 0.25 0.25 0)
-           (gl:vertex 0.75 0.25 0)
-           (gl:vertex 0.75 0.75 0)
-           (gl:vertex 0.25 0.75 0))
-         (gl:flush)
          (glop:swap-buffers win))))
 
 (defun test-multiple-windows ()
