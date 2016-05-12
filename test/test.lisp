@@ -57,7 +57,6 @@
     (gl:clear-color 0.3 0.3 1.0 0)
     (loop while (glop:dispatch-events win :blocking nil) do
          (gl:clear :color-buffer)
-         (gl:flush)
          (glop:swap-buffers win))
     (glop:destroy-window win)))
 
@@ -72,7 +71,6 @@
       (gl:clear-color 1.0 0.3 0.3 0)
       (loop while (glop:dispatch-events win :blocking nil) do
            (gl:clear :color-buffer)
-           (gl:flush)
            (glop:swap-buffers win)
          when (> (- (get-internal-real-time) time) (* 2.0 internal-time-units-per-second))
          do (progn (setf time (get-internal-real-time))
@@ -87,7 +85,6 @@
     (gl:clear-color 0.3 0.3 1.0 0)
     (loop while (glop:dispatch-events win :blocking nil) do
          (gl:clear :color-buffer)
-         (gl:flush)
          (glop:swap-buffers win))))
 
 
@@ -109,7 +106,6 @@
               (glop:close-event (setf running nil))
               (t (format t "Unhandled event: ~A~%" evt)))
          else do (gl:clear :color-buffer)
-                 (gl:flush)
                  (glop:swap-buffers win))
     (glop:destroy-window win)))
 
@@ -141,7 +137,6 @@
               (t (format t "Unhandled event: ~A~%" evt)))
             (cffi:foreign-free x-evt))
        else do (gl:clear :color-buffer)
-               (gl:flush)
                (glop:swap-buffers win))
   (glop:destroy-window win)))
 
@@ -156,16 +151,15 @@
     (gl:ortho 0 1 0 1 -1 1)
     ;; idle loop, we draw here anyway
     (loop while (glop:dispatch-events win :blocking nil) do
-         ;; rendering
-         (gl:clear :color-buffer)
-         (gl:color 1 1 1)
-         (gl:with-primitive :polygon
-           (gl:vertex 0.25 0.25 0)
-           (gl:vertex 0.75 0.25 0)
-           (gl:vertex 0.75 0.75 0)
-           (gl:vertex 0.25 0.75 0))
-         (gl:flush)
-         (glop:swap-buffers win))))
+          ;; rendering
+          (gl:clear :color-buffer)
+          (gl:color 1 1 1)
+          (gl:with-primitive :polygon
+                             (gl:vertex 0.25 0.25 0)
+                             (gl:vertex 0.75 0.25 0)
+                              (gl:vertex 0.75 0.75 0)
+                              (gl:vertex 0.25 0.75 0))
+          (glop:swap-buffers win))))
 
 
 (defun test-gl-hello-fullscreen ()
@@ -242,7 +236,6 @@
                   (gl:vertex 0.75 0.25 0)
                   (gl:vertex 0.75 0.75 0)
                   (gl:vertex 0.25 0.75 0))
-                (gl:flush)
                 (glop:swap-buffers win))
                (progn
                  (setf windows (remove win windows))
@@ -297,7 +290,6 @@
            (gl:vertex 0.75 0.25 0)
            (gl:vertex 0.75 0.75 0)
            (gl:vertex 0.25 0.75 0))
-         (gl:flush)
          (glop:swap-buffers win))))
 
 
@@ -359,5 +351,4 @@
            (gl:vertex 0.75 0.25 0)
            (gl:vertex 0.75 0.75 0)
            (gl:vertex 0.25 0.75 0))
-         (gl:flush)
          (glop:swap-buffers win))))

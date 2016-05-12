@@ -45,8 +45,7 @@
 (defmethod create-gl-context ((win x11-window) &key (make-current t) major minor
                                                     forward-compat debug
                                                     profile)
-  (without-fp-traps
-    (let ((ctx (make-glx-context :display (x11-window-display win))))
+  (let ((ctx (make-glx-context :display (x11-window-display win))))
       (setf (glx-context-ctx ctx)
             (if (and major minor)
                 (let ((attrs (list :major-version major :minor-version minor)))
@@ -70,7 +69,7 @@
         (attach-gl-context win ctx))
       (when (and major minor)
         (glop-glx:correct-context? major minor))
-      ctx)))
+      ctx))
 
 (defmethod destroy-gl-context ((ctx glx-context))
   (detach-gl-context ctx)
@@ -101,7 +100,6 @@
                         (accum-blue-size 0)
                         stencil-buffer
                         (stencil-size 0))
-  (without-fp-traps
       (let ((attribs (list :rgba rgba
                            :red-size red-size
                            :green-size green-size
@@ -150,7 +148,8 @@
           (setf win-title title)
           (glop-xlib:xkb-set-detectable-auto-repeat display t (cffi:null-pointer))
           (glop-xlib:x-flush (x11-window-display win))
-          win))))
+          win)))
+
 
 (defmethod close-window ((win x11-window))
   (with-accessors ((display x11-window-display)
@@ -189,8 +188,9 @@
   (glop-xlib:x-store-name (x11-window-display win) (x11-window-id win) title))
 
 (defmethod swap-buffers ((win x11-window))
-  (glop-glx:glx-wait-gl)
-  (glop-glx:glx-swap-buffers (x11-window-display win) (x11-window-id win)))
+  (without-fp-traps
+   (glop-glx:glx-wait-gl)
+   (glop-glx:glx-swap-buffers (x11-window-display win) (x11-window-id win))))
 
 (defmethod show-cursor ((win x11-window))
   (with-accessors ((display x11-window-display)
