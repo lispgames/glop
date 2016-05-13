@@ -292,6 +292,9 @@
   (display-ptr :pointer)
   (screen :int))
 
+(defcfun ("XDefaultScreen" default-screen) :int
+  (display-ptr :pointer))
+
 (defcfun ("XRootWindow" root-window) :int
   (display-ptr :pointer)
   (screen :int))
