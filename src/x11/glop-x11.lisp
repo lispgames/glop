@@ -126,8 +126,8 @@
                          (fb-config x11-window-fb-config)
                          (win-title window-title))
             win
-          (setf display (glop-xlib:x-open-display)
-                screen 0)
+          (setf display (glop-xlib:x-open-display))
+          (setf screen (glop-xlib:default-screen display))
           (multiple-value-bind (glx-major glx-minor)
               (glop-glx:glx-get-version display)
             (if (and (>= glx-major 1)
