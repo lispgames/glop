@@ -449,8 +449,8 @@ Returns NIL on :CLOSE event, T otherwise."
 
 (defmacro with-window ((win-sym title width height &rest attribs) &body body)
   "Creates a window and binds it to WIN-SYM.  The window is detroyed when body exits."
-  `(let ((,win-sym (apply #'create-window ,title ,width ,height
-                          (list ,@attribs))))
+  `(let ((,win-sym (create-window ,title ,width ,height
+                                  ,@attribs)))
      (when ,win-sym
        (unwind-protect (progn ,@body)
          (destroy-window ,win-sym)))))
