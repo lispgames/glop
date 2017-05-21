@@ -114,9 +114,15 @@ Returns NIL if no match is found."
                                               (stencil-size 0)
                                            profile
                                            (gl t))
-  "Creates a new window with an attached GL context using the provided visual attributes.
-   Major and minor arguments specify the context version to use, when NIL
-   (default value) old style gl context creation is used.
+  "Creates a new window with an attached GL context using the provided
+   visual attributes.
+
+   Major and minor arguments specify the context version to use. When
+   NIL (default value) old style gl context creation is used. Some
+   combinations of platforms and drivers may require :PROFILE :CORE to
+   use versions newer than 2.1, while others will use newest version
+   even if version is not specified.
+
    The created window will be of the WINDOW class, you can override this by
    specifying your own class using :WIN-CLASS."
   (let ((win (make-instance win-class)))
@@ -194,7 +200,8 @@ set window fullscreen state."
 
 (defgeneric show-window (window)
   (:documentation
-   "Make WINDOW visible."))
+   "Make WINDOW visible. (may need to be called twice when window is
+   shown for the first time on Windows.)"))
 
 (defgeneric hide-window (window)
   (:documentation
