@@ -45,6 +45,9 @@
           (attach-gl-context win ctx))
         (when (and major minor)
           (glop-wgl:correct-context? major minor))
+    (let ((e (glop-wgl::get-error)))
+      (unless (zerop e)
+        (warn "got gl error ~s during context creation?" e)))
     (%init-swap-interval win)
         ctx))
 

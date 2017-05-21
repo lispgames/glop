@@ -81,6 +81,8 @@
 (defcfun ("wglCreateContext" wgl-create-context) hglrc
   (dc hdc))
 
+(defcfun ("glGetError" get-error) :int)
+
 (defun wgl-create-specific-context (hdc context-attribs)
   (with-foreign-object ( atts :int (1+ (length context-attribs)))
     (loop
