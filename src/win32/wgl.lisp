@@ -175,14 +175,17 @@
                                     (accum-green-size 0)
                                     (accum-blue-size 0)
                                     stencil-buffer (stencil-size 0))
-  (declare (ignore stencil-buffer))
-  (with-foreign-object (pfd 'pixelformatdescriptor)
+  (declare (ignore stencil-buffer)
+           (ignorable stereo))
+  (with-foreign-object (pfd '(:struct pixelformatdescriptor))
     (with-foreign-slots ((size version flags pixel-type color-bits
                                red-bits green-bits blue-bits alpha-bits
                                accum-bits accum-red-bits accum-green-bits accum-blue-bits
                                stencil-bits
-                               depth-bits) pfd pixelformatdescriptor)
-      (setf size (foreign-type-size 'pixelformatdescriptor)
+                               depth-bits)
+                         pfd
+                         (:struct pixelformatdescriptor))
+      (setf size (foreign-type-size '(:struct pixelformatdescriptor))
             version 1
             flags (foreign-bitfield-value 'pfd-flags
                        (list :pfd-draw-to-window :pfd-support-opengl
