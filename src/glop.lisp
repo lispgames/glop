@@ -138,7 +138,6 @@ Returns NIL if no match is found."
         (create-gl-context win :major major :minor minor
                                :make-current t)
         (setf (window-gl-context win) nil))
-    (%init-swap-interval win)
     (show-window win)
     (set-fullscreen win fullscreen)
     win))

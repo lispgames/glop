@@ -69,7 +69,8 @@
 
 (defcenum (gl-enum :unsigned-int)
   (:version #x1F02)
-  (:extensions #x1F03))
+  (:extensions #x1F03)
+  (:num-extensions #x821D))
 
 (define-foreign-library opengl
   (t (:default "opengl32")))
@@ -111,8 +112,30 @@
           ctx)))))
 
 
-(defcfun ("glGetString" get-string) :pointer
-  (name :unsigned-int))
+(defcfun ("glGetString" get-string) :string
+  (name gl-enum))
+
+(defun get-string-i (name index)
+  (let ((p (wgl-get-proc-address "glGetStringi"))
+        (e (foreign-enum-value 'gl-enum name)))
+    (when p
+      (foreign-funcall-pointer p nil :unsigned-int e
+                                     :unsigned-int index
+                                     :string))))
+
+
+(defcfun ("glGetIntegerv" %get-integer) :pointer
+  (name gl-enum)
+  (pointer :pointer))
+
+(defun get-integer (enum &key (count 1))
+  (with-foreign-object (p :int count)
+    (%get-integer enum p)
+    (if (= count 1)
+        ;; possibly should only return single int if COUNT wasn't
+        ;; supplied by user?
+        (mem-aref p :int 0)
+        (loop for i below count collect (mem-aref p :int i)))))
 
 (defcfun ("wglMakeCurrent" wgl-make-current) bool
   (dc hdc) (rc hglrc))
@@ -192,11 +215,25 @@
 (defcfun ("SwapBuffers" swap-buffers) bool
   (dc hdc))
 
+(defun get-version ()
+  (glop::parse-gl-version-string-values
+   (get-string :version)))
+
+(defun get-extensions ()
+  (if (>= (get-version) 3)
+      ;; use new API for 3+ since old won't work on core profile
+      (let ((n (glop-wgl::get-integer :num-extensions)))
+        (loop for i below n
+              collect (glop-wgl::get-string-i :extensions i)))
+      ;; old API
+      (split-sequence:split-sequence
+       #\space
+       (glop-wgl::get-string :extensions))))
+
 
 (defun correct-context? (major-desired minor-desired)
   (multiple-value-bind (major minor)
-      (glop::parse-gl-version-string-values
-       (foreign-string-to-lisp (get-string (foreign-enum-value 'gl-enum :version))))
+      (get-version)
     (when (or (< major major-desired)
               (and (= major major-desired) (< minor minor-desired)))
       (error "unable to create requested context"))))

@@ -22,7 +22,8 @@
   (depth 0 :type integer))
 
 (defclass swap-interval-mixin ()
-  ((swap-interval-function :accessor swap-interval-function)
+  ((swap-interval-function :initform :uninitialized
+                           :accessor swap-interval-function)
    (swap-interval-tear :accessor swap-interval-tear)))
 
 ;; platform specific windows
@@ -40,7 +41,8 @@
    (size-event :accessor win32-window-pushed-size-event)
    ;; store desired swap interval in case we are using dwm instead
    (swap-interval :accessor win32-window-swap-interval)
-   (win32-window-dwm-active :reader win32-window-dwm-active)))
+   (win32-window-dwm-active :initform :uninitialized
+                            :reader win32-window-dwm-active)))
 
 #+(and unix (not darwin))
 (defclass x11-window ()

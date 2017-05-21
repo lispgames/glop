@@ -45,6 +45,7 @@
           (attach-gl-context win ctx))
         (when (and major minor)
           (glop-wgl:correct-context? major minor))
+    (%init-swap-interval win)
         ctx))
 
 (defmethod destroy-gl-context ((ctx wgl-context))
@@ -127,6 +128,7 @@
   (setf (window-pushed-event win)
         (make-instance 'resize-event :width (window-width win)
                                      :height (window-height win)))
+  (%init-dwm win)
   win)
 
 (defmethod close-window ((win win32-window))
@@ -198,29 +200,30 @@
       (%swap-interval win 0)
       (%swap-interval win (win32-window-swap-interval win))))
 
-(defmethod %init-swap-interval ((win win32-window))
-  ;; assumes we have a valid GL context...
-  (let* ((ext (split-sequence:split-sequence
-               #\space
-               (cffi:foreign-string-to-lisp
-                (glop-wgl::get-string #.(cffi:foreign-enum-value
-                                         'glop-wgl::gl-enum :extensions)))))
-         (wesi (position "WGL_EXT_swap_control" ext :test 'string-equal))
-         (wesit (position "WGL_EXT_swap_control_tear" ext :test 'string-equal))
-         (ver (glop-win32::get-version))
-         (dwm t))
+(defun %init-dwm (win)
+  (let ((ver (glop-win32::get-version))
+        (dwm t))
     (cond
       ((< ver 6.0) ;; no dwm at all
        (setf dwm nil))
       ((< ver 6.2) ;; vista-win7, see if dwm is active
        (setf dwm (glop-win32::dwm-is-composition-enabled))))
-    (if wesi
-      (setf (swap-interval-function win)
-            (glop:gl-get-proc-address "wglSwapIntervalEXT"))
-      (setf (swap-interval-function win)
-            :unsupported))
-    (setf (swap-interval-tear win) (not (not wesit))) ;; convert pos to boolean
     (setf (slot-value win 'win32-window-dwm-active) dwm)
+    dwm))
+
+
+(defmethod %init-swap-interval ((win win32-window))
+  ;; assumes we have a valid GL context...
+  (let* ((dwm (%init-dwm win))
+         (ext (glop-wgl::get-extensions))
+         (wesc (position "WGL_EXT_swap_control" ext :test 'string-equal))
+         (wesct (position "WGL_EXT_swap_control_tear" ext :test 'string-equal)))
+    (if wesc
+        (setf (swap-interval-function win)
+              (glop:gl-get-proc-address "wglSwapIntervalEXT"))
+        (setf (swap-interval-function win)
+              :unsupported))
+    (setf (swap-interval-tear win) (not (not wesct))) ;; convert pos to boolean
     (if dwm
         ;; disable swap-interval if we are using dwm
         (%swap-interval win 0)
