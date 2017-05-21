@@ -38,7 +38,8 @@
    (id :accessor win32-window-id)
    (in-size-move :accessor win32-window-in-size-move :initform nil
                  :accessor in-size-move)
-   (size-event :accessor win32-window-pushed-size-event)
+   (size-event :initform nil
+               :accessor win32-window-pushed-size-event)
    ;; store desired swap interval in case we are using dwm instead
    (swap-interval :accessor win32-window-swap-interval)
    (win32-window-dwm-active :initform :uninitialized
