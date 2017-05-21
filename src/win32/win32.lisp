@@ -808,9 +808,7 @@
 (defun set-geometry (wnd x y width height)
   ;; we specify position/size of client rect, convert to whole window
   (multiple-value-bind (ax ay aw ah)
-      (glop-win32:adjust-window-rect-ex x y width height
-                                        :style style
-                                        :ex-style ex-style)
+      (glop-win32:adjust-window-rect-ex x y width height)
     (setf x ax y ay width aw height ah))
   (move-window wnd x y width height 1))
 
