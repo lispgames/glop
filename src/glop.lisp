@@ -112,6 +112,7 @@ Returns NIL if no match is found."
                                               (accum-blue-size 0)
                                               stencil-buffer
                                               (stencil-size 0)
+                                           profile
                                            (gl t))
   "Creates a new window with an attached GL context using the provided visual attributes.
    Major and minor arguments specify the context version to use, when NIL
@@ -136,7 +137,8 @@ Returns NIL if no match is found."
                  :stencil-size stencil-size)
     (if gl
         (create-gl-context win :major major :minor minor
-                               :make-current t)
+                               :make-current t
+                               :profile profile)
         (setf (window-gl-context win) nil))
     (show-window win)
     (set-fullscreen win fullscreen)
