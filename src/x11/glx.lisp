@@ -79,7 +79,7 @@
 
 (defcfun ("glXWaitGL" glx-wait-gl) :void)
 
-(defcfun ("glXChooseVisual" %glx-choose-visual) visual-info
+(defcfun ("glXChooseVisual" %glx-choose-visual) (:pointer (:struct visual-info))
   (display-ptr :pointer) (screen :int) (attribs :pointer))
 
 (defcfun ("glXChooseFBConfig" %glx-choose-fb-config) (:pointer fb-config)
@@ -100,7 +100,8 @@
   (attribute :int)
   (value (:pointer :int)))
 
-(defcfun ("glXGetVisualFromFBConfig" %glx-get-visual-from-fb-config) visual-info
+(defcfun ("glXGetVisualFromFBConfig" %glx-get-visual-from-fb-config)
+    (:pointer (:struct visual-info))
   (display-ptr :pointer)
   (fb-config (:pointer fb-config)))
 

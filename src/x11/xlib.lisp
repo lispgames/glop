@@ -13,7 +13,7 @@
 (defctype gcontext xid)
 
 (defcstruct _xdisplay)
-(defctype display _xdisplay)
+(defctype display (:struct _xdisplay))
 
 (defctype visualid :unsigned-long)
 
@@ -146,8 +146,8 @@
   (keycode :unsigned-int)
   (same-screen :boolean))
 
-(defctype x-key-pressed-event x-key-event)
-(defctype x-key-released-event x-key-event)
+(defctype x-key-pressed-event (:struct x-key-event))
+(defctype x-key-released-event (:struct x-key-event))
 
 (defcstruct x-button-event
   (type :int)
@@ -164,8 +164,8 @@
   (button :unsigned-int)
   (same-screen :boolean))
 
-(defctype x-button-pressed-event x-button-event)
-(defctype x-button-released-event x-button-event)
+(defctype x-button-pressed-event (:struct x-button-event))
+(defctype x-button-released-event (:struct x-button-event))
 
 (defcstruct x-motion-event
   (type :int)
@@ -182,7 +182,7 @@
   (is-hint :char)
   (same-screen :boolean))
 
-(defctype x-pointer-moved-event x-motion-event)
+(defctype x-pointer-moved-event (:struct x-motion-event))
 
 (defctype x-atom :unsigned-long)
 
@@ -199,7 +199,7 @@
   (win window)
   (message-type x-atom)
   (format :int)
-  (data x-client-message-event-data))
+  (data (:union x-client-message-event-data)))
 
 (defcstruct x-expose-event
   (type :int)
@@ -392,22 +392,22 @@
 (defcfun ("XCreateWindow" %x-create-window) window
   (display-ptr :pointer) (parent window) (x :int) (y :int) (width :int) (height :int)
   (border-width :int) (depth :int) (win-class x-window-class) (visual :pointer)
-  (value-mask x-window-attributes-flags) (attributes set-window-attributes))
+  (value-mask x-window-attributes-flags) (attributes (:pointer (:struct set-window-attributes))))
 
 (defun %set-fullscreen (window dpy be-fullscreen)
   (let ((wm-state (x-intern-atom dpy "_NET_WM_STATE" nil))
         (fullscreen (x-intern-atom dpy "_NET_WM_STATE_FULLSCREEN" nil)))
-    (with-foreign-object (msg 'x-event)
-      (with-foreign-slots ((type) msg x-event)
+    (with-foreign-object (msg '(:union x-event))
+      (with-foreign-slots ((type) msg (:union x-event))
         (setf type (foreign-enum-value 'x-event-name :client-message))
-        (with-foreign-slots ((win message-type format data) msg x-client-message-event) 
-        (setf win window)
-        (setf message-type wm-state)
-        (setf format 32)
-        (with-foreign-slots ((l) data x-client-message-event-data)
-          (setf (mem-aref l :long 0) (if be-fullscreen 1 0))
-          (setf (mem-aref l :long 1) fullscreen)
-          (setf (mem-aref l :long 2) 0))))
+        (with-foreign-slots ((win message-type format data) msg (:struct x-client-message-event))
+          (setf win window)
+          (setf message-type wm-state)
+          (setf format 32)
+          (with-foreign-slots ((l) data (:union x-client-message-event-data))
+            (setf (mem-aref l :long 0) (if be-fullscreen 1 0))
+            (setf (mem-aref l :long 1) fullscreen)
+            (setf (mem-aref l :long 2) 0))))
       (x-send-event dpy (x-default-root-window dpy) nil (foreign-bitfield-value 'x-event-mask-flags '(:structure-notify-mask)) msg))))
 
 ;;; XGenericEvent events dispatch on a per-display 'opcode', so we
@@ -451,12 +451,12 @@
   (length :int))
 
 (defcallback x-error-handler :int ((display :pointer)
-                                   (event (:pointer x-error-event)))
+                                   (event (:pointer (:struct x-error-event))))
   (declare (ignorable display))
   (restart-case
       (with-foreign-slots ((type display-ptr serial error-code
                                  request-code minor-code resource-id)
-                           event x-error-event)
+                           event (:struct x-error-event))
         (let ((message (with-foreign-pointer-as-string (m 256)
                          (x-get-error-text display-ptr error-code m 256))))
          (format t "x error ~s: ~a, opcode ~s . ~s, resource id ~s, serial ~s"
@@ -495,10 +495,10 @@
 
 (defun x-create-window (dpy parent x y width height visual-infos)
   (let ((root-win (x-default-root-window dpy)))
-    (with-foreign-slots ((visual-id visual depth) visual-infos visual-info)
+    (with-foreign-slots ((visual-id visual depth) visual-infos (:struct visual-info))
       (let ((colormap (x-create-color-map dpy root-win visual :alloc-none)))
-        (with-foreign-object (win-attrs 'set-window-attributes)
-          (with-foreign-slots ((cmap event-mask border-pixel) win-attrs set-window-attributes)
+        (with-foreign-object (win-attrs '(:struct set-window-attributes))
+          (with-foreign-slots ((cmap event-mask border-pixel) win-attrs (:struct set-window-attributes))
             (setf cmap colormap
                   event-mask (foreign-bitfield-value 'x-event-mask-flags
                                 '(:exposure-mask
@@ -532,13 +532,13 @@
   (display-ptr :pointer) (discard :boolean))
 
 (defcfun ("XNextEvent" %x-next-event) :int
-  (display-ptr :pointer) (evt x-event))
+  (display-ptr :pointer) (evt (:pointer (:union x-event))))
 
 (defcfun ("XEventsQueued" %x-events-queued) :int
   (display-ptr :pointer) (mode x-queued-mode))
 
 (defcfun ("XPeekEvent" %x-peek-event) :int
-  (display-ptr :pointer) (evt x-event))
+  (display-ptr :pointer) (evt (:pointer (:union x-event))))
 
 (defcfun ("XPending" %x-pending) :int
   (display-ptr :pointer))
@@ -551,7 +551,7 @@
 
 (defun x-next-event (win dpy &optional blocking)
   (x-sync dpy nil)
-  (with-foreign-object (evt 'x-event)
+  (with-foreign-object (evt '(:union x-event))
     (loop for processed-event = (if blocking
                                     (progn (%x-next-event dpy evt)
                                            (process-event win dpy evt))
@@ -565,10 +565,10 @@
       (last-y 0))
   (defun process-event (win dpy evt)
     "Process an X11 event into a GLOP event."
-    (with-foreign-slots ((type) evt x-event)
+    (with-foreign-slots ((type) evt (:union x-event))
       (case (foreign-enum-keyword 'x-event-name type :errorp nil)
         (:key-press
-         (with-foreign-slots ((keycode) evt x-key-event)
+         (with-foreign-slots ((keycode) evt (:struct x-key-event))
            (when (and glop:*ignore-auto-repeat* (glop:key-pressed keycode))
              (return-from process-event))
            (setf (glop:key-pressed keycode) t)
@@ -578,20 +578,26 @@
                             :keysym keysym
                             :text text))))
         (:key-release
-         (with-foreign-slots ((keycode win time) evt x-key-event)
+         (with-foreign-slots ((keycode win time) evt (:struct x-key-event))
            ;; ignore key release for key repeats
            ;; if a key is repeated we now get the same behavior as win32
            ;; i.e. multiple :key-press events without corresponding key release
            ;; the following is translated from glfw:x11_window.c:612
            (when (and (x-pending-p dpy) (%x-events-queued dpy 1)) ;; 1 is QueuedAfterReading
-             (with-foreign-object (next-evt 'x-event)
+             (with-foreign-object (next-evt '(:union x-event))
                (%x-peek-event dpy next-evt)
                (when (and (eq :key-press
                               (foreign-enum-keyword 'x-event-name
-                                   (foreign-slot-value next-evt 'x-key-event 'type)
+                                   (foreign-slot-value next-evt
+                                                       '(:struct x-key-event)
+                                                       'type)
                                    :errorp nil))
-                          (eq win (foreign-slot-value next-evt 'x-key-event 'win))
-                          (eq time (foreign-slot-value next-evt 'x-key-event 'time)))
+                          (eq win (foreign-slot-value next-evt
+                                                      '(:struct x-key-event)
+                                                      'win))
+                          (eq time (foreign-slot-value next-evt
+                                                       '(:struct x-key-event)
+                                                       'time)))
                  (return-from process-event))))
            (setf (glop:key-pressed keycode) nil)
            (multiple-value-bind (text keysym) (x-lookup-string evt)
@@ -604,11 +610,11 @@
            (make-instance 'glop:button-press-event
                           :button button)))
         (:button-release
-         (with-foreign-slots ((button) evt x-button-pressed-event)
+         (with-foreign-slots ((button) evt x-button-released-event)
            (make-instance 'glop:button-release-event
                           :button button)))
         (:motion-notify
-         (with-foreign-slots ((x y) evt x-motion-event)
+         (with-foreign-slots ((x y) evt (:struct x-motion-event))
            (let ((glop-evt (make-instance 'glop:mouse-motion-event
                                           :x x :y y
                                           :dx (- x last-x)
@@ -616,51 +622,54 @@
              (setf last-x x last-y y)
              glop-evt)))
         (:expose
-         (with-foreign-slots ((display-ptr win) evt x-expose-event)
+         (with-foreign-slots ((display-ptr win) evt (:struct x-expose-event))
            (multiple-value-bind (root x y width height border-width depth)
                (x-get-geometry display-ptr win)
              (declare (ignorable x y root border-width depth))
              (make-instance 'glop:expose-event
                             :width width :height height))))
         (:configure-notify
-         (with-foreign-slots ((x y width height event) evt x-configure-event)
+         (with-foreign-slots ((x y width height event) evt (:struct x-configure-event))
            (cond
-             ((= event (cffi:foreign-slot-value evt 'x-configure-event 'win))
+             ((= event (cffi:foreign-slot-value evt '(:struct x-configure-event) 'win))
               (glop::%update-geometry win x y width height)
               (make-instance 'glop:resize-event
                              :width width :height height))
              (t
               (make-instance 'glop::child-resize-event
-                             :child  (cffi:foreign-slot-value evt 'x-configure-event 'win)
+                             :child  (cffi:foreign-slot-value evt '(:struct x-configure-event) 'win)
                              :width width :height height)))))
         (:map-notify
-         (with-foreign-slots ((event win) evt x-map-event)
+         (with-foreign-slots ((event win) evt (:struct x-map-event))
            (if (= event win)
                (make-instance 'glop:visibility-unobscured-event)
                (make-instance 'glop::child-visibility-unobscured-event
                               :child win))))
         (:unmap-notify
-         (with-foreign-slots ((event win) evt x-unmap-event)
+         (with-foreign-slots ((event win) evt (:struct x-unmap-event))
            (if (= event win)
                (make-instance 'glop:visibility-obscured-event)
                (make-instance 'glop::child-visibility-obscured-event
                               :child win)))
 )
         (:client-message
-         (with-foreign-slots ((display-ptr message-type data) evt x-client-message-event)
+         (with-foreign-slots ((display-ptr message-type data) evt
+                              (:struct x-client-message-event))
            ;; fixme: look up WM_PROTOCOLS, WM_DELETE_WINDOW atoms once and cache them, then compare those instead of doing string compares
            (let ((message-type-str (x-get-atom-name display-ptr message-type)))
              (cond
                ((string= message-type-str "WM_PROTOCOLS")
-                (with-foreign-slots ((l) data x-client-message-event-data)
-                  (let ((atom-name (x-get-atom-name display-ptr (mem-ref l :long))))
+                (with-foreign-slots ((l) data
+                                     (:union x-client-message-event-data))
+                  (let ((atom-name (x-get-atom-name display-ptr
+                                                    (mem-ref l :long))))
                    (when (string= atom-name "WM_DELETE_WINDOW")
                      (make-instance 'glop:close-event)))))
                (t
                 ;(format t "got client message type ~s~%" message-type-str)
                 nil)))))
         (:visibility-notify
-         (with-foreign-slots ((state) evt x-visibility-event)
+         (with-foreign-slots ((state) evt (:struct x-visibility-event))
            (case state
              (:unobscured
               (make-instance 'glop:visibility-unobscured-event))
@@ -670,7 +679,7 @@
               (make-instance 'glop:visibility-obscured-event)))))
         (:create-notify
          (with-foreign-slots ((parent window x y width height) evt
-                              x-create-window-event)
+                              (:struct x-create-window-event))
            ;; should this verify 'parent' matches current window?
            ;; (or that 'window' doesn't?)
            (make-instance 'glop::child-created-event
@@ -679,7 +688,8 @@
                           :x x :y y
                           :width width :height height)))
         (:destroy-notify
-         (with-foreign-slots ((event window) evt x-destroy-window-event)
+         (with-foreign-slots ((event window) evt
+                              (:struct x-destroy-window-event))
            (cond
              ((= event window)
               ;; window itself was destroyed, ignoring for now...
@@ -691,7 +701,7 @@
                              :parent event)))))
         (:reparent-notify
          (with-foreign-slots ((parent window event x y) evt
-                              x-reparent-event)
+                              (:struct x-reparent-event))
            (when (/= event window) ;; make sure it was child not main window
              (make-instance 'glop::child-reparent-event
                            :parent parent
@@ -718,7 +728,8 @@
 
 (defun process-generic-event (event)
   (restart-case
-      (with-foreign-slots ((display-ptr extension evtype cookie data) event x-generic-event-cookie)
+      (with-foreign-slots ((display-ptr extension evtype cookie data) event
+                           (:struct x-generic-event-cookie))
         (format t "")
         (let ((ext (get-display-extension-data display-ptr extension)))
           (if ext
@@ -732,7 +743,8 @@
     (continue () :report "Skip event")))
 
 (defcfun ("XLookupString" %x-lookup-string) :int
-  (evt x-key-event) (buffer-return :pointer) (bytes-buffer :int)
+  (evt (:pointer (:struct x-key-event)))
+  (buffer-return :pointer) (bytes-buffer :int)
   (keysym-return :pointer) (status-in-out :pointer))
 
 (defun x-lookup-string (key-event)
@@ -783,21 +795,22 @@
 
 (defcfun ("XConfigureWindow" %x-configure-window) :int
   (display-ptr :pointer) (win window) (value-mask x-window-configure-flags)
-  (values x-window-changes))
+  (values (:pointer (:struct x-window-changes))))
 
 (defun x-set-geometry (dpy win x y width height)
-  (with-foreign-object (changes 'x-window-changes)
-    (setf (foreign-slot-value changes 'x-window-changes 'x) x
-          (foreign-slot-value changes 'x-window-changes 'y) y
-          (foreign-slot-value changes 'x-window-changes 'width) width
-          (foreign-slot-value changes 'x-window-changes 'height) height)
+  (with-foreign-object (changes '(:struct x-window-changes))
+    (setf (foreign-slot-value changes '(:struct x-window-changes) 'x) x
+          (foreign-slot-value changes '(:struct x-window-changes) 'y) y
+          (foreign-slot-value changes '(:struct x-window-changes) 'width) width
+          (foreign-slot-value changes '(:struct x-window-changes) 'height) height)
     (%x-configure-window dpy win (foreign-bitfield-value 'x-window-configure-flags
                                                          '(:cw-x :cw-y :cw-width :cw-height))
                          changes)))
 
 (defcfun ("XCreatePixmapCursor" %x-create-pixmap-cursor) cursor
   (display-ptr :pointer) (src pixmap) (mask pixmap)
-  (foreground-color xcolor) (background-color xcolor)
+  (foreground-color (:pointer (:struct xcolor)))
+  (background-color (:pointer (:struct xcolor)))
   (x :uint) (y :uint))
 
 (defcfun ("XCreatePixmap" %x-create-pixmap) pixmap
@@ -850,14 +863,14 @@
   (x :int) (y :int) (width :uint) (height :uint))
 
 (defun x-create-null-cursor (dpy win)
-  (with-foreign-objects ((xgc 'xgcvalues) (col 'xcolor))
-    (setf (foreign-slot-value xgc 'xgcvalues 'function)
+  (with-foreign-objects ((xgc '(:struct xgcvalues)) (col '(:struct xcolor)))
+    (setf (foreign-slot-value xgc '(:struct xgcvalues) 'function)
           (foreign-enum-value 'xgcvalues-function :GXclear)
-          (foreign-slot-value col 'xcolor 'pixel)
+          (foreign-slot-value col '(:struct xcolor) 'pixel)
           0
-          (foreign-slot-value col 'xcolor 'red)
+          (foreign-slot-value col '(:struct xcolor) 'red)
           0
-          (foreign-slot-value col 'xcolor 'flags)
+          (foreign-slot-value col '(:struct xcolor) 'flags)
           4)
     (let* ((cursor-mask (%x-create-pixmap dpy win 1 1 1))
            (gc (%x-create-gc dpy cursor-mask '(:gcv-function) xgc)))
@@ -900,11 +913,11 @@
 
 (defcfun ("XGetEventData" x-get-event-data) :boolean
   (display-ptr :pointer)
-  (cookie (:pointer x-generic-event-cookie)))
+  (cookie (:pointer (:struct x-generic-event-cookie))))
 
 (defcfun ("XFreeEventData" x-free-event-data) :void
   (display-ptr :pointer)
-  (cookie (:pointer x-generic-event-cookie)))
+  (cookie (:pointer (:struct x-generic-event-cookie))))
 
 
 (defcfun ("XQueryExtension" %x-query-extension) :boolean
