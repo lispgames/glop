@@ -264,6 +264,16 @@
   (mode :int)
   (detail :int))
 
+(defcstruct x-generic-event-cookie
+  (type :int)
+  (serial :unsigned-long)
+  (send-event :boolean)
+  (display-ptr :pointer)
+  (extension :int)
+  (evtype :int)
+  (cookie :unsigned-int)
+  (data :pointer))
+
 (defcunion x-event
   (type :int)
   (pad :long :count 24))
@@ -320,7 +330,7 @@
 (defcfun ("XOpenDisplay" %x-open-display) :pointer
   (display-name :string))
 
-(defcfun ("XCloseDisplay" x-close-display) :pointer
+(defcfun ("XCloseDisplay" %x-close-display) :pointer
   (display-ptr :pointer))
 
 (defcfun ("XDefaultRootWindow" x-default-root-window) window
@@ -359,11 +369,46 @@
           (setf (mem-aref l :long 2) 0))))
       (x-send-event dpy (x-default-root-window dpy) nil (foreign-bitfield-value 'x-event-mask-flags '(:structure-notify-mask)) msg))))
 
+;;; XGenericEvent events dispatch on a per-display 'opcode', so we
+;;; store a map from display-ptr to an opcode->extension map for
+;;; all known open display connections
+;;; -- indexed by integer value of display-ptr since we can't portably use
+;;;    cffi pointers as keys in a hash table (SBCL in particular can't use
+;;;    any of the standard hash table tests on SAPs)
+
+;; fixme: put this somewhere better?
+(defparameter *display-extensions* (make-hash-table :test 'eql))
+(defun get-display-extension-data (display opcode)
+  (gethash opcode (gethash (pointer-address display) *display-extensions*)))
+
+(defun (setf get-display-extension-data) (value display opcode)
+  (format t "setf get-display-extension-data ~s ~s ~s~%" value display opcode)
+  (setf (gethash opcode (gethash (pointer-address display) *display-extensions*))
+        value)
+  (format t "-> ~s~%" (get-display-extension-data display opcode))
+  value)
+
+(defclass extension-data ()
+  ((name :initarg name :reader name)
+   (opcode  :initarg opcode :reader opcode)
+   (event-base :initarg event-base :reader event-base)
+   (error-base :initarg error-base :reader error-base)))
+
 (defun x-open-display (&optional (display-name (null-pointer)))
   (let ((display (%x-open-display display-name)))
     (when (null-pointer-p display)
       (error "Unable to open display"))
+    (when (gethash (pointer-address display) *display-extensions*)
+      ;; can this happen? if so, need ref counts or something
+      ;; so we don't remove it until all are closed...
+      (warn "duplicate display in x-open-display? need to add reference couting..."))
+    (setf (gethash (pointer-address display) *display-extensions*)
+          (make-hash-table :test 'eql))
     display))
+
+(defun x-close-display (display)
+  (remhash (pointer-address display) *display-extensions*)
+  (%x-close-display display))
 
 (defmacro with-current-display (dpy-sym &body body)
   `(let ((,dpy-sym (x-open-display)))
@@ -526,8 +571,35 @@
          (make-instance 'glop:focus-in-event))
         (:focus-out
          (make-instance 'glop:focus-out-event))
+        (:generic-event
+         (process-generic-event evt))
         ;; unhandled event
         (t nil)))))
+
+;; dispatcher for extension events, extensions should eql specialize on
+;; extension name and opcode, data cffi pointer to event structure, which
+;; is freed after dispatcher returns
+(defgeneric %generic-event-dispatch (extension-name event data))
+(defmethod %generic-event-dispatch (extension-name event data)
+  (format t "unknown generic-event: extension=~s, event=~s, data=#x~8,'0x~%" extension-name event (pointer-address data)))
+
+(defun process-generic-event (event)
+  (with-foreign-slots ((display-ptr extension evtype cookie data) event x-generic-event-cookie)
+    (format t "")
+    (let ((ext (get-display-extension-data display-ptr extension)))
+      (if ext
+          (unwind-protect
+               (progn
+                 (x-get-event-data display-ptr event)
+                 (%generic-event-dispatch (name ext) evtype data)
+)
+            (unless (null-pointer-p data)
+              (x-free-event-data display-ptr event))
+)
+          (format t "Unhandled X11 generic-event: ~S, opcode ~s, display ~s~%" evtype extension display-ptr)))
+
+)
+)
 
 (defcfun ("XLookupString" %x-lookup-string) :int
   (evt x-key-event) (buffer-return :pointer) (bytes-buffer :int)
@@ -693,3 +765,31 @@
 (defcfun ("XProcessInternalConnection" process-internal-connection) :void
   (display :pointer)
   (fd :int))
+
+(defcfun ("XGetEventData" x-get-event-data) :boolean
+  (display-ptr :pointer)
+  (cookie (:pointer x-generic-event-cookie)))
+
+(defcfun ("XFreeEventData" x-free-event-data) :void
+  (display-ptr :pointer)
+  (cookie (:pointer x-generic-event-cookie)))
+
+
+(defcfun ("XQueryExtension" %x-query-extension) :boolean
+  (display-ptr :pointer)
+  (name :string)
+  (major-opcode-return (:pointer :int))
+  (first-event-return (:pointer :int))
+  (first-error-return (:pointer :int)))
+(defun x-query-extension (display name)
+  (with-foreign-objects ((opcode :int) (event :int) (error :int))
+    (if (%x-query-extension display name opcode event error)
+        (values t (mem-ref opcode :int) (mem-ref event :int) (mem-ref error :int))
+        (values nil 0 0 0))))
+
+
+(defconstant +status-success+ 0)
+(defconstant +status-bad-request+ 1)
+(defconstant +status-bad-value+ 2)
+(defconstant +status-bad-window+ 3)
+;; bad-pixmap bad-atom bad-cursor bad-font bad-match bad-drawable bad-access bad-alloc bad-color bad-gc bad-id-choice bad-name bad-length bad-implementation=17
