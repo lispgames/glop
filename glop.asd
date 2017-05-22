@@ -19,6 +19,7 @@
                                    (:file "keysymdef")
                                    (:file "xlib")
                                    (:file "xkb")
+                                   (:file "xcomposite")
                                    (:file "glx")
                                    (:file "display-ctrl")
                                    (:file "glop-x11")))
