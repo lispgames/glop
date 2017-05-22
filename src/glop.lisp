@@ -362,6 +362,61 @@ user settings.")
   (:default-initargs :focused nil)
   (:documentation "Window lost focus."))
 
+(defclass child-event (event)
+  ;; 'child' is platform specific id of child window for now.
+  ;; might be nicer to wrap it in some class, but then we would have
+  ;; to maintain a mapping of IDs to instances, and would probably
+  ;; want some way for applications to specify which class as well
+  ((child :initarg :child :reader child))
+  (:documentation "Status of child window changed."))
+
+(defclass child-created-event (child-event)
+  ;; 'parent' is a platform specific ID, for similar reasons to
+  ;; 'child' above...
+  ((parent :initarg :parent :reader parent)
+   (x :initarg :x :reader x)
+   (y :initarg :y :reader y)
+   (width :initarg :width :reader width)
+   (height :initarg :height :reader height)))
+(define-simple-print-object child-created-event x y width height)
+
+(defclass child-destroyed-event (child-event)
+  ;; 'parent' is a platform specific ID, for similar reasons to
+  ;; 'child' above...
+  ((parent :initarg :parent :reader parent)))
+(define-simple-print-object child-destroyed-event parent child)
+
+(defclass child-reparent-event (child-event)
+  ;; 'parent' is a platform specific ID, for similar reasons to
+  ;; 'child' above...
+  ((parent :initarg :parent :reader parent)
+   (x :initarg :x :reader x)
+   (y :initarg :y :reader y)))
+(define-simple-print-object child-reparent-event x y)
+
+(defclass child-visibility-event (child-event)
+  ((visible :initarg :visible :reader visible))
+  (:documentation "Child window visibility changed."))
+(define-simple-print-object child-visibility-event visible)
+
+(defclass child-visibility-obscured-event (child-visibility-event)
+  ()
+  (:default-initargs :visible nil)
+  (:documentation "Child window was fully obscured."))
+
+(defclass child-visibility-unobscured-event (child-visibility-event)
+  ()
+  (:default-initargs :visible t)
+  (:documentation "Child window was unobscured."))
+
+(defclass child-resize-event (child-event)
+  ;; possibly should store position too unless we figure out how to map
+  ;; child IDs to actual window instances?
+  ((width :initarg :width :reader width)
+   (height :initarg :height :reader height))
+  (:documentation "Child window resized."))
+(define-simple-print-object child-resize-event width height)
+
 (defun push-event (window evt)
   "Push an artificial event into the event processing system.
 Note that this has no effect on the underlying window system."

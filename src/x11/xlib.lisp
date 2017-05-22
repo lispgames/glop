@@ -264,6 +264,42 @@
   (mode :int)
   (detail :int))
 
+(defcstruct x-create-window-event
+  (type :int)
+  (serial :unsigned-long)
+  (send-event :boolean)
+  (display-ptr :pointer)
+  (parent window)
+  (window window)
+  (x :int)
+  (y :int)
+  (width :int)
+  (height :int)
+  (border-width :int)
+  (override-redirect :boolean))
+
+(defcstruct x-destroy-window-event
+  (type :int)
+  (serial :unsigned-long)
+  (send-event :boolean)
+  (display-ptr :pointer)
+  (event window)
+  (window window))
+
+(defcstruct x-reparent-event
+  (type :int)
+  (serial :unsigned-long)
+  (send-event :boolean)
+  (display-ptr :pointer)
+  (event window)
+  (window window)
+  (parent window)
+  (x :int)
+  (y :int)
+  (override-redirect :boolean))
+
+
+
 (defcstruct x-generic-event-cookie
   (type :int)
   (serial :unsigned-long)
@@ -587,20 +623,42 @@
              (make-instance 'glop:expose-event
                             :width width :height height))))
         (:configure-notify
-         (with-foreign-slots ((x y width height) evt x-configure-event)
-           (glop::%update-geometry win x y width height)
-           (make-instance 'glop:resize-event
-                          :width width :height height)))
+         (with-foreign-slots ((x y width height event) evt x-configure-event)
+           (cond
+             ((= event (cffi:foreign-slot-value evt 'x-configure-event 'win))
+              (glop::%update-geometry win x y width height)
+              (make-instance 'glop:resize-event
+                             :width width :height height))
+             (t
+              (make-instance 'glop::child-resize-event
+                             :child  (cffi:foreign-slot-value evt 'x-configure-event 'win)
+                             :width width :height height)))))
         (:map-notify
-         (make-instance 'glop:visibility-unobscured-event))
+         (with-foreign-slots ((event win) evt x-map-event)
+           (if (= event win)
+               (make-instance 'glop:visibility-unobscured-event)
+               (make-instance 'glop::child-visibility-unobscured-event
+                              :child win))))
         (:unmap-notify
-         (make-instance 'glop:visibility-obscured-event))
+         (with-foreign-slots ((event win) evt x-unmap-event)
+           (if (= event win)
+               (make-instance 'glop:visibility-obscured-event)
+               (make-instance 'glop::child-visibility-obscured-event
+                              :child win)))
+)
         (:client-message
          (with-foreign-slots ((display-ptr message-type data) evt x-client-message-event)
-           (with-foreign-slots ((l) data x-client-message-event-data)
-             (let ((atom-name (x-get-atom-name display-ptr (mem-ref l :long))))
-               (when (string= atom-name "WM_DELETE_WINDOW")
-                 (make-instance 'glop:close-event))))))
+           ;; fixme: look up WM_PROTOCOLS, WM_DELETE_WINDOW atoms once and cache them, then compare those instead of doing string compares
+           (let ((message-type-str (x-get-atom-name display-ptr message-type)))
+             (cond
+               ((string= message-type-str "WM_PROTOCOLS")
+                (with-foreign-slots ((l) data x-client-message-event-data)
+                  (let ((atom-name (x-get-atom-name display-ptr (mem-ref l :long))))
+                   (when (string= atom-name "WM_DELETE_WINDOW")
+                     (make-instance 'glop:close-event)))))
+               (t
+                ;(format t "got client message type ~s~%" message-type-str)
+                nil)))))
         (:visibility-notify
          (with-foreign-slots ((state) evt x-visibility-event)
            (case state
@@ -610,6 +668,36 @@
               (make-instance 'glop:visibility-unobscured-event :visible :partial))
              (:fully-obscured
               (make-instance 'glop:visibility-obscured-event)))))
+        (:create-notify
+         (with-foreign-slots ((parent window x y width height) evt
+                              x-create-window-event)
+           ;; should this verify 'parent' matches current window?
+           ;; (or that 'window' doesn't?)
+           (make-instance 'glop::child-created-event
+                          :parent parent
+                          :child window
+                          :x x :y y
+                          :width width :height height)))
+        (:destroy-notify
+         (with-foreign-slots ((event window) evt x-destroy-window-event)
+           (cond
+             ((= event window)
+              ;; window itself was destroyed, ignoring for now...
+              )
+             (t
+              ;; child window was destroyed
+              (make-instance 'glop::child-destroyed-event
+                             :child window
+                             :parent event)))))
+        (:reparent-notify
+         (with-foreign-slots ((parent window event x y) evt
+                              x-reparent-event)
+           (when (/= event window) ;; make sure it was child not main window
+             (make-instance 'glop::child-reparent-event
+                           :parent parent
+                           :child window
+                           :x x :y y))))
+
         (:focus-in
          (make-instance 'glop:focus-in-event))
         (:focus-out
