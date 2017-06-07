@@ -704,9 +704,8 @@
              glop-evt)))
         (:expose
          (with-foreign-slots ((display-ptr win) evt (:struct x-expose-event))
-           (multiple-value-bind (root x y width height border-width depth)
+           (destructuring-bind (&key width height &allow-other-keys)
                (x-get-geometry display-ptr win)
-             (declare (ignorable x y root border-width depth))
              (make-instance 'glop:expose-event
                             :width width :height height))))
         (:configure-notify
@@ -854,9 +853,6 @@
                          (width :unsigned-int) (height :unsigned-int)
                          (border-width :unsigned-int) (depth :unsigned-int))
     (%x-get-geometry dpy win root x y width height border-width depth)
-    #++(values (mem-ref root 'window) (mem-ref x :int) (mem-ref y :int)
-            (mem-ref width :unsigned-int) (mem-ref height :unsigned-int)
-            (mem-ref border-width :unsigned-int) (mem-ref depth :unsigned-int))
     (list :root (mem-ref root 'window)
           :x (mem-ref x :int) :y (mem-ref y :int)
           :width (mem-ref width :unsigned-int)
