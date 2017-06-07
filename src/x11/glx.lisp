@@ -23,11 +23,24 @@
   (:accum-alpha-size)
   (:render-type #x8011)
   (:sample-buffers 100000)
-  (:samples 100001))
+  (:samples 100001)
+
+  (:bind-to-texture-rgb-ext #x20d0)
+  (:bind-to-texture-rgba-ext #x20d1)
+  (:bind-to-mipmap-texture-ext #x20d2)
+  (:bind-to-texture-targets-ext #x20d3)
+  (:y-inverted-ext #x20d4)
+
+  (:drawable-type #x8010)
+  (:dont-care -1))
 
 (defbitfield (glx-attribute-flags :int)
   (:rgba-bit 1)
-  (:color-index-bit 2))
+  (:color-index-bit 2)
+  (:pixmap-bit 1)
+  (:texture-1d-bit-ext #x00000001)
+  (:texture-2d-bit-ext #x00000002)
+  (:texture-rectangle-bit-ext #x00000004))
 
 (defcenum (gl-enum :unsigned-int)
   (:version #x1F02))
@@ -53,6 +66,21 @@
   (:bad-value)
   (:bad-enum))
 
+(defcenum glx-pixmap-attrib-attribs
+  ;; from EXT_texture_from_pixmap
+  (:texture-format-ext #x20d5)
+  (:texture-target-ext #x20d6)
+  (:mipmap-texture-ext #x20d7))
+
+(defcenum glx-pixmap-attrib-values
+  ;; from EXT_texture_from_pixmap
+  (:texture-1d-ext #x20db)
+  (:texture-2d-ext #x20dc)
+  (:texture-rectangle-ext #x20dd)
+  (:texture-format-none-ext #x20d8)
+  (:texture-format-rgb-ext #x20d9)
+  (:texture-format-rgba-ext #x20da))
+
 (define-foreign-library opengl
   (:darwin (:framework "OpenGL"))
   (:windows "opengl32.dll" :convention :stdcall)
@@ -66,7 +94,7 @@
 
 (defcfun ("glXWaitGL" glx-wait-gl) :void)
 
-(defcfun ("glXChooseVisual" %glx-choose-visual) visual-info
+(defcfun ("glXChooseVisual" %glx-choose-visual) (:pointer (:struct visual-info))
   (display-ptr :pointer) (screen :int) (attribs :pointer))
 
 (defcfun ("glXChooseFBConfig" %glx-choose-fb-config) (:pointer fb-config)
@@ -87,7 +115,8 @@
   (attribute :int)
   (value (:pointer :int)))
 
-(defcfun ("glXGetVisualFromFBConfig" %glx-get-visual-from-fb-config) visual-info
+(defcfun ("glXGetVisualFromFBConfig" %glx-get-visual-from-fb-config)
+    (:pointer (:struct visual-info))
   (display-ptr :pointer)
   (fb-config (:pointer fb-config)))
 
@@ -235,6 +264,35 @@
 
 (defcfun ("glXGetProcAddress" glx-get-proc-address) :pointer
   (proc-name :string))
+
+(defctype glx-pixmap :int)
+
+(defcfun ("glXCreatePixmap" %glx-create-pixmap) glx-pixmap
+  (display-ptr :pointer)
+  (config fb-config)
+  (pixmap glop-xlib::pixmap)
+  (attribs (:pointer :int)))
+
+(defun glx-create-pixmap (display fb-config x-pixmap &rest attribs)
+  (let ((l (length attribs)))
+    (with-foreign-object (attr :int (+ l 2))
+      (setf (mem-aref attr :int l) 0
+            (mem-aref attr :int (1+ l)) 0)
+      (loop for (_k _v) on attribs by #'cddr
+            for k = (if (keywordp _k)
+                        (foreign-enum-value 'glx-pixmap-attrib-attribs _k)
+                        _k)
+            for v = (if (keywordp _v)
+                        (foreign-enum-value 'glx-pixmap-attrib-values _v)
+                        _v)
+            for i from 0 by 2
+            do (setf (mem-aref attr :int i) k
+                     (mem-aref attr :int (1+ i)) v))
+      (%glx-create-pixmap display fb-config x-pixmap attr))))
+
+(defcfun ("glXDestroyPixmap" glx-destroy-pixmap) :void
+  (display-ptr :pointer)
+  (pixmap glx-pixmap))
 
 (defun correct-context? (major-desired minor-desired)
   (multiple-value-bind (major minor)

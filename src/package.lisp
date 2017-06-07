@@ -40,6 +40,10 @@
    #+(and unix (not darwin))#:x11-window-id
    #+(and unix (not darwin))#:x11-window-display
    #+(or win32 windows)#:win32-window-id
-   ))
+   #:maximize-window
+   #:restore-window
+   #:remove-window-decorations
+   #:restore-window-decorations
+   #:swap-interval))
 
 

@@ -47,7 +47,8 @@
   (:pfd-double-buffer-dont-care #x40000000)
   (:pfd-stereo-dont-care #x80000000)
   (:pfd-swap-copy #x00000400)
-  (:pfd-swap-exchange #x00000200))
+  (:pfd-swap-exchange #x00000200)
+  (:pfd-support-composition #x00008000))
 
 (defcenum pfd-pixel-type
   (:pfd-type-rgba 0)
@@ -67,7 +68,9 @@
   (:forward-compatible-bit #x00000002))
 
 (defcenum (gl-enum :unsigned-int)
-  (:version #x1F02))
+  (:version #x1F02)
+  (:extensions #x1F03)
+  (:num-extensions #x821D))
 
 (define-foreign-library opengl
   (t (:default "opengl32")))
@@ -77,6 +80,8 @@
 
 (defcfun ("wglCreateContext" wgl-create-context) hglrc
   (dc hdc))
+
+(defcfun ("glGetError" get-error) :int)
 
 (defun wgl-create-specific-context (hdc context-attribs)
   (with-foreign-object ( atts :int (1+ (length context-attribs)))
@@ -109,11 +114,35 @@
           ctx)))))
 
 
-(defcfun ("glGetString" get-string) :pointer
-  (name :unsigned-int))
+(defcfun ("glGetString" get-string) :string
+  (name gl-enum))
+
+(defun get-string-i (name index)
+  (let ((p (wgl-get-proc-address "glGetStringi"))
+        (e (foreign-enum-value 'gl-enum name)))
+    (when p
+      (foreign-funcall-pointer p nil :unsigned-int e
+                                     :unsigned-int index
+                                     :string))))
+
+
+(defcfun ("glGetIntegerv" %get-integer) :pointer
+  (name gl-enum)
+  (pointer :pointer))
+
+(defun get-integer (enum &key (count 1))
+  (with-foreign-object (p :int count)
+    (%get-integer enum p)
+    (if (= count 1)
+        ;; possibly should only return single int if COUNT wasn't
+        ;; supplied by user?
+        (mem-aref p :int 0)
+        (loop for i below count collect (mem-aref p :int i)))))
 
 (defcfun ("wglMakeCurrent" wgl-make-current) bool
   (dc hdc) (rc hglrc))
+
+(defcfun ("wglGetCurrentDC" wgl-get-current-dc) hdc)
 
 (defcfun ("wglDeleteContext" wgl-delete-context) bool
   (rc hglrc))
@@ -146,17 +175,21 @@
                                     (accum-green-size 0)
                                     (accum-blue-size 0)
                                     stencil-buffer (stencil-size 0))
-  (declare (ignore stencil-buffer))
-  (with-foreign-object (pfd 'pixelformatdescriptor)
+  (declare (ignore stencil-buffer)
+           (ignorable stereo))
+  (with-foreign-object (pfd '(:struct pixelformatdescriptor))
     (with-foreign-slots ((size version flags pixel-type color-bits
                                red-bits green-bits blue-bits alpha-bits
                                accum-bits accum-red-bits accum-green-bits accum-blue-bits
                                stencil-bits
-                               depth-bits) pfd pixelformatdescriptor)
-      (setf size (foreign-type-size 'pixelformatdescriptor)
+                               depth-bits)
+                         pfd
+                         (:struct pixelformatdescriptor))
+      (setf size (foreign-type-size '(:struct pixelformatdescriptor))
             version 1
             flags (foreign-bitfield-value 'pfd-flags
                        (list :pfd-draw-to-window :pfd-support-opengl
+                             :pfd-support-composition
                              (if double-buffer
                                  :pfd-double-buffer
                                  :pfd-double-buffer-dont-care)
@@ -187,11 +220,28 @@
 (defcfun ("SwapBuffers" swap-buffers) bool
   (dc hdc))
 
+(defun get-version ()
+  (glop::parse-gl-version-string-values
+   (get-string :version)))
+
+(defun get-extensions ()
+  (if (>= (get-version) 3)
+      ;; use new API for 3+ since old won't work on core profile
+      (let ((n (glop-wgl::get-integer :num-extensions)))
+        (loop for i below n
+              collect (glop-wgl::get-string-i :extensions i)))
+      ;; old API
+      (split-sequence:split-sequence
+       #\space
+       (glop-wgl::get-string :extensions))))
+
 
 (defun correct-context? (major-desired minor-desired)
   (multiple-value-bind (major minor)
-      (glop::parse-gl-version-string-values
-       (foreign-string-to-lisp (get-string (foreign-enum-value 'gl-enum :version))))
+      (get-version)
     (when (or (< major major-desired)
               (and (= major major-desired) (< minor minor-desired)))
       (error "unable to create requested context"))))
+
+
+

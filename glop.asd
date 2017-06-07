@@ -5,7 +5,7 @@
   :version "0.1.0"
   :description "Direct FFI bindings for OpenGL window and context management"
   :author "Morgan Veyret <patzy at oxyde dot org>"
-  :depends-on (:cffi)
+  :depends-on (:cffi :trivial-garbage :split-sequence)
   :components
   ((:module "src"
             :serial t
@@ -19,6 +19,7 @@
                                    (:file "keysymdef")
                                    (:file "xlib")
                                    (:file "xkb")
+                                   (:file "xcomposite")
                                    (:file "glx")
                                    (:file "display-ctrl")
                                    (:file "glop-x11")))
@@ -40,6 +41,7 @@
                       :components ((:file "package")
                                    (:file "win32")
                                    (:file "wgl")
+                                   (:file "dwm")
                                    (:file "glop-win32")))
              (:file "glop")))))
 

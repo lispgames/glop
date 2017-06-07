@@ -11,7 +11,7 @@
   (mwidth :int)
   (mheight :int))
 
-(defctype screen-size xrr-screen-size)
+(defctype screen-size (:struct xrr-screen-size))
 
 (defcenum (rr-rotation)
   (:rotate-0 1)
@@ -80,7 +80,7 @@
     (xrr-free-screen-config-info sc)))
 
 (defun supported-modes (dpy screen)
-  (with-foreign-objects ((count :int) (gl :int) (rgba :int) (dummy 'visual-info))
+  (with-foreign-objects ((count :int) (gl :int) (dummy '(:struct visual-info)))
     (let ((rtn-list (get-visual-info dpy 0 dummy count))
           (sc (xrr-get-screen-info dpy (root-window dpy screen)))
           (depth-list nil)
@@ -94,8 +94,8 @@
           (glop-glx::glx-get-config dpy vi
                                     (foreign-enum-value 'glop-glx::glx-attributes :use-gl) gl)
           (when (and (= 1 (mem-aref gl :int))
-                        (not (member (foreign-slot-value vi 'visual-info 'depth) depth-list)))
-            (push (foreign-slot-value vi 'visual-info 'depth) depth-list)))
+                        (not (member (foreign-slot-value vi '(:struct visual-info) 'depth) depth-list)))
+            (push (foreign-slot-value vi '(:struct visual-info) 'depth) depth-list)))
         ;; available resolutions
         (x-free rtn-list)
         (setf rtn-list (xrr-config-sizes sc count))

@@ -340,3 +340,48 @@
            (gl:vertex 0.75 0.75 0)
            (gl:vertex 0.25 0.75 0))
          (glop:swap-buffers win))))
+
+
+
+(defclass vsync-window (glop:window)
+  ((vsync :accessor vsync :initform 1)))
+
+(defmethod glop:on-event ((window vsync-window) (event glop:key-event))
+  (when (eq (glop:keysym event) :escape)
+      (glop:push-close-event window))
+  (when (and (glop:pressed event) (eq (glop:keysym event) :v))
+    (case (vsync window)
+      (-1 (setf (vsync window) 0))
+      (0 (setf (vsync window) 1))
+      (1 (setf (vsync window) -1)))
+    (format t "vsync -> ~s~%" (vsync window))
+    (glop:swap-interval window (vsync window))))
+
+(defun test-vsync ()
+  (glop:with-window (win "Glop test window" 800 600
+                         :win-class 'vsync-window)
+    (format t "Created window: ~S~%" win)
+    ;; GL init
+    (gl:clear-color 0.3 0.3 1.0 0)
+    ;; setup view
+    (gl:matrix-mode :projection)
+    (gl:load-identity)
+    (gl:ortho -1 1 -1 1 -1 1)
+    ;; idle loop, we draw here anyway
+    (loop
+      for angle from 0 by 0.1
+      while (glop:dispatch-events win :blocking nil :on-foo nil)
+      do
+         ;; rendering
+         (gl:clear :color-buffer)
+         (gl:color (random 1.0) 1 1)
+         (gl:with-pushed-matrix* (:modelview)
+           (gl:rotate angle 0 0 1)
+           (gl:with-primitive :polygon
+             (gl:vertex -0.5 -0.5 0)
+             (gl:vertex 0.5 -0.5 0)
+             (gl:vertex 0.5 0.5 0)
+             (gl:vertex -0.5 0.5 0)))
+         ;;(gl:flush)
+         (glop:swap-buffers win))))
+

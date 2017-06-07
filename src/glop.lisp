@@ -93,6 +93,10 @@ Returns NIL if no match is found."
   (:documentation
    "Closes the provided window *without* releasing any attached GL context."))
 
+(defgeneric %init-swap-interval (window)
+  (:method (w)
+    (setf (swap-interval-function w) :unsupported)))
+
 (defun create-window (title width height &key (x 0) (y 0) major minor fullscreen
                                               (win-class 'window)
                                               (double-buffer t)
@@ -107,10 +111,18 @@ Returns NIL if no match is found."
                                               (accum-green-size 0)
                                               (accum-blue-size 0)
                                               stencil-buffer
-                                              (stencil-size 0))
-  "Creates a new window with an attached GL context using the provided visual attributes.
-   Major and minor arguments specify the context version to use, when NIL
-   (default value) old style gl context creation is used.
+                                              (stencil-size 0)
+                                           profile
+                                           (gl t))
+  "Creates a new window with an attached GL context using the provided
+   visual attributes.
+
+   Major and minor arguments specify the context version to use. When
+   NIL (default value) old style gl context creation is used. Some
+   combinations of platforms and drivers may require :PROFILE :CORE to
+   use versions newer than 2.1, while others will use newest version
+   even if version is not specified.
+
    The created window will be of the WINDOW class, you can override this by
    specifying your own class using :WIN-CLASS."
   (let ((win (make-instance win-class)))
@@ -129,8 +141,11 @@ Returns NIL if no match is found."
                  :accum-blue-size accum-blue-size
                  :stencil-buffer stencil-buffer
                  :stencil-size stencil-size)
-    (create-gl-context win :major major :minor minor
-                           :make-current t)
+    (if gl
+        (create-gl-context win :major major :minor minor
+                               :make-current t
+                               :profile profile)
+        (setf (window-gl-context win) nil))
     (show-window win)
     (set-fullscreen win fullscreen)
     win))
@@ -185,7 +200,8 @@ set window fullscreen state."
 
 (defgeneric show-window (window)
   (:documentation
-   "Make WINDOW visible."))
+   "Make WINDOW visible. (may need to be called twice when window is
+   shown for the first time on Windows.)"))
 
 (defgeneric hide-window (window)
   (:documentation
@@ -199,6 +215,29 @@ set window fullscreen state."
   (:documentation
    "Swaps GL buffers."))
 
+(defgeneric swap-interval (window interval)
+  (:documentation
+   "Specify number of vsync intervals to wait before swap-buffers takes effect.
+
+Use 0 for no vsync, 1 for normal vsync, 2 for 1/2 monitor refresh rate, etc.
+
+If INTERVAL is negativem the absolute value is used, and when
+supported swap won't wait for vsync if specified interval has already
+elapsed.
+
+May be ignored or only partially supported depending on platform and
+user settings.")
+  ;; windows: only supports 0/1 when dwm is enabled (always on win8+ i think?)
+  ;; (possibly could support > 1 with dwm, but hard to detect if some vsync
+  ;;  already passed so would always wait N frames. Possibly could combine
+  ;;  a normal SwapInterval call with N-1 and a dwmFlush?)
+  ;; linux: todo (depends on GLX_EXT_swap_control, GLX_EXT_swap_control_tear
+  ;; osx: todo
+  ;; todo: some way to query supported options
+  (:method (w i)
+    ;; just do nothing by default for now
+    (declare (ignore w i))))
+
 (defgeneric show-cursor (window)
   (:documentation
    "Enable cursor display for WINDOW"))
@@ -206,6 +245,24 @@ set window fullscreen state."
 (defgeneric hide-cursor (window)
   (:documentation
    "Disable cursor display for WINDOW"))
+
+;; slightly lower-level API for things related to fullscreen
+(defgeneric maximize-window (window)
+  (:documentation
+   "'Maximize' a window to fill screen, without changing screen mode
+   or window decoractions."))
+
+(defgeneric restore-window (window)
+  (:documentation
+   "Undo the effects of MAXIMIZE-WINDOW"))
+
+(defgeneric remove-window-decorations (window)
+  (:documentation
+   "Remove window border, title, etc. if possible."))
+
+(defgeneric restore-window-decorations (window)
+  (:documentation
+   "Restore window border, title, etc."))
 
 ;;; Events handling
 (defmacro define-simple-print-object (type &rest attribs)
@@ -305,6 +362,61 @@ set window fullscreen state."
   (:default-initargs :focused nil)
   (:documentation "Window lost focus."))
 
+(defclass child-event (event)
+  ;; 'child' is platform specific id of child window for now.
+  ;; might be nicer to wrap it in some class, but then we would have
+  ;; to maintain a mapping of IDs to instances, and would probably
+  ;; want some way for applications to specify which class as well
+  ((child :initarg :child :reader child))
+  (:documentation "Status of child window changed."))
+
+(defclass child-created-event (child-event)
+  ;; 'parent' is a platform specific ID, for similar reasons to
+  ;; 'child' above...
+  ((parent :initarg :parent :reader parent)
+   (x :initarg :x :reader x)
+   (y :initarg :y :reader y)
+   (width :initarg :width :reader width)
+   (height :initarg :height :reader height)))
+(define-simple-print-object child-created-event x y width height)
+
+(defclass child-destroyed-event (child-event)
+  ;; 'parent' is a platform specific ID, for similar reasons to
+  ;; 'child' above...
+  ((parent :initarg :parent :reader parent)))
+(define-simple-print-object child-destroyed-event parent child)
+
+(defclass child-reparent-event (child-event)
+  ;; 'parent' is a platform specific ID, for similar reasons to
+  ;; 'child' above...
+  ((parent :initarg :parent :reader parent)
+   (x :initarg :x :reader x)
+   (y :initarg :y :reader y)))
+(define-simple-print-object child-reparent-event x y)
+
+(defclass child-visibility-event (child-event)
+  ((visible :initarg :visible :reader visible))
+  (:documentation "Child window visibility changed."))
+(define-simple-print-object child-visibility-event visible)
+
+(defclass child-visibility-obscured-event (child-visibility-event)
+  ()
+  (:default-initargs :visible nil)
+  (:documentation "Child window was fully obscured."))
+
+(defclass child-visibility-unobscured-event (child-visibility-event)
+  ()
+  (:default-initargs :visible t)
+  (:documentation "Child window was unobscured."))
+
+(defclass child-resize-event (child-event)
+  ;; possibly should store position too unless we figure out how to map
+  ;; child IDs to actual window instances?
+  ((width :initarg :width :reader width)
+   (height :initarg :height :reader height))
+  (:documentation "Child window resized."))
+(define-simple-print-object child-resize-event width height)
+
 (defun push-event (window evt)
   "Push an artificial event into the event processing system.
 Note that this has no effect on the underlying window system."
@@ -399,8 +511,8 @@ Returns NIL on :CLOSE event, T otherwise."
 
 (defmacro with-window ((win-sym title width height &rest attribs) &body body)
   "Creates a window and binds it to WIN-SYM.  The window is detroyed when body exits."
-  `(let ((,win-sym (apply #'create-window ,title ,width ,height
-                          (list ,@attribs))))
+  `(let ((,win-sym (create-window ,title ,width ,height
+                                  ,@attribs)))
      (when ,win-sym
        (unwind-protect (progn ,@body)
          (destroy-window ,win-sym)))))
