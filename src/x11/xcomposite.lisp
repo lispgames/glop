@@ -2,6 +2,7 @@
 (in-package #:glop-xlib)
 
 (define-foreign-library xcomposite
+  (:unix (:or "libXcomposite.so" "libXcomposite.so.1"))
   (t (:default "libXcomposite")))
 (use-foreign-library xcomposite)
 
