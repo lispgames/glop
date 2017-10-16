@@ -1,6 +1,7 @@
 #include <AppKit/AppKit.h>
 #include <malloc/malloc.h>
 #include <CoreServices/CoreServices.h>
+#include <Availability.h>
 #include <unistd.h>
 #include <string.h>
 
@@ -41,10 +42,12 @@ unsigned short NSEventKeyCode (NSEvent *event)
   return [event keyCode];
 }
 
+#if __MAC_OS_X_VERSION_MIN_REQUIRED < __MAC_10_11
 NSUInteger NSEventModifierFlags (NSEvent *event)
 {
   return [event modifierFlags];
 }
+#endif
 
 NSWindow *NSEventWindow (NSEvent *event)
 {
